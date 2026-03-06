@@ -1,16 +1,28 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
-	import { locales, localizeHref } from '$lib/paraglide/runtime';
+	import { baseLocale, deLocalizeHref, locales } from '$lib/paraglide/runtime';
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
 
+	function normalizeRoutePath(path: string) {
+		if (path === '/') return '/';
+		return path.endsWith('/') ? path : `${path}/`;
+	}
+
 	function getLocalizedPath(locale: (typeof locales)[number]) {
 		const pathname = page.url.pathname;
-		const routePath = base !== '' && pathname.startsWith(base) ? pathname.slice(base.length) || '/' : pathname;
-		return `${base}${localizeHref(routePath, { locale })}`;
+		const routePath =
+			base !== '' && pathname.startsWith(base) ? pathname.slice(base.length) || '/' : pathname;
+		const canonicalPath = normalizeRoutePath(deLocalizeHref(routePath));
+		const localizedPath =
+			locale === baseLocale
+				? canonicalPath
+				: `/${locale}${canonicalPath === '/' ? '/' : canonicalPath}`;
+
+		return `${base}${localizedPath}`;
 	}
 </script>
 
