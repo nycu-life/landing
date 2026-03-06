@@ -9,13 +9,13 @@ describe('/+page.svelte', () => {
 
 		const heading = page.getByRole('heading', {
 			level: 1,
-			name: /one front door for transit, courses, and places at nycu/i
+			name: /關於 nycu\.life 計畫/i
 		});
-		const primaryCta = page.getByRole('link', { name: /see the three pillars/i });
-		const serviceNav = page.getByRole('banner').getByRole('link', { name: /^services$/i });
+		const primaryCta = page.getByRole('link', { name: /查看計畫內容/i });
+		const serviceNav = page.getByRole('banner').getByRole('link', { name: /^團隊分工$/i });
 		const journeysHeading = page.getByRole('heading', {
 			level: 2,
-			name: /campus life feels better when the next step is obvious/i
+			name: /打破資訊分散，打造整合式數位校園生活平台/i
 		});
 
 		await expect.element(heading).toBeInTheDocument();

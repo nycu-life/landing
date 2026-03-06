@@ -6,18 +6,18 @@ test('landing page supports the new brand journey', async ({ page }) => {
 	await expect(
 		page.getByRole('heading', {
 			level: 1,
-			name: /one front door for transit, courses, and places at nycu/i
+			name: /關於 nycu\.life 計畫/i
 		})
 	).toBeVisible();
-	await expect(page.getByRole('link', { name: /see the three pillars/i })).toBeVisible();
+	await expect(page.getByRole('link', { name: /查看計畫內容/i })).toBeVisible();
 
-	await page.getByRole('link', { name: /see the three pillars/i }).click();
+	await page.getByRole('link', { name: /查看計畫內容/i }).click();
 	await expect(page).toHaveURL(/#journeys$/);
 
-	await page.getByRole('link', { name: /explore courses/i }).click();
+	await page.getByRole('link', { name: /查看核心分工/i }).click();
 	await expect(page).toHaveURL(/#umbrella$/);
-	await expect(page.getByRole('heading', { level: 3, name: /^courses$/i })).toBeVisible();
-	await expect(page.getByText(/search and advanced filters reduce guesswork across semesters/i)).toBeVisible();
+	await expect(page.getByRole('heading', { level: 3, name: /^設計組$/i })).toBeVisible();
+	await expect(page.getByText(/產品組：品牌視覺呈現、ui\/ux 設計與使用者體驗/i)).toBeVisible();
 
 	await expect(page.getByRole('link', { name: /github organization/i })).toBeVisible();
 });
