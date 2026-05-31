@@ -6,7 +6,9 @@
 		Github,
 		Globe,
 		Instagram,
+		Link2,
 		Linkedin,
+		Mail,
 		MapPin,
 		Route,
 		Sparkles
@@ -39,4 +41,8 @@
 	<Github class={className} aria-hidden="true" strokeWidth={1.8} />
 {:else if name === 'linkedin'}
 	<Linkedin class={className} aria-hidden="true" strokeWidth={1.8} />
+{:else if name === 'mail'}
+	<Mail class={className} aria-hidden="true" strokeWidth={1.8} />
+{:else if name === 'link'}
+	<Link2 class={className} aria-hidden="true" strokeWidth={1.8} />
 {/if}

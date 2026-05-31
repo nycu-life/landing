@@ -111,6 +111,12 @@
 	"team_linkedin": "LinkedIn",
 	"team_more_label": "More members joining",
 	"team_more_body": "This roster is still growing. If you would like to build with us, you are welcome to join.",
+	"team_back": "Back to team",
+	"member_about_title": "About",
+	"member_about_empty": "This member's intro is coming soon.",
+	"member_gallery_title": "Gallery",
+	"member_links_title": "Links",
+	"member_website": "Website",
 
 	"dept_pm": "Product",
 	"dept_engineering": "Engineering",

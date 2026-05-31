@@ -21,7 +21,9 @@ export type IconName =
 	| 'globe'
 	| 'instagram'
 	| 'github'
-	| 'linkedin';
+	| 'linkedin'
+	| 'mail'
+	| 'link';
 
 /** Brand links used across the site. */
 export const INSTAGRAM_URL = 'https://instagram.com/nycu.life';
@@ -242,68 +244,16 @@ export const devLogEntries: DevLogEntry[] = [
 /* Team — organized by department                                             */
 /* -------------------------------------------------------------------------- */
 
-export type TeamMember = {
-	id: string;
-	/** Optional photo URL; the UI falls back to initials when absent. */
-	photo?: string;
-	name: Message;
-	role: Message;
-	linkedin?: string;
-};
-
-export type Department = {
-	id: string;
-	label: Message;
-	members: TeamMember[];
-};
-
+// Team copy (chrome). The member roster + per-member profile pages live in
+// src/lib/content/team.ts (single source of truth, prerendered at /team/<slug>).
 export const teamSection = {
 	eyebrow: m.team_eyebrow,
 	title: m.team_title,
 	lede: m.team_lede,
 	roleLabel: m.team_role_label,
-	linkedinLabel: m.team_linkedin,
 	moreLabel: m.team_more_label,
 	moreBody: m.team_more_body
 };
-
-/**
- * Departments mirror the team's real org structure. We only list the members
- * we actually know and leave the remaining departments as clean, fillable
- * slots (rendered via the "more members joining" affordance) rather than
- * inventing names.
- */
-// Departments mirror the team's real org structure. Members are intentionally
-// left empty for now — the team will fill in name/role/intro/LinkedIn/photo
-// later; until then each department renders the "more members joining" slot.
-// PM is omitted on purpose: PMs already appear within their own department.
-export const departments: Department[] = [
-	{
-		id: 'engineering',
-		label: m.dept_engineering,
-		members: []
-	},
-	{
-		id: 'design',
-		label: m.dept_design,
-		members: []
-	},
-	{
-		id: 'marketing',
-		label: m.dept_marketing,
-		members: []
-	},
-	{
-		id: 'admin',
-		label: m.dept_admin,
-		members: []
-	},
-	{
-		id: 'legal',
-		label: m.dept_legal,
-		members: []
-	}
-];
 
 export const joinSection = {
 	title: m.join_title,
