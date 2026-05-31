@@ -1,3 +1,16 @@
+import { m } from '$lib/paraglide/messages';
+
+/**
+ * The landing page is fully data-driven. Structural data (ids, icons, links,
+ * accent tones, photo paths) lives here, while every piece of display copy is
+ * resolved through a Paraglide message function so the page stays bilingual
+ * (zh-tw / en) without duplicating layout.
+ *
+ * `Message` is the shape of a Paraglide message accessor: call it to get the
+ * string for the active locale.
+ */
+type Message = () => string;
+
 export type IconName =
 	| 'spark'
 	| 'grid'
@@ -10,268 +23,213 @@ export type IconName =
 	| 'route'
 	| 'book'
 	| 'pin'
-	| 'layers';
+	| 'layers'
+	| 'apple'
+	| 'play'
+	| 'linkedin';
+
+/** A section that can be reached from the numbered menu navigation. */
+export type SectionId = 'services' | 'team' | 'about' | 'join';
 
 export type NavItem = {
+	id: SectionId;
+	/** Two-digit index rendered as "01", "02", ... */
+	index: string;
+	label: Message;
+};
+
+export type DownloadKind = 'appstore' | 'googleplay' | 'web';
+
+export type DownloadLink = {
+	kind: DownloadKind;
+	label: Message;
+	href: string;
+	icon: IconName;
+};
+
+export type ServiceId = 'bus' | 'courses' | 'places';
+
+export type Service = {
+	id: ServiceId;
+	/** Two-digit index rendered alongside the service. */
+	index: string;
+	icon: IconName;
+	/** Accent tone token used for the per-service treatment. */
+	accent: 'cobalt' | 'lime' | 'sun';
+	name: Message;
+	summary: Message;
+	blurb: Message;
+	features: Message[];
+	downloads: DownloadLink[];
+};
+
+export type TeamMember = {
 	id: string;
-	label: string;
-	icon: IconName;
-};
-
-export type SectionCopy = {
-	eyebrow: string;
-	title: string;
-	summary: string;
-};
-
-export type HeroMoment = {
-	time: string;
-	title: string;
-	summary: string;
-	icon: IconName;
-};
-
-export type HeroContent = {
-	badge: string;
-	title: string;
-	summary: string;
-	primaryCtaLabel: string;
-	primaryCtaHref: string;
-	secondaryCtaLabel: string;
-	secondaryCtaHref: string;
-	tags: string[];
-	sceneEyebrow: string;
-	sceneTitle: string;
-	sceneSummary: string;
-	sceneNote: string;
-	sceneMoments: HeroMoment[];
-};
-
-export type ServicePillarId = 'traffic' | 'courses' | 'spaces';
-
-export type JourneyItem = {
-	id: string;
-	eyebrow: string;
-	title: string;
-	summary: string;
-	anchorLabel: string;
-	pillarId: ServicePillarId;
-	icon: IconName;
-};
-
-export type ServicePillar = {
-	id: ServicePillarId;
-	title: string;
-	summary: string;
-	tone: string;
-	highlights: string[];
-	touchpoints: string[];
-	icon: IconName;
+	/** Optional photo URL; the UI falls back to initials when absent. */
+	photo?: string;
+	name: Message;
+	group: Message;
+	intro: Message;
+	linkedin?: string;
 };
 
 export type ValuePillar = {
-	title: string;
-	body: string;
 	icon: IconName;
+	title: Message;
+	body: Message;
 };
 
 export type FooterLink = {
-	label: string;
-	description: string;
+	label: Message;
 	href: string;
+	icon: IconName;
 };
 
+export const GITHUB_URL = 'https://github.com/nycu-life';
+
 export const pageMeta = {
-	title: 'NYCU.LIFE | One front door for transit, courses, and places',
-	description:
-		'NYCU.LIFE brings transit, courses, and campus place context into one calmer front door for NYCU students.'
+	title: m.meta_title,
+	description: m.meta_description
+};
+
+export const brand = {
+	name: m.brand_name,
+	tagline: m.brand_tagline
 };
 
 export const navItems: NavItem[] = [
-	{ id: 'journeys', label: 'Journeys', icon: 'spark' },
-	{ id: 'umbrella', label: 'Services', icon: 'grid' },
-	{ id: 'why', label: 'Why', icon: 'badge' },
-	{ id: 'updates', label: 'Updates', icon: 'branch' }
+	{ id: 'services', index: '01', label: m.nav_services },
+	{ id: 'team', index: '02', label: m.nav_team },
+	{ id: 'about', index: '03', label: m.nav_about },
+	{ id: 'join', index: '04', label: m.nav_join }
 ];
 
-export const hero: HeroContent = {
-	badge: 'Campus life brand',
-	title: 'One front door for transit, courses, and places at NYCU.',
-	summary:
-		'NYCU.LIFE focuses on the campus switches students repeat every day, then turns them into one calmer, more readable experience.',
-	primaryCtaLabel: 'See the three pillars',
-	primaryCtaHref: '#journeys',
-	secondaryCtaLabel: 'GitHub updates',
-	secondaryCtaHref: 'https://github.com/nycu-life',
-	tags: ['Transit', 'Courses', 'Places'],
-	sceneEyebrow: 'A calmer student day',
-	sceneTitle: 'Move through campus with less friction.',
-	sceneSummary:
-		'Start with movement and course planning, then reconnect classrooms and place context in the same product language.',
-	sceneNote:
-		'More services to come.',
-	sceneMoments: [
-		{
-			time: '07:35',
-			title: 'Check the next ride',
-			summary: 'Shuttles, buses, coaches, and campus routes should read like one trip.',
-			icon: 'route'
-		},
-		{
-			time: '11:10',
-			title: 'Shape the semester faster',
-			summary: 'Search, filter, save, and compare without jumping across disconnected tools.',
-			icon: 'book'
-		},
-		{
-			time: '15:20',
-			title: 'Know where to go next',
-			summary: 'Room lookup and place context start with the next step, not a wall of maps.',
-			icon: 'pin'
-		}
-	]
+export const hero = {
+	eyebrow: m.hero_eyebrow,
+	titleLines: [m.hero_title_line_1, m.hero_title_line_2, m.hero_title_line_3] as Message[],
+	lede: m.hero_lede,
+	primaryCta: { label: m.hero_cta_primary, href: '#services' },
+	secondaryCta: { label: m.hero_cta_secondary, href: GITHUB_URL },
+	marquee: m.hero_marquee,
+	imageCaption: m.hero_image_caption
 };
 
-export const journeysSection: SectionCopy = {
-	eyebrow: 'Student journeys',
-	title: 'Campus life feels better when the next step is obvious.',
-	summary:
-		'NYCU.LIFE begins with the three moments students switch between most.'
+export const servicesSection = {
+	index: m.services_index,
+	eyebrow: m.services_eyebrow,
+	title: m.services_title,
+	lede: m.services_lede,
+	blurbLabel: m.services_blurb_label,
+	featuresLabel: m.services_features_label
 };
 
-export const journeys: JourneyItem[] = [
+export const services: Service[] = [
 	{
-		id: 'journey-traffic',
-		eyebrow: 'Before class',
-		title: 'Get moving without guessing what to open',
-		summary:
-			'Transit should feel like one readable flow for students, not several unrelated tools.',
-		anchorLabel: 'Explore transit',
-		pillarId: 'traffic',
-		icon: 'route'
-	},
-	{
-		id: 'journey-courses',
-		eyebrow: 'Semester planning',
-		title: 'Plan more than a single class result',
-		summary:
-			'Course discovery should help students compare, save, and shape a semester.',
-		anchorLabel: 'Explore courses',
-		pillarId: 'courses',
-		icon: 'book'
-	},
-	{
-		id: 'journey-spaces',
-		eyebrow: 'Between classes',
-		title: 'Find the next room with less doubt',
-		summary:
-			'Start with classrooms and course locations, then grow into a clearer sense of campus.',
-		anchorLabel: 'Explore places',
-		pillarId: 'spaces',
-		icon: 'pin'
-	}
-];
-
-export const umbrellaSection = {
-	eyebrow: 'Service umbrella',
-	title: 'Three pillars. One brand.',
-	summary:
-		'Each pillar solves a different task, but they should still feel like the same campus front door.',
-	toneLabel: 'How this should feel',
-	highlightsLabel: 'What students get'
-};
-
-export const servicePillars: ServicePillar[] = [
-	{
-		id: 'traffic',
-		title: 'Transit',
-		summary:
-			'A clearer way to see shuttles, buses, coaches, and campus routes in one place.',
-		tone: 'Fast to scan. Built around movement, not admin structure.',
-		highlights: [
-			'Live transit information belongs in one student-facing flow.',
-			'Cross-campus routes should read like a trip, not an internal system.'
-		],
-		touchpoints: ['Shuttle', 'Bus', 'Coach', 'Campus routes'],
-		icon: 'route'
+		id: 'bus',
+		index: '01',
+		icon: 'route',
+		accent: 'cobalt',
+		name: m.service_bus_name,
+		summary: m.service_bus_summary,
+		blurb: m.service_bus_blurb,
+		features: [m.service_bus_feature_1, m.service_bus_feature_2, m.service_bus_feature_3],
+		downloads: [
+			{ kind: 'appstore', label: m.services_download_appstore, href: '#', icon: 'apple' },
+			{ kind: 'googleplay', label: m.services_download_googleplay, href: '#', icon: 'play' },
+			{ kind: 'web', label: m.services_download_web, href: '#', icon: 'globe' }
+		]
 	},
 	{
 		id: 'courses',
-		title: 'Courses',
-		summary:
-			'Course discovery should help students shape a semester, not just search a table.',
-		tone: 'Focused, flexible, and easy to compare.',
-		highlights: [
-			'Search and advanced filters reduce guesswork across semesters.',
-			'Favorites, schedule planning, and stats keep the semester readable.'
+		index: '02',
+		icon: 'book',
+		accent: 'lime',
+		name: m.service_courses_name,
+		summary: m.service_courses_summary,
+		blurb: m.service_courses_blurb,
+		features: [
+			m.service_courses_feature_1,
+			m.service_courses_feature_2,
+			m.service_courses_feature_3
 		],
-		touchpoints: ['Search', 'Filter', 'Save', 'Schedule'],
-		icon: 'book'
+		downloads: [
+			{ kind: 'web', label: m.services_download_web, href: '#', icon: 'globe' },
+			{ kind: 'appstore', label: m.services_download_appstore, href: '#', icon: 'apple' }
+		]
 	},
 	{
-		id: 'spaces',
-		title: 'Places',
-		summary:
-			'Start with classrooms and course locations, then grow into a clearer sense of campus.',
-		tone: 'Useful today, honest about what is still growing.',
-		highlights: [
-			'Room lookup and course locations already make the next move clearer.',
-			'We describe this as place context, not a complete map product.'
-		],
-		touchpoints: ['Rooms', 'Locations', 'Place context'],
-		icon: 'pin'
+		id: 'places',
+		index: '03',
+		icon: 'pin',
+		accent: 'sun',
+		name: m.service_places_name,
+		summary: m.service_places_summary,
+		blurb: m.service_places_blurb,
+		features: [m.service_places_feature_1, m.service_places_feature_2, m.service_places_feature_3],
+		downloads: [{ kind: 'web', label: m.services_download_web, href: '#', icon: 'globe' }]
 	}
 ];
 
-export const valuesSection: SectionCopy = {
-	eyebrow: 'Why NYCU.LIFE',
-	title: 'Less noise. Better orientation.',
-	summary:
-		'The goal is not to show everything. The goal is to make the next action easier.'
+export const teamSection = {
+	index: m.team_index,
+	eyebrow: m.team_eyebrow,
+	title: m.team_title,
+	lede: m.team_lede,
+	roleLabel: m.team_role_label,
+	linkedinLabel: m.team_linkedin
 };
 
-export const valuePillars: ValuePillar[] = [
+export const teamMembers: TeamMember[] = [
 	{
-		title: 'Fewer switches',
-		body: 'Move between transit, courses, and places without relearning the interface each time.',
-		icon: 'layers'
+		id: 'lead',
+		name: m.member_lead_name,
+		group: m.member_lead_group,
+		intro: m.member_lead_intro,
+		linkedin: GITHUB_URL
 	},
 	{
-		title: 'Less ambiguity',
-		body: 'Know what to open, where to go, and what the next step is.',
-		icon: 'pin'
+		id: 'design',
+		name: m.member_design_name,
+		group: m.member_design_group,
+		intro: m.member_design_intro
 	},
 	{
-		title: 'More like student life',
-		body: 'The story starts from real campus moments, not backend boundaries.',
-		icon: 'spark'
+		id: 'backend',
+		name: m.member_backend_name,
+		group: m.member_backend_group,
+		intro: m.member_backend_intro,
+		linkedin: GITHUB_URL
 	}
 ];
 
-export const closingSection = {
-	eyebrow: 'Updates',
-	title: 'NYCU.LIFE is growing as a quieter campus front door.',
-	summary:
-		'Transit and courses already have real product ground behind them. Place context expands from the same student day.',
-	note: 'Public updates stay on GitHub.',
-	primaryLabel: 'Back to top',
-	primaryHref: '#top',
-	secondaryLabel: 'Follow GitHub',
-	secondaryHref: 'https://github.com/nycu-life',
-	linksEyebrow: 'Public links',
-	linksTitle: 'Follow the brand, not the noise.',
-	footerNote: 'NYCU.LIFE is for students, clubs, and campus tools that still need a clearer home.'
+export const joinSection = {
+	title: m.join_title,
+	lede: m.join_lede,
+	cta: { label: m.join_cta, href: GITHUB_URL }
+};
+
+export const aboutSection = {
+	index: m.about_index,
+	eyebrow: m.about_eyebrow,
+	title: m.about_title,
+	statement: m.about_statement
+};
+
+export const aboutValues: ValuePillar[] = [
+	{ icon: 'layers', title: m.about_value_1_title, body: m.about_value_1_body },
+	{ icon: 'pin', title: m.about_value_2_title, body: m.about_value_2_body },
+	{ icon: 'spark', title: m.about_value_3_title, body: m.about_value_3_body }
+];
+
+export const footer = {
+	tagline: m.footer_tagline,
+	linksLabel: m.footer_links_label,
+	localeLabel: m.footer_locale_label,
+	rights: m.footer_rights,
+	backToTop: m.footer_back_to_top
 };
 
 export const footerLinks: FooterLink[] = [
-	{
-		label: 'GitHub organization',
-		description: 'Public updates and open projects live here.',
-		href: 'https://github.com/nycu-life'
-	},
-	{
-		label: 'Contributors',
-		description: 'Public contribution history stays visible here.',
-		href: 'https://github.com/nycu-life/contributors'
-	}
+	{ label: m.footer_github, href: GITHUB_URL, icon: 'branch' },
+	{ label: m.footer_contributors, href: `${GITHUB_URL}/contributors`, icon: 'people' }
 ];
