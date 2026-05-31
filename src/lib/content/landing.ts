@@ -273,17 +273,11 @@ export const teamSection = {
  * slots (rendered via the "more members joining" affordance) rather than
  * inventing names.
  */
+// Departments mirror the team's real org structure. Members are intentionally
+// left empty for now — the team will fill in name/role/intro/LinkedIn/photo
+// later; until then each department renders the "more members joining" slot.
+// PM is omitted on purpose: PMs already appear within their own department.
 export const departments: Department[] = [
-	{
-		id: 'pm',
-		label: m.dept_pm,
-		members: [
-			{ id: 'zongyi', name: m.member_zongyi_name, role: m.member_zongyi_role },
-			{ id: 'zhengyang', name: m.member_zhengyang_name, role: m.member_zhengyang_role },
-			{ id: 'xiaoshi', name: m.member_xiaoshi_name, role: m.member_xiaoshi_role },
-			{ id: 'xiuji', name: m.member_xiuji_name, role: m.member_xiuji_role }
-		]
-	},
 	{
 		id: 'engineering',
 		label: m.dept_engineering,
@@ -292,10 +286,7 @@ export const departments: Department[] = [
 	{
 		id: 'design',
 		label: m.dept_design,
-		members: [
-			{ id: 'xinghua', name: m.member_xinghua_name, role: m.member_xinghua_role },
-			{ id: 'tingzhen', name: m.member_tingzhen_name, role: m.member_tingzhen_role }
-		]
+		members: []
 	},
 	{
 		id: 'marketing',
