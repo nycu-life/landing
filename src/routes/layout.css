@@ -285,8 +285,14 @@ main {
 
 .site-header-brand {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	gap: 0.6rem;
+}
+
+.site-header-logo {
+	height: 1.5rem;
+	width: auto;
+	display: block;
 }
 
 .site-header-mark {
@@ -952,10 +958,13 @@ main {
 }
 
 .site-footer-mark {
-	font-size: clamp(1.8rem, 5vw, 2.6rem);
-	font-weight: 800;
-	letter-spacing: -0.03em;
-	color: var(--brand);
+	display: inline-block;
+}
+
+.site-footer-logo {
+	height: clamp(1.8rem, 4vw, 2.4rem);
+	width: auto;
+	display: block;
 }
 
 .site-footer-tagline {
