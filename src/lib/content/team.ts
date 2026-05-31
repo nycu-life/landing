@@ -75,7 +75,7 @@ export const members: Member[] = [
 	{ slug: 'cai-xiuji', name: '蔡秀吉', program: '百川' },
 	{ slug: 'yang-haoyu', name: '楊皓宇', program: '資工系' },
 	{
-		slug: 'lin-zhenke',
+		slug: 'jacoblin',
 		name: '林振可',
 		program: '資工碩',
 		intro: 'NYCU IOC｜開源愛好者｜Ex-GDG on Campus Lead｜NTNU CSIE Alum。喜歡把麻煩的校園日常做成好用的工具。',
@@ -105,7 +105,7 @@ export const assignments: Assignment[] = [
 	{ member: 'you-zongyi', department: 'engineering', role: '開發' },
 	{ member: 'cai-xiuji', department: 'engineering', role: '開發（醫療支持）' },
 	{ member: 'yang-haoyu', department: 'engineering', role: '開發（資安、弱點掃描）' },
-	{ member: 'lin-zhenke', department: 'engineering', role: '開發' },
+	{ member: 'jacoblin', department: 'engineering', role: '開發' },
 	// 設計組
 	{ member: 'chen-tingzhen', department: 'design', role: '使用者體驗、流程設計' },
 	{ member: 'chen-xinghua', department: 'design', role: '設計規範、美術設計' },
