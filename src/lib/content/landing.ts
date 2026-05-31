@@ -1,9 +1,9 @@
 import { m } from '$lib/paraglide/messages';
 
 /**
- * The landing page is fully data-driven. Structural data (ids, icons, links,
- * accent tones, photo paths) lives here, while every piece of display copy is
- * resolved through a Paraglide message function so the page stays bilingual
+ * The landing page is fully data-driven. Structural data (ids, links, status,
+ * screenshot paths, accent tones) lives here, while every piece of display copy
+ * is resolved through a Paraglide message function so the page stays bilingual
  * (zh-tw / en) without duplicating layout.
  *
  * `Message` is the shape of a Paraglide message accessor: call it to get the
@@ -13,79 +13,35 @@ type Message = () => string;
 
 export type IconName =
 	| 'spark'
-	| 'grid'
-	| 'shield'
-	| 'people'
-	| 'branch'
-	| 'globe'
 	| 'arrow'
-	| 'badge'
+	| 'check'
 	| 'route'
 	| 'book'
 	| 'pin'
-	| 'layers'
-	| 'apple'
-	| 'play'
+	| 'globe'
+	| 'instagram'
+	| 'github'
 	| 'linkedin';
 
-/** A section that can be reached from the numbered menu navigation. */
-export type SectionId = 'services' | 'team' | 'about' | 'join';
+/** Brand links used across the site. */
+export const INSTAGRAM_URL = 'https://instagram.com/nycu.life';
+export const GITHUB_URL = 'https://github.com/nycu-life';
+export const WEBSITE_URL = 'https://nycu.one';
+
+/** A section that can be reached from the header navigation. */
+export type SectionId = 'products' | 'courses' | 'devlog' | 'team';
 
 export type NavItem = {
 	id: SectionId;
-	/** Two-digit index rendered as "01", "02", ... */
-	index: string;
 	label: Message;
 };
 
-export type DownloadKind = 'appstore' | 'googleplay' | 'web';
-
-export type DownloadLink = {
-	kind: DownloadKind;
-	label: Message;
-	href: string;
-	icon: IconName;
-};
-
-export type ServiceId = 'bus' | 'courses' | 'places';
-
-export type Service = {
-	id: ServiceId;
-	/** Two-digit index rendered alongside the service. */
-	index: string;
-	icon: IconName;
-	/** Accent tone token used for the per-service treatment. */
-	accent: 'cobalt' | 'lime' | 'sun';
-	name: Message;
-	summary: Message;
-	blurb: Message;
-	features: Message[];
-	downloads: DownloadLink[];
-};
-
-export type TeamMember = {
-	id: string;
-	/** Optional photo URL; the UI falls back to initials when absent. */
-	photo?: string;
-	name: Message;
-	group: Message;
-	intro: Message;
-	linkedin?: string;
-};
-
-export type ValuePillar = {
-	icon: IconName;
-	title: Message;
-	body: Message;
-};
-
-export type FooterLink = {
-	label: Message;
-	href: string;
-	icon: IconName;
-};
-
-export const GITHUB_URL = 'https://github.com/nycu-life';
+export const navItems: NavItem[] = [
+	{ id: 'products', label: m.nav_products },
+	{ id: 'courses', label: m.nav_courses },
+	{ id: 'devlog', label: m.nav_devlog },
+	{ id: 'team', label: m.nav_team }
+];
 
 export const pageMeta = {
 	title: m.meta_title,
@@ -97,129 +53,282 @@ export const brand = {
 	tagline: m.brand_tagline
 };
 
-export const navItems: NavItem[] = [
-	{ id: 'services', index: '01', label: m.nav_services },
-	{ id: 'team', index: '02', label: m.nav_team },
-	{ id: 'about', index: '03', label: m.nav_about },
-	{ id: 'join', index: '04', label: m.nav_join }
-];
-
 export const hero = {
 	eyebrow: m.hero_eyebrow,
-	titleLines: [m.hero_title_line_1, m.hero_title_line_2, m.hero_title_line_3] as Message[],
+	title: m.hero_title,
+	subtitle: m.hero_subtitle,
 	lede: m.hero_lede,
-	primaryCta: { label: m.hero_cta_primary, href: '#services' },
-	secondaryCta: { label: m.hero_cta_secondary, href: GITHUB_URL },
-	marquee: m.hero_marquee,
-	imageCaption: m.hero_image_caption
+	primaryCta: { label: m.hero_cta_primary, href: '#products' },
+	secondaryCta: { label: m.hero_cta_secondary, href: INSTAGRAM_URL },
+	image: { src: '/products/bus.png', caption: m.hero_image_caption }
 };
 
-export const servicesSection = {
-	index: m.services_index,
-	eyebrow: m.services_eyebrow,
-	title: m.services_title,
-	lede: m.services_lede,
-	blurbLabel: m.services_blurb_label,
-	featuresLabel: m.services_features_label
+/* -------------------------------------------------------------------------- */
+/* Why NYCU LIFE — pain → answer                                              */
+/* -------------------------------------------------------------------------- */
+
+export type PainPoint = {
+	id: string;
+	icon: IconName;
+	pain: Message;
+	answer: Message;
 };
 
-export const services: Service[] = [
+export const whySection = {
+	eyebrow: m.why_eyebrow,
+	title: m.why_title,
+	lede: m.why_lede,
+	painLabel: m.why_pain_label,
+	answerLabel: m.why_answer_label
+};
+
+export const painPoints: PainPoint[] = [
+	{ id: 'bus', icon: 'route', pain: m.why_bus_pain, answer: m.why_bus_answer },
+	{ id: 'info', icon: 'spark', pain: m.why_info_pain, answer: m.why_info_answer },
+	{ id: 'course', icon: 'book', pain: m.why_course_pain, answer: m.why_course_answer },
+	{ id: 'commute', icon: 'pin', pain: m.why_commute_pain, answer: m.why_commute_answer }
+];
+
+/* -------------------------------------------------------------------------- */
+/* Products                                                                   */
+/* -------------------------------------------------------------------------- */
+
+export type ProductStatus = 'live' | 'soon' | 'dev';
+
+export type Product = {
+	id: string;
+	accent: 'blue' | 'lime' | 'sun';
+	status: ProductStatus;
+	/** A real product screenshot, or undefined for not-yet-shipped products. */
+	screenshot?: { src: string; frame: 'browser' | 'phone' };
+	/** Optional link to the live product. */
+	href?: string;
+	name: Message;
+	summary: Message;
+	features: Message[];
+};
+
+export const productsSection = {
+	eyebrow: m.products_eyebrow,
+	title: m.products_title,
+	lede: m.products_lede,
+	featuresLabel: m.products_features_label,
+	visitLabel: m.products_visit
+};
+
+export const productStatusLabel: Record<ProductStatus, Message> = {
+	live: m.products_status_live,
+	soon: m.products_status_soon,
+	dev: m.products_status_dev
+};
+
+export const products: Product[] = [
 	{
 		id: 'bus',
-		index: '01',
-		icon: 'route',
-		accent: 'cobalt',
-		name: m.service_bus_name,
-		summary: m.service_bus_summary,
-		blurb: m.service_bus_blurb,
-		features: [m.service_bus_feature_1, m.service_bus_feature_2, m.service_bus_feature_3],
-		downloads: [
-			{ kind: 'appstore', label: m.services_download_appstore, href: '#', icon: 'apple' },
-			{ kind: 'googleplay', label: m.services_download_googleplay, href: '#', icon: 'play' },
-			{ kind: 'web', label: m.services_download_web, href: '#', icon: 'globe' }
-		]
+		accent: 'blue',
+		status: 'live',
+		screenshot: { src: '/products/bus.png', frame: 'browser' },
+		href: 'https://bus.nycu.one',
+		name: m.product_bus_name,
+		summary: m.product_bus_summary,
+		features: [m.product_bus_feature_1, m.product_bus_feature_2, m.product_bus_feature_3]
 	},
 	{
-		id: 'courses',
-		index: '02',
-		icon: 'book',
+		id: 'coz',
 		accent: 'lime',
-		name: m.service_courses_name,
-		summary: m.service_courses_summary,
-		blurb: m.service_courses_blurb,
+		status: 'live',
+		screenshot: { src: '/products/coz.png', frame: 'browser' },
+		href: 'https://coz.nycu.one',
+		name: m.product_coz_name,
+		summary: m.product_coz_summary,
+		features: [m.product_coz_feature_1, m.product_coz_feature_2, m.product_coz_feature_3]
+	},
+	{
+		id: 'activity',
+		accent: 'sun',
+		status: 'soon',
+		screenshot: { src: '/products/activity.png', frame: 'browser' },
+		name: m.product_activity_name,
+		summary: m.product_activity_summary,
 		features: [
-			m.service_courses_feature_1,
-			m.service_courses_feature_2,
-			m.service_courses_feature_3
-		],
-		downloads: [
-			{ kind: 'web', label: m.services_download_web, href: '#', icon: 'globe' },
-			{ kind: 'appstore', label: m.services_download_appstore, href: '#', icon: 'apple' }
+			m.product_activity_feature_1,
+			m.product_activity_feature_2,
+			m.product_activity_feature_3
 		]
 	},
 	{
-		id: 'places',
-		index: '03',
-		icon: 'pin',
-		accent: 'sun',
-		name: m.service_places_name,
-		summary: m.service_places_summary,
-		blurb: m.service_places_blurb,
-		features: [m.service_places_feature_1, m.service_places_feature_2, m.service_places_feature_3],
-		downloads: [{ kind: 'web', label: m.services_download_web, href: '#', icon: 'globe' }]
+		id: 'map',
+		accent: 'blue',
+		status: 'dev',
+		name: m.product_map_name,
+		summary: m.product_map_summary,
+		features: [m.product_map_feature_1, m.product_map_feature_2, m.product_map_feature_3]
 	}
 ];
 
+/* -------------------------------------------------------------------------- */
+/* Course zone — NYCozU highlight                                             */
+/* -------------------------------------------------------------------------- */
+
+export type CoursePoint = {
+	title: Message;
+	body: Message;
+};
+
+export const courseSection = {
+	eyebrow: m.course_eyebrow,
+	title: m.course_title,
+	lede: m.course_lede,
+	cta: { label: m.course_cta, href: 'https://coz.nycu.one' },
+	image: { src: '/products/coz.png', caption: m.course_image_caption }
+};
+
+export const coursePoints: CoursePoint[] = [
+	{ title: m.course_point_1_title, body: m.course_point_1_body },
+	{ title: m.course_point_2_title, body: m.course_point_2_body },
+	{ title: m.course_point_3_title, body: m.course_point_3_body }
+];
+
+/* -------------------------------------------------------------------------- */
+/* Dev log                                                                    */
+/* -------------------------------------------------------------------------- */
+
+export type DevLogEntry = {
+	id: string;
+	status: ProductStatus | 'done';
+	date: Message;
+	title: Message;
+	body: Message;
+};
+
+export const devLogSection = {
+	eyebrow: m.devlog_eyebrow,
+	title: m.devlog_title,
+	lede: m.devlog_lede
+};
+
+export const devLogEntries: DevLogEntry[] = [
+	{
+		id: 'eta',
+		status: 'done',
+		date: m.devlog_1_date,
+		title: m.devlog_1_title,
+		body: m.devlog_1_body
+	},
+	{
+		id: 'courses',
+		status: 'done',
+		date: m.devlog_2_date,
+		title: m.devlog_2_title,
+		body: m.devlog_2_body
+	},
+	{
+		id: 'activity',
+		status: 'soon',
+		date: m.devlog_3_date,
+		title: m.devlog_3_title,
+		body: m.devlog_3_body
+	},
+	{
+		id: 'map',
+		status: 'dev',
+		date: m.devlog_4_date,
+		title: m.devlog_4_title,
+		body: m.devlog_4_body
+	}
+];
+
+/* -------------------------------------------------------------------------- */
+/* Team — organized by department                                             */
+/* -------------------------------------------------------------------------- */
+
+export type TeamMember = {
+	id: string;
+	/** Optional photo URL; the UI falls back to initials when absent. */
+	photo?: string;
+	name: Message;
+	role: Message;
+	linkedin?: string;
+};
+
+export type Department = {
+	id: string;
+	label: Message;
+	members: TeamMember[];
+};
+
 export const teamSection = {
-	index: m.team_index,
 	eyebrow: m.team_eyebrow,
 	title: m.team_title,
 	lede: m.team_lede,
 	roleLabel: m.team_role_label,
-	linkedinLabel: m.team_linkedin
+	linkedinLabel: m.team_linkedin,
+	moreLabel: m.team_more_label,
+	moreBody: m.team_more_body
 };
 
-export const teamMembers: TeamMember[] = [
+/**
+ * Departments mirror the team's real org structure. We only list the members
+ * we actually know and leave the remaining departments as clean, fillable
+ * slots (rendered via the "more members joining" affordance) rather than
+ * inventing names.
+ */
+export const departments: Department[] = [
 	{
-		id: 'lead',
-		name: m.member_lead_name,
-		group: m.member_lead_group,
-		intro: m.member_lead_intro,
-		linkedin: GITHUB_URL
+		id: 'pm',
+		label: m.dept_pm,
+		members: [
+			{ id: 'zongyi', name: m.member_zongyi_name, role: m.member_zongyi_role },
+			{ id: 'zhengyang', name: m.member_zhengyang_name, role: m.member_zhengyang_role },
+			{ id: 'xiaoshi', name: m.member_xiaoshi_name, role: m.member_xiaoshi_role },
+			{ id: 'xiuji', name: m.member_xiuji_name, role: m.member_xiuji_role }
+		]
+	},
+	{
+		id: 'engineering',
+		label: m.dept_engineering,
+		members: []
 	},
 	{
 		id: 'design',
-		name: m.member_design_name,
-		group: m.member_design_group,
-		intro: m.member_design_intro
+		label: m.dept_design,
+		members: [
+			{ id: 'xinghua', name: m.member_xinghua_name, role: m.member_xinghua_role },
+			{ id: 'tingzhen', name: m.member_tingzhen_name, role: m.member_tingzhen_role }
+		]
 	},
 	{
-		id: 'backend',
-		name: m.member_backend_name,
-		group: m.member_backend_group,
-		intro: m.member_backend_intro,
-		linkedin: GITHUB_URL
+		id: 'marketing',
+		label: m.dept_marketing,
+		members: []
+	},
+	{
+		id: 'admin',
+		label: m.dept_admin,
+		members: []
+	},
+	{
+		id: 'legal',
+		label: m.dept_legal,
+		members: []
 	}
 ];
 
 export const joinSection = {
 	title: m.join_title,
 	lede: m.join_lede,
-	cta: { label: m.join_cta, href: GITHUB_URL }
+	cta: { label: m.join_cta, href: INSTAGRAM_URL }
 };
 
-export const aboutSection = {
-	index: m.about_index,
-	eyebrow: m.about_eyebrow,
-	title: m.about_title,
-	statement: m.about_statement
-};
+/* -------------------------------------------------------------------------- */
+/* Footer                                                                     */
+/* -------------------------------------------------------------------------- */
 
-export const aboutValues: ValuePillar[] = [
-	{ icon: 'layers', title: m.about_value_1_title, body: m.about_value_1_body },
-	{ icon: 'pin', title: m.about_value_2_title, body: m.about_value_2_body },
-	{ icon: 'spark', title: m.about_value_3_title, body: m.about_value_3_body }
-];
+export type FooterLink = {
+	label: Message;
+	href: string;
+	icon: IconName;
+};
 
 export const footer = {
 	tagline: m.footer_tagline,
@@ -230,6 +339,7 @@ export const footer = {
 };
 
 export const footerLinks: FooterLink[] = [
-	{ label: m.footer_github, href: GITHUB_URL, icon: 'branch' },
-	{ label: m.footer_contributors, href: `${GITHUB_URL}/contributors`, icon: 'people' }
+	{ label: m.footer_instagram, href: INSTAGRAM_URL, icon: 'instagram' },
+	{ label: m.footer_github, href: GITHUB_URL, icon: 'github' },
+	{ label: m.footer_website, href: WEBSITE_URL, icon: 'globe' }
 ];

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { joinSection, teamMembers, teamSection } from '$lib/content/landing';
+	import { departments, joinSection, teamSection } from '$lib/content/landing';
 	import Icon from './Icon.svelte';
 	import { reveal } from './scroll';
 
@@ -9,41 +9,60 @@
 
 <section id="team" class="section section-team">
 	<header class="section-head reveal" use:reveal>
-		<div class="section-head-marker">
-			<span class="section-index">{teamSection.index()}</span>
-			<span class="section-eyebrow">{teamSection.eyebrow()}</span>
-		</div>
+		<p class="section-eyebrow">{teamSection.eyebrow()}</p>
 		<h2 class="section-title">{teamSection.title()}</h2>
 		<p class="section-lede">{teamSection.lede()}</p>
 	</header>
 
-	<div class="team-grid">
-		{#each teamMembers as member, index (member.id)}
-			<article class="team-card reveal" use:reveal={{ delay: index * 90 }}>
-				<div class="team-photo">
-					{#if member.photo}
-						<img src={member.photo} alt={member.name()} loading="lazy" />
-					{:else}
-						<span class="team-photo-fallback" aria-hidden="true">{initial(member.name())}</span>
-					{/if}
-				</div>
+	<div class="team-departments">
+		{#each departments as dept, index (dept.id)}
+			<section class="team-dept reveal" use:reveal={{ delay: index * 60 }}>
+				<header class="team-dept-head">
+					<h3 class="team-dept-title">{dept.label()}</h3>
+					<span class="team-dept-count">{dept.members.length || ''}</span>
+				</header>
 
-				<div class="team-info">
-					<h3 class="team-name">{member.name()}</h3>
-					<p class="team-role">
-						<span class="team-role-label">{teamSection.roleLabel()}</span>
-						<span>{member.group()}</span>
-					</p>
-					<p class="team-intro">{member.intro()}</p>
-
-					{#if member.linkedin}
-						<a class="team-linkedin" href={member.linkedin} target="_blank" rel="noreferrer">
-							<Icon name="linkedin" class="h-4 w-4" />
-							<span>{teamSection.linkedinLabel()}</span>
-						</a>
-					{/if}
-				</div>
-			</article>
+				{#if dept.members.length > 0}
+					<ul class="team-grid">
+						{#each dept.members as member (member.id)}
+							<li class="team-card">
+								<div class="team-avatar">
+									{#if member.photo}
+										<img src={member.photo} alt={member.name()} loading="lazy" />
+									{:else}
+										<span class="team-avatar-fallback" aria-hidden="true"
+											>{initial(member.name())}</span
+										>
+									{/if}
+								</div>
+								<div class="team-info">
+									<p class="team-name">{member.name()}</p>
+									<p class="team-role">
+										<span class="team-role-label">{teamSection.roleLabel()}</span>
+										<span>{member.role()}</span>
+									</p>
+									{#if member.linkedin}
+										<a
+											class="team-linkedin"
+											href={member.linkedin}
+											target="_blank"
+											rel="noreferrer"
+										>
+											<Icon name="linkedin" class="h-4 w-4" />
+											<span>{teamSection.linkedinLabel()}</span>
+										</a>
+									{/if}
+								</div>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<div class="team-open">
+						<p class="team-open-label">{teamSection.moreLabel()}</p>
+						<p class="team-open-body">{teamSection.moreBody()}</p>
+					</div>
+				{/if}
+			</section>
 		{/each}
 	</div>
 
@@ -58,7 +77,7 @@
 			target="_blank"
 			rel="noreferrer"
 		>
-			<Icon name="branch" class="h-4 w-4" />
+			<Icon name="instagram" class="h-4 w-4" />
 			<span>{joinSection.cta.label()}</span>
 		</a>
 	</div>
