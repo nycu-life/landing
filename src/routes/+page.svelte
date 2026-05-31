@@ -9,6 +9,7 @@
 	import Why from '$lib/components/landing/Why.svelte';
 	import { brand, navItems, pageMeta } from '$lib/content/landing';
 	import { m } from '$lib/paraglide/messages';
+	import { base } from '$app/paths';
 </script>
 
 <svelte:head>
@@ -19,7 +20,7 @@
 <div class="landing-root">
 	<header class="site-header">
 		<a class="site-header-brand" href="#top">
-			<span class="site-header-mark">{brand.name()}</span>
+			<img class="site-header-logo" src="{base}/brand/logo-horizontal-blue.svg" alt={brand.name()} />
 			<span class="site-header-tagline">{brand.tagline()}</span>
 		</a>
 		<SectionNav items={navItems} label={m.nav_aria()} />

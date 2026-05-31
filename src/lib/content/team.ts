@@ -78,7 +78,7 @@ export const members: Member[] = [
 		slug: 'jacoblin',
 		name: '林振可',
 		program: '資工碩',
-		intro: 'NYCU IOC｜開源愛好者｜Ex-GDG on Campus Lead｜NTNU CSIE Alum。喜歡把麻煩的校園日常做成好用的工具。',
+		intro: '嗨，我是 Jacob！在 NYCU LIFE 主要顧校車 app，但其實每個專案都會手癢去摸一下，網頁到手機 app 都來者不拒。研究上玩的是語音與語言模型相關的 AI/ML，不過比起只待在 paper 裡，我更喜歡把這些東西做成真的有人在用的 application。寫 code 時習慣 Codex 跟 Claude Code 一起開，把 AI agent 當隊友用。最近最好奇的是：AI agent 要怎麼真正改變人與人的互動、做出實際的 social impact，任何跟這個沾上邊的 innovation 我都想插一腳。',
 		socials: [
 			{ kind: 'github', url: 'https://github.com/JacobLinCool' },
 			{ kind: 'website', url: 'https://jacoblin.cool' },

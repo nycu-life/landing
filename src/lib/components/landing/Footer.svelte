@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { brand, footer, footerLinks } from '$lib/content/landing';
 	import { getLocale, locales, setLocale } from '$lib/paraglide/runtime';
 	import Icon from './Icon.svelte';
@@ -14,7 +15,9 @@
 <footer class="site-footer">
 	<div class="site-footer-top">
 		<div class="site-footer-brand">
-			<a class="site-footer-mark" href="#top">{brand.name()}</a>
+			<a class="site-footer-mark" href="#top" aria-label={brand.name()}>
+				<img class="site-footer-logo" src="{base}/brand/logo-horizontal-blue.svg" alt={brand.name()} />
+			</a>
 			<p class="site-footer-tagline">{footer.tagline()}</p>
 		</div>
 
