@@ -74,7 +74,17 @@ export const members: Member[] = [
 	{ slug: 'you-zongyi', name: '游宗易', program: '資工系' },
 	{ slug: 'cai-xiuji', name: '蔡秀吉', program: '百川' },
 	{ slug: 'yang-haoyu', name: '楊皓宇', program: '資工系' },
-	{ slug: 'lin-zhenke', name: '林振可', program: '資工碩' },
+	{
+		slug: 'lin-zhenke',
+		name: '林振可',
+		program: '資工碩',
+		intro: 'NYCU IOC｜開源愛好者｜Ex-GDG on Campus Lead｜NTNU CSIE Alum。喜歡把麻煩的校園日常做成好用的工具。',
+		socials: [
+			{ kind: 'github', url: 'https://github.com/JacobLinCool' },
+			{ kind: 'website', url: 'https://jacoblin.cool' },
+			{ kind: 'email', url: 'mailto:jacoblincool@gmail.com' }
+		]
+	},
 	{ slug: 'chen-tingzhen', name: '陳亭蓁', program: '傳科系' },
 	{ slug: 'chen-xinghua', name: '陳星樺', program: '傳科系' },
 	{ slug: 'ma-xiaoshi', name: '馬曉詩', program: '百川' },
