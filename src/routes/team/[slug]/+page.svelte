@@ -3,12 +3,15 @@
 	import * as m from '$lib/paraglide/messages';
 	import Avatar from '$lib/components/landing/Avatar.svelte';
 	import Icon from '$lib/components/landing/Icon.svelte';
-	import type { SocialKind } from '$lib/content/team';
+	import { departmentsOfMember, type SocialKind } from '$lib/content/team';
+	import { deptLabel } from '$lib/content/departments';
 	import type { IconName } from '$lib/content/landing';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 	const member = $derived(data.member);
+	const memberDepts = $derived(departmentsOfMember(member.slug));
+	const roleSummary = $derived(memberDepts.map((d) => d.role).join('、'));
 
 	const socialMeta: Record<SocialKind, { icon: IconName; label: string }> = {
 		github: { icon: 'github', label: 'GitHub' },
@@ -27,7 +30,7 @@
 
 <svelte:head>
 	<title>{member.name}｜NYCU LIFE</title>
-	<meta name="description" content="{member.name} · {member.program} · {member.role} — NYCU LIFE" />
+	<meta name="description" content="{member.name} · {member.program} · {roleSummary} — NYCU LIFE" />
 </svelte:head>
 
 <main class="landing-root member-page">
@@ -43,7 +46,15 @@
 			<p class="member-meta">
 				<span class="member-chip">{member.program}</span>
 			</p>
-			<p class="member-role">{member.role}</p>
+			<ul class="member-roles">
+				{#each memberDepts as d (d.department)}
+					<li class="member-role-chip">
+						<span class="member-role-dept">{deptLabel(d.department)}</span>
+						<span class="member-role-sep" aria-hidden="true">·</span>
+						<span>{d.role}</span>
+					</li>
+				{/each}
+			</ul>
 		</div>
 	</header>
 
@@ -132,10 +143,30 @@
 		font-size: 0.8rem;
 		font-weight: 700;
 	}
-	.member-role {
-		margin: 0.6rem 0 0;
+	.member-roles {
+		list-style: none;
+		margin: 0.75rem 0 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.member-role-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.3rem 0.75rem;
+		border: 1px solid var(--line);
+		border-radius: 9999px;
+		font-size: 0.9rem;
 		color: var(--ink-soft);
-		font-size: 1.05rem;
+	}
+	.member-role-dept {
+		font-weight: 700;
+		color: var(--ink);
+	}
+	.member-role-sep {
+		color: var(--line-strong);
 	}
 	.member-block {
 		margin-top: 2.25rem;

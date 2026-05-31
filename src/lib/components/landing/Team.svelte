@@ -1,26 +1,11 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import * as m from '$lib/paraglide/messages';
 	import { joinSection, teamSection } from '$lib/content/landing';
-	import { departmentOrder, membersByDepartment, type DepartmentId } from '$lib/content/team';
+	import { departmentOrder, membersInDepartment } from '$lib/content/team';
+	import { deptLabel } from '$lib/content/departments';
 	import Avatar from './Avatar.svelte';
 	import Icon from './Icon.svelte';
 	import { reveal } from './scroll';
-
-	const deptLabel = (id: DepartmentId): string => {
-		switch (id) {
-			case 'engineering':
-				return m.dept_engineering();
-			case 'design':
-				return m.dept_design();
-			case 'marketing':
-				return m.dept_marketing();
-			case 'admin':
-				return m.dept_admin();
-			case 'legal':
-				return m.dept_legal();
-		}
-	};
 </script>
 
 <section id="team" class="section section-team">
@@ -32,7 +17,7 @@
 
 	<div class="team-departments">
 		{#each departmentOrder as id, index (id)}
-			{@const people = membersByDepartment(id)}
+			{@const people = membersInDepartment(id)}
 			<section class="team-dept reveal" use:reveal={{ delay: index * 60 }}>
 				<header class="team-dept-head">
 					<h3 class="team-dept-title">{deptLabel(id)}</h3>
@@ -41,7 +26,7 @@
 
 				{#if people.length > 0}
 					<ul class="team-grid">
-						{#each people as member (member.slug)}
+						{#each people as { member, role } (member.slug)}
 							<li>
 								<a class="team-card team-card-link" href="{base}/team/{member.slug}">
 									<Avatar name={member.name} slug={member.slug} photo={member.photo} />
@@ -51,7 +36,7 @@
 										</p>
 										<p class="team-role">
 											<span class="team-role-label">{teamSection.roleLabel()}</span>
-											<span>{member.role}</span>
+											<span>{role}</span>
 										</p>
 									</div>
 									<Icon name="arrow" class="team-card-arrow h-4 w-4" />
