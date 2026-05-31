@@ -1,4 +1,99 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"hello_world": "Hello, {name} from en!"
+	"hello_world": "Hello, {name} from en!",
+
+	"meta_title": "NYCU LIFE | Your campus digital companion",
+	"meta_description": "NYCU LIFE is a campus digital companion that brings campus buses, course search, and place information into one place to make campus life easier.",
+
+	"brand_name": "NYCU LIFE",
+	"brand_tagline": "Campus digital companion",
+
+	"nav_aria": "Page navigation",
+	"nav_services": "Services",
+	"nav_team": "Team",
+	"nav_about": "Purpose",
+	"nav_join": "Join us",
+
+	"hero_eyebrow": "Campus digital companion",
+	"hero_title_line_1": "NYCU LIFE, your campus companion",
+	"hero_title_line_2": "Making campus life",
+	"hero_title_line_3": "easier",
+	"hero_lede": "We take the campus routines students repeat every day and turn them into a set of digital services that read more clearly and feel smoother to use.",
+	"hero_cta_primary": "Browse the services",
+	"hero_cta_secondary": "Open source on GitHub",
+	"hero_marquee": "Live bus times · Course search · Place context · Open source · Built by students",
+	"hero_image_caption": "Built for the students of NYCU",
+
+	"services_index": "Services",
+	"services_eyebrow": "Services / Apps",
+	"services_title": "Three services, one campus experience",
+	"services_lede": "Each service solves a different task, yet they should all feel like the same campus front door. Scroll down to bring each one into focus.",
+	"services_download_appstore": "App Store",
+	"services_download_googleplay": "Google Play",
+	"services_download_web": "Web app",
+	"services_blurb_label": "About this app",
+	"services_features_label": "What you can do",
+
+	"service_bus_name": "Campus Bus",
+	"service_bus_summary": "Shuttles, city buses, coaches, and campus routes brought into one readable flow.",
+	"service_bus_blurb": "A native app with live arrival times and route maps, so moving between campuses reads like one trip instead of several unrelated systems.",
+	"service_bus_feature_1": "Live arrival and departure times",
+	"service_bus_feature_2": "Shuttles, city buses, and coaches in one place",
+	"service_bus_feature_3": "Cross-campus routes at a glance",
+
+	"service_courses_name": "Course Search",
+	"service_courses_summary": "Course discovery should help you shape a whole semester, not just search a table.",
+	"service_courses_blurb": "Powerful search and advanced filters, plus favorites, schedule planning, and enrollment stats make building a timetable clear, flexible, and easy to compare.",
+	"service_courses_feature_1": "Search and advanced filters reduce guesswork",
+	"service_courses_feature_2": "Favorites, schedule planning, and stats",
+	"service_courses_feature_3": "Compare across semesters with ease",
+
+	"service_places_name": "Places",
+	"service_places_summary": "Start with classrooms and course locations, then grow a clearer sense of campus.",
+	"service_places_blurb": "Room lookup and course locations make the next move clearer. We honestly call it place context, not a complete map product.",
+	"service_places_feature_1": "Room and course location lookup",
+	"service_places_feature_2": "Venue and space information",
+	"service_places_feature_3": "A growing sense of campus direction",
+
+	"team_index": "Team",
+	"team_eyebrow": "Team / Join us",
+	"team_title": "Built by students, made for students",
+	"team_lede": "NYCU LIFE is an open-source project maintained by a group of students who believe campus life can be better, working on it in their spare time.",
+	"team_role_label": "Group / Role",
+	"team_linkedin": "LinkedIn",
+
+	"member_lead_name": "Project Lead",
+	"member_lead_group": "Core / Full-stack",
+	"member_lead_intro": "Convinced that good tools can take a little friction out of campus life.",
+
+	"member_design_name": "Design Partner",
+	"member_design_group": "Design / Experience",
+	"member_design_intro": "Distills complex campus information into interfaces that read and flow well.",
+
+	"member_backend_name": "Backend Partner",
+	"member_backend_group": "Backend / Data",
+	"member_backend_intro": "Keeping live data flowing steadily is the foundation of a service worth trusting.",
+
+	"join_title": "Join us",
+	"join_lede": "Whether you code, design, write docs, or simply have ideas to make campus better, you are welcome to join in.",
+	"join_cta": "Contribute on GitHub",
+
+	"about_index": "Purpose",
+	"about_eyebrow": "Purpose / About us",
+	"about_title": "Less noise, better orientation",
+	"about_statement": "Our goal is not to lay everything out at once, but to make the next step easier. NYCU LIFE wants to be a quieter campus front door, so that students moving between transit, courses, and places never have to relearn the interface.",
+	"about_value_1_title": "Fewer switches",
+	"about_value_1_body": "Move between buses, courses, and places without relearning the interface each time.",
+	"about_value_2_title": "Less ambiguity",
+	"about_value_2_body": "Know what to open, where to go, and what the next step is.",
+	"about_value_3_title": "Closer to student life",
+	"about_value_3_body": "The story starts from real campus moments, not backend boundaries.",
+
+	"footer_tagline": "A campus digital companion for students, clubs, and campus tools that still need a clearer home.",
+	"footer_links_label": "Public links",
+	"footer_github": "GitHub organization",
+	"footer_contributors": "Contributors",
+	"footer_locale_label": "Language",
+	"footer_rights": "Maintained by the NYCU LIFE student team.",
+	"footer_back_to_top": "Back to top"
 }

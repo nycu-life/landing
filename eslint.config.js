@@ -38,5 +38,14 @@ export default defineConfig(
 				svelteConfig
 			}
 		}
+	},
+	{
+		// The landing page only navigates via in-page hash anchors and external
+		// URLs (GitHub, store placeholders), never SvelteKit routes, so the
+		// resolve() requirement does not apply here.
+		files: ['src/lib/components/landing/**/*.svelte', 'src/routes/+page.svelte'],
+		rules: {
+			'svelte/no-navigation-without-resolve': 'off'
+		}
 	}
 );

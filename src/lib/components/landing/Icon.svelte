@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {
+		Apple,
 		ArrowRight,
 		BadgeCheck,
 		BookOpen,
@@ -7,7 +8,9 @@
 		Globe,
 		LayoutGrid,
 		Layers3,
+		Linkedin,
 		MapPin,
+		Play,
 		Route,
 		ShieldCheck,
 		Sparkles,
@@ -45,4 +48,10 @@
 	<MapPin class={className} aria-hidden="true" strokeWidth={1.8} />
 {:else if name === 'layers'}
 	<Layers3 class={className} aria-hidden="true" strokeWidth={1.8} />
+{:else if name === 'apple'}
+	<Apple class={className} aria-hidden="true" strokeWidth={1.8} />
+{:else if name === 'play'}
+	<Play class={className} aria-hidden="true" strokeWidth={1.8} />
+{:else if name === 'linkedin'}
+	<Linkedin class={className} aria-hidden="true" strokeWidth={1.8} />
 {/if}

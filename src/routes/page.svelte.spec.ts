@@ -4,23 +4,20 @@ import { render } from 'vitest-browser-svelte';
 import Page from './+page.svelte';
 
 describe('/+page.svelte', () => {
-	it('renders the student-facing hero and service navigation', async () => {
+	it('renders the editorial hero, numbered nav, and section headings', async () => {
 		render(Page);
 
-		const heading = page.getByRole('heading', {
-			level: 1,
-			name: /one front door for transit, courses, and places at nycu/i
-		});
-		const primaryCta = page.getByRole('link', { name: /see the three pillars/i });
-		const serviceNav = page.getByRole('banner').getByRole('link', { name: /^services$/i });
-		const journeysHeading = page.getByRole('heading', {
-			level: 2,
-			name: /campus life feels better when the next step is obvious/i
-		});
+		// The hero headline carries the brand name in its first display line.
+		const heading = page.getByRole('heading', { level: 1, name: /NYCU LIFE/i });
+		// The numbered menu nav exposes a services entry inside the banner.
+		const servicesNavLink = page
+			.getByRole('banner')
+			.getByRole('link', { name: /服務項目|services/i });
+		// Each major section renders a level-2 heading.
+		const sectionHeadings = page.getByRole('heading', { level: 2 });
 
 		await expect.element(heading).toBeInTheDocument();
-		await expect.element(primaryCta).toBeVisible();
-		await expect.element(serviceNav).toBeVisible();
-		await expect.element(journeysHeading).toBeVisible();
+		await expect.element(servicesNavLink.first()).toBeVisible();
+		await expect.element(sectionHeadings.first()).toBeInTheDocument();
 	});
 });

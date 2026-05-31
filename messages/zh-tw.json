@@ -1,4 +1,99 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"hello_world": "Hello, {name} from zh-tw!"
+	"hello_world": "Hello, {name} from zh-tw!",
+
+	"meta_title": "NYCU LIFE｜校園數位小幫手",
+	"meta_description": "NYCU LIFE 是一套校園數位小幫手，整合校園公車、課程查詢與場館資訊，讓校園生活更便利。",
+
+	"brand_name": "NYCU LIFE",
+	"brand_tagline": "校園數位小幫手",
+
+	"nav_aria": "頁面導覽",
+	"nav_services": "服務項目",
+	"nav_team": "團隊成員",
+	"nav_about": "團隊宗旨",
+	"nav_join": "加入我們",
+
+	"hero_eyebrow": "校園數位小幫手",
+	"hero_title_line_1": "NYCU LIFE 校園數位小幫手",
+	"hero_title_line_2": "讓校園生活",
+	"hero_title_line_3": "更便利",
+	"hero_lede": "我們把學生每天重複切換的校園日常，整理成一套讀起來更清楚、用起來更順手的數位服務。",
+	"hero_cta_primary": "瀏覽服務項目",
+	"hero_cta_secondary": "GitHub 開源專案",
+	"hero_marquee": "公車即時資訊 · 課程查詢 · 場館導覽 · 開源協作 · 學生打造",
+	"hero_image_caption": "為交大／陽明交大的學生而生",
+
+	"services_index": "服務項目",
+	"services_eyebrow": "服務項目 / APP",
+	"services_title": "三項服務，一致的校園體驗",
+	"services_lede": "每一項服務各自解決不同的任務，但都應該像同一扇校園大門。向下捲動，逐一放大認識它們。",
+	"services_download_appstore": "App Store",
+	"services_download_googleplay": "Google Play",
+	"services_download_web": "網頁版",
+	"services_blurb_label": "關於這個 App",
+	"services_features_label": "你能做到的事",
+
+	"service_bus_name": "校園公車",
+	"service_bus_summary": "把校車、市區公車、國道客運與校內路線整合在同一個讀得懂的流程裡。",
+	"service_bus_blurb": "一個原生 App，提供即時到站資訊與路線地圖，讓跨校區移動像一趟完整的旅程，而不是好幾個彼此無關的系統。",
+	"service_bus_feature_1": "即時到站與發車資訊",
+	"service_bus_feature_2": "校車、市區公車、國道客運整合",
+	"service_bus_feature_3": "跨校區路線一目了然",
+
+	"service_courses_name": "課程查詢",
+	"service_courses_summary": "課程探索應該幫學生規劃一整個學期，而不只是查一張表。",
+	"service_courses_blurb": "強大的搜尋與進階篩選，加上收藏、課表規劃與選課統計，讓排課這件事變得清楚、有彈性、也更容易比較。",
+	"service_courses_feature_1": "搜尋與進階篩選減少猜測",
+	"service_courses_feature_2": "收藏、課表規劃與統計",
+	"service_courses_feature_3": "跨學期比較更輕鬆",
+
+	"service_places_name": "場館資訊",
+	"service_places_summary": "從教室與課程地點出發，逐步長成對校園更清楚的方向感。",
+	"service_places_blurb": "教室查詢與課程地點，讓下一步要去哪裡更明確。我們誠實地稱它為「場館資訊」，而不是一套完整的地圖產品。",
+	"service_places_feature_1": "教室與課程地點查詢",
+	"service_places_feature_2": "場館與空間資訊",
+	"service_places_feature_3": "持續成長中的校園方向感",
+
+	"team_index": "團隊成員",
+	"team_eyebrow": "團隊成員 / 加入我們",
+	"team_title": "由學生打造，為學生而生",
+	"team_lede": "NYCU LIFE 是一群相信校園生活可以更好的學生，利用課餘時間一起維護的開源專案。",
+	"team_role_label": "組別 / 角色",
+	"team_linkedin": "LinkedIn",
+
+	"member_lead_name": "專案發起人",
+	"member_lead_group": "核心 / 全端",
+	"member_lead_intro": "相信好的工具能讓校園生活少一點摩擦、多一點餘裕。",
+
+	"member_design_name": "設計夥伴",
+	"member_design_group": "設計 / 體驗",
+	"member_design_intro": "把複雜的校園資訊收斂成讀得懂、用得順的介面。",
+
+	"member_backend_name": "後端夥伴",
+	"member_backend_group": "後端 / 資料",
+	"member_backend_intro": "讓即時資料穩定流動，是讓服務值得信任的基礎。",
+
+	"join_title": "加入我們",
+	"join_lede": "不論你寫程式、做設計、會寫文件，或只是有想讓校園更好的點子，我們都歡迎你一起加入。",
+	"join_cta": "到 GitHub 參與",
+
+	"about_index": "團隊宗旨",
+	"about_eyebrow": "團隊宗旨 / 關於我們",
+	"about_title": "更少雜訊，更好的方向感",
+	"about_statement": "我們的目標不是把所有東西都攤開來，而是讓「下一步」變得更容易。NYCU LIFE 想成為一扇更安靜的校園大門，讓學生在交通、課程與場館之間移動時，不必每次都重新學習介面。",
+	"about_value_1_title": "更少切換",
+	"about_value_1_body": "在公車、課程與場館之間移動，不必每次重新適應介面。",
+	"about_value_2_title": "更少模糊",
+	"about_value_2_body": "知道該打開什麼、要去哪裡、下一步是什麼。",
+	"about_value_3_title": "更貼近學生",
+	"about_value_3_body": "故事從真實的校園時刻出發，而不是後端的系統邊界。",
+
+	"footer_tagline": "校園數位小幫手，為學生、社團與還需要一個更清楚的家的校園工具而生。",
+	"footer_links_label": "公開連結",
+	"footer_github": "GitHub 組織",
+	"footer_contributors": "貢獻者",
+	"footer_locale_label": "語言",
+	"footer_rights": "由 NYCU LIFE 學生團隊維護。",
+	"footer_back_to_top": "回到頂端"
 }
