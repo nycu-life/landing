@@ -1,12 +1,14 @@
 <script lang="ts">
-	import About from '$lib/components/landing/About.svelte';
+	import CourseZone from '$lib/components/landing/CourseZone.svelte';
+	import DevLog from '$lib/components/landing/DevLog.svelte';
 	import Footer from '$lib/components/landing/Footer.svelte';
 	import Hero from '$lib/components/landing/Hero.svelte';
+	import Products from '$lib/components/landing/Products.svelte';
 	import SectionNav from '$lib/components/landing/SectionNav.svelte';
-	import Services from '$lib/components/landing/Services.svelte';
 	import Team from '$lib/components/landing/Team.svelte';
+	import Why from '$lib/components/landing/Why.svelte';
 	import { brand, navItems, pageMeta } from '$lib/content/landing';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 </script>
 
 <svelte:head>
@@ -14,7 +16,7 @@
 	<meta name="description" content={pageMeta.description()} />
 </svelte:head>
 
-<div class="editorial-root">
+<div class="landing-root">
 	<header class="site-header">
 		<a class="site-header-brand" href="#top">
 			<span class="site-header-mark">{brand.name()}</span>
@@ -25,9 +27,11 @@
 
 	<main>
 		<Hero />
-		<Services />
+		<Why />
+		<Products />
+		<CourseZone />
+		<DevLog />
 		<Team />
-		<About />
 	</main>
 
 	<Footer />
