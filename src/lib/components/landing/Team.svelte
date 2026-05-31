@@ -1,10 +1,26 @@
 <script lang="ts">
-	import { departments, joinSection, teamSection } from '$lib/content/landing';
+	import { base } from '$app/paths';
+	import * as m from '$lib/paraglide/messages';
+	import { joinSection, teamSection } from '$lib/content/landing';
+	import { departmentOrder, membersByDepartment, type DepartmentId } from '$lib/content/team';
+	import Avatar from './Avatar.svelte';
 	import Icon from './Icon.svelte';
 	import { reveal } from './scroll';
 
-	/** First grapheme of a name, used for the photo fallback avatar. */
-	const initial = (name: string) => [...name][0]?.toUpperCase() ?? '·';
+	const deptLabel = (id: DepartmentId): string => {
+		switch (id) {
+			case 'engineering':
+				return m.dept_engineering();
+			case 'design':
+				return m.dept_design();
+			case 'marketing':
+				return m.dept_marketing();
+			case 'admin':
+				return m.dept_admin();
+			case 'legal':
+				return m.dept_legal();
+		}
+	};
 </script>
 
 <section id="team" class="section section-team">
@@ -15,44 +31,31 @@
 	</header>
 
 	<div class="team-departments">
-		{#each departments as dept, index (dept.id)}
+		{#each departmentOrder as id, index (id)}
+			{@const people = membersByDepartment(id)}
 			<section class="team-dept reveal" use:reveal={{ delay: index * 60 }}>
 				<header class="team-dept-head">
-					<h3 class="team-dept-title">{dept.label()}</h3>
-					<span class="team-dept-count">{dept.members.length || ''}</span>
+					<h3 class="team-dept-title">{deptLabel(id)}</h3>
+					<span class="team-dept-count">{people.length || ''}</span>
 				</header>
 
-				{#if dept.members.length > 0}
+				{#if people.length > 0}
 					<ul class="team-grid">
-						{#each dept.members as member (member.id)}
-							<li class="team-card">
-								<div class="team-avatar">
-									{#if member.photo}
-										<img src={member.photo} alt={member.name()} loading="lazy" />
-									{:else}
-										<span class="team-avatar-fallback" aria-hidden="true"
-											>{initial(member.name())}</span
-										>
-									{/if}
-								</div>
-								<div class="team-info">
-									<p class="team-name">{member.name()}</p>
-									<p class="team-role">
-										<span class="team-role-label">{teamSection.roleLabel()}</span>
-										<span>{member.role()}</span>
-									</p>
-									{#if member.linkedin}
-										<a
-											class="team-linkedin"
-											href={member.linkedin}
-											target="_blank"
-											rel="noreferrer"
-										>
-											<Icon name="linkedin" class="h-4 w-4" />
-											<span>{teamSection.linkedinLabel()}</span>
-										</a>
-									{/if}
-								</div>
+						{#each people as member (member.slug)}
+							<li>
+								<a class="team-card team-card-link" href="{base}/team/{member.slug}">
+									<Avatar name={member.name} slug={member.slug} photo={member.photo} />
+									<div class="team-info">
+										<p class="team-name">
+											{member.name}<span class="team-program">{member.program}</span>
+										</p>
+										<p class="team-role">
+											<span class="team-role-label">{teamSection.roleLabel()}</span>
+											<span>{member.role}</span>
+										</p>
+									</div>
+									<Icon name="arrow" class="team-card-arrow h-4 w-4" />
+								</a>
 							</li>
 						{/each}
 					</ul>
@@ -82,3 +85,31 @@
 		</a>
 	</div>
 </section>
+
+<style>
+	.team-card-link {
+		text-decoration: none;
+		color: inherit;
+		cursor: pointer;
+		transition:
+			transform 0.15s ease,
+			box-shadow 0.15s ease,
+			border-color 0.15s ease;
+	}
+	.team-card-link:hover {
+		transform: translateY(-2px);
+		border-color: var(--brand);
+		box-shadow: 0 14px 30px -22px color-mix(in srgb, var(--brand) 70%, transparent);
+	}
+	.team-program {
+		margin-left: 0.4rem;
+		font-size: 0.78rem;
+		font-weight: 500;
+		color: var(--muted);
+	}
+	:global(.team-card-arrow) {
+		margin-left: auto;
+		color: var(--muted);
+		flex-shrink: 0;
+	}
+</style>
