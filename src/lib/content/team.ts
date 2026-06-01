@@ -7,21 +7,16 @@
      several departments (each with its own role) while still linking to the
      one /team/<slug> profile page.
 
-   Each member gets a build-time-prerendered profile page at /team/<slug>.
-   Per-person content (intro, photo, gallery, socials) is left for each member
-   to fill — drop a photo at static/team/<slug>.jpg and it shows automatically.
+   The roster is sourced from the team sign-up sheet (name + group). Per-person
+   extras (program, intro, photo, gallery, socials, role) are optional and left
+   for each member to fill — drop a photo at static/team/<slug>.jpg and it shows
+   automatically. We deliberately do NOT publish emails / student ids here.
    ────────────────────────────────────────────────────────────────────────── */
 
 export type DepartmentId = 'engineering' | 'design' | 'marketing' | 'admin' | 'legal';
 
 /** Order departments render in on the team page. */
-export const departmentOrder: DepartmentId[] = [
-	'engineering',
-	'design',
-	'marketing',
-	'admin',
-	'legal'
-];
+export const departmentOrder: DepartmentId[] = ['engineering', 'design', 'admin', 'legal'];
 
 export type SocialKind =
 	| 'github'
@@ -48,8 +43,8 @@ export interface Member {
 	slug: string;
 	/** Display name, e.g. 魏均祐. */
 	name: string;
-	/** 系所 / program, e.g. 科法碩 / 傳科系 / 資工系 / 百川 / 光電系 / 資工碩. */
-	program: string;
+	/** 系所 / program, e.g. 科法碩 / 傳科系 / 資工系. Optional. */
+	program?: string;
 	/** A short message the member wants to say (self-intro). Optional. */
 	intro?: string;
 	/** Avatar override. If omitted, /team/<slug>.jpg is tried, then initials. */
@@ -65,60 +60,97 @@ export interface Assignment {
 	/** Member slug this assignment refers to. */
 	member: string;
 	department: DepartmentId;
-	/** 職責 within this department, e.g. 開發 / 法務、風險評估. */
-	role: string;
+	/** 職責 within this department, e.g. 開發 / 法務、風險評估. Optional. */
+	role?: string;
 }
 
 /** Canonical profiles. Add a member here; a static page is generated per slug. */
 export const members: Member[] = [
-	{ slug: 'you-zongyi', name: '游宗易', program: '資工系' },
-	{ slug: 'cai-xiuji', name: '蔡秀吉', program: '百川' },
-	{ slug: 'yang-haoyu', name: '楊皓宇', program: '資工系' },
+	// 工程 / Engineering
+	{ slug: 'yio', name: '游宗易', program: '資工系' },
 	{
 		slug: 'jacoblin',
 		name: '林振可',
 		program: '資工碩',
-		intro: '我在 NYCU LIFE 主要負責校車 app，也會參與其他幾個專案，從網頁到手機 app 都有涉獵。研究方向是語音與語言模型相關的 AI/ML，但比起停留在論文，我更想把這些技術做成真正有人使用的應用。平常寫程式會搭配 Codex 與 Claude Code，把 AI agent 當作協作的夥伴。最近比較關注的，是 AI agent 如何實際影響人與人的互動、帶來具體的社會影響，以及這方面的各種創新。',
+		intro:
+			'我在 NYCU LIFE 主要負責校車 app，也會參與其他幾個專案，從網頁到手機 app 都有涉獵。研究方向是語音與語言模型相關的 AI/ML，但比起停留在論文，我更想把這些技術做成真正有人使用的應用。平常寫程式會搭配 Codex 與 Claude Code，把 AI agent 當作協作的夥伴。最近比較關注的，是 AI agent 如何實際影響人與人的互動、帶來具體的社會影響，以及這方面的各種創新。',
 		socials: [
 			{ kind: 'github', url: 'https://github.com/JacobLinCool' },
 			{ kind: 'website', url: 'https://jacoblin.cool' },
 			{ kind: 'email', url: 'mailto:jacoblincool@gmail.com' }
 		]
 	},
-	{ slug: 'chen-tingzhen', name: '陳亭蓁', program: '傳科系' },
-	{ slug: 'chen-xinghua', name: '陳星樺', program: '傳科系' },
-	{ slug: 'ma-xiaoshi', name: '馬曉詩', program: '百川' },
-	{ slug: 'zhong-jiatong', name: '鍾佳潼', program: '光電系' },
-	{ slug: 'wei-junyou', name: '魏均祐', program: '科法碩' },
-	{ slug: 'li-zhengyang', name: '李正洋', program: '科法碩' },
-	{ slug: 'xie-yiqing', name: '謝亦晴', program: '科法碩' },
-	{ slug: 'chen-junxuan', name: '陳濬萱', program: '科法碩' }
+	{ slug: 'hsuan', name: '張睿玹' },
+	{ slug: 'thc1006', name: '蔡秀吉', program: '百川' },
+	{ slug: 'naup96321', name: '楊皓宇', program: '資工系' },
+	{ slug: 'pb', name: '賴柏翰' },
+	{ slug: 'feedc0de', name: '簡煦恩' },
+	{ slug: 'ddd', name: '林育廷' },
+	{ slug: 'takalawang', name: '王重鈞' },
+	{ slug: 'lin', name: 'Lin Lee' },
+	// 設計 / Design
+	{ slug: 'ting', name: '陳亭蓁', program: '傳科系' },
+	{ slug: 'xcc', name: '陳星樺', program: '傳科系' },
+	{ slug: 'ctin512', name: '張庭軒' },
+	{ slug: 'eugene', name: '顏睿軍' },
+	{ slug: 'wkdub', name: '張涓柔' },
+	{ slug: 'einstein706', name: '王子瑜' },
+	{ slug: 'lin47', name: '林思綺' },
+	{ slug: 'alien', name: '許沛涵' },
+	// 行政 / Administration
+	{ slug: 'jun', name: '鍾佳潼', program: '光電系' },
+	{ slug: 'itsivyma', name: '馬筱詩', program: '百川' },
+	{ slug: 'yong0w0', name: '黃少寰' },
+	{ slug: 'kgipj', name: '林雨欣' },
+	{ slug: 'griffith', name: '陳俊宇' },
+	{ slug: 'ariel', name: '連晨熹' },
+	{ slug: 'folksy', name: '尤時晴' },
+	// 法務 / Legal
+	{ slug: 'lizy', name: '李正洋', program: '科法碩' },
+	{ slug: 'yo7536108', name: '魏均祐', program: '科法碩' },
+	{ slug: 'yiching', name: '謝亦晴', program: '科法碩' },
+	{ slug: 'joanna', name: '陳濬萱', program: '科法碩' }
 ];
 
 /**
- * Department membership (decoupled join). Some people are in more than one
- * department — e.g. 游宗易 is in 工程 + 行政, 李正洋 is in 法務 + 行政 — and
- * appear in each, all linking to the same profile.
+ * Department membership (decoupled join). One row per person per department.
+ * `role` is filled where we have a specific one; otherwise the listing just
+ * shows the member under their department.
  */
 export const assignments: Assignment[] = [
 	// 工程組
-	{ member: 'you-zongyi', department: 'engineering', role: '開發' },
-	{ member: 'cai-xiuji', department: 'engineering', role: '開發（醫療支持）' },
-	{ member: 'yang-haoyu', department: 'engineering', role: '開發（資安、弱點掃描）' },
+	{ member: 'yio', department: 'engineering', role: '開發' },
 	{ member: 'jacoblin', department: 'engineering', role: '開發' },
+	{ member: 'thc1006', department: 'engineering', role: '開發（醫療支持）' },
+	{ member: 'naup96321', department: 'engineering', role: '開發（資安、弱點掃描）' },
+	{ member: 'hsuan', department: 'engineering' },
+	{ member: 'pb', department: 'engineering' },
+	{ member: 'feedc0de', department: 'engineering' },
+	{ member: 'ddd', department: 'engineering' },
+	{ member: 'takalawang', department: 'engineering' },
+	{ member: 'lin', department: 'engineering' },
 	// 設計組
-	{ member: 'chen-tingzhen', department: 'design', role: '使用者體驗、流程設計' },
-	{ member: 'chen-xinghua', department: 'design', role: '設計規範、美術設計' },
+	{ member: 'ting', department: 'design', role: '使用者體驗、流程設計' },
+	{ member: 'xcc', department: 'design', role: '設計規範、美術設計' },
+	{ member: 'ctin512', department: 'design' },
+	{ member: 'eugene', department: 'design' },
+	{ member: 'wkdub', department: 'design' },
+	{ member: 'einstein706', department: 'design' },
+	{ member: 'lin47', department: 'design' },
+	{ member: 'alien', department: 'design' },
 	// 行政組
-	{ member: 'ma-xiaoshi', department: 'admin', role: '行政秘書' },
-	{ member: 'zhong-jiatong', department: 'admin', role: '行政' },
-	{ member: 'you-zongyi', department: 'admin', role: '行政' },
-	{ member: 'li-zhengyang', department: 'admin', role: '行政' },
+	{ member: 'jun', department: 'admin', role: '行政' },
+	{ member: 'itsivyma', department: 'admin', role: '行政秘書' },
+	{ member: 'yong0w0', department: 'admin' },
+	{ member: 'kgipj', department: 'admin' },
+	{ member: 'griffith', department: 'admin' },
+	{ member: 'ariel', department: 'admin' },
+	{ member: 'folksy', department: 'admin' },
 	// 法務組
-	{ member: 'wei-junyou', department: 'legal', role: '法務、風險評估' },
-	{ member: 'li-zhengyang', department: 'legal', role: '法務、風險評估' },
-	{ member: 'xie-yiqing', department: 'legal', role: '法務' },
-	{ member: 'chen-junxuan', department: 'legal', role: '法務' }
+	{ member: 'lizy', department: 'legal', role: '法務、風險評估' },
+	{ member: 'yo7536108', department: 'legal', role: '法務、風險評估' },
+	{ member: 'yiching', department: 'legal', role: '法務' },
+	{ member: 'joanna', department: 'legal', role: '法務' }
 ];
 
 export const memberSlugs = members.map((m) => m.slug);
@@ -128,17 +160,17 @@ export function findMember(slug: string): Member | undefined {
 }
 
 /** Members assigned to a department, with their role there (for the listing). */
-export function membersInDepartment(id: DepartmentId): Array<{ member: Member; role: string }> {
+export function membersInDepartment(id: DepartmentId): Array<{ member: Member; role?: string }> {
 	return assignments
 		.filter((a) => a.department === id)
 		.map((a) => ({ member: findMember(a.member), role: a.role }))
-		.filter((x): x is { member: Member; role: string } => x.member !== undefined);
+		.filter((x): x is { member: Member; role: string | undefined } => x.member !== undefined);
 }
 
 /** Departments a member belongs to, with their role there (for the profile). */
 export function departmentsOfMember(
 	slug: string
-): Array<{ department: DepartmentId; role: string }> {
+): Array<{ department: DepartmentId; role?: string }> {
 	return assignments
 		.filter((a) => a.member === slug)
 		.map((a) => ({ department: a.department, role: a.role }));

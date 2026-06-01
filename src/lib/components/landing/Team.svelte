@@ -32,12 +32,16 @@
 									<Avatar name={member.name} slug={member.slug} photo={member.photo} />
 									<div class="team-info">
 										<p class="team-name">
-											{member.name}<span class="team-program">{member.program}</span>
+											{member.name}{#if member.program}<span class="team-program"
+													>{member.program}</span
+												>{/if}
 										</p>
-										<p class="team-role">
-											<span class="team-role-label">{teamSection.roleLabel()}</span>
-											<span>{role}</span>
-										</p>
+										{#if role}
+											<p class="team-role">
+												<span class="team-role-label">{teamSection.roleLabel()}</span>
+												<span>{role}</span>
+											</p>
+										{/if}
 									</div>
 									<Icon name="arrow" class="team-card-arrow h-4 w-4" />
 								</a>
