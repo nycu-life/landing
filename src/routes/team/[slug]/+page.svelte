@@ -12,7 +12,15 @@
 	let { data }: { data: PageData } = $props();
 	const member = $derived(data.member);
 	const memberDepts = $derived(departmentsOfMember(member.slug));
-	const roleSummary = $derived(memberDepts.map((d) => d.role).join('、'));
+	const roleSummary = $derived(
+		memberDepts
+			.map((d) => d.role)
+			.filter(Boolean)
+			.join('、')
+	);
+	const metaDesc = $derived(
+		[member.name, member.program, roleSummary].filter(Boolean).join(' · ') + ' — NYCU LIFE'
+	);
 
 	const socialMeta: Record<SocialKind, { icon: IconName; label: string }> = {
 		github: { icon: 'github', label: 'GitHub' },
@@ -29,7 +37,7 @@
 
 <svelte:head>
 	<title>{member.name}｜NYCU LIFE</title>
-	<meta name="description" content="{member.name} · {member.program} · {roleSummary} — NYCU LIFE" />
+	<meta name="description" content={metaDesc} />
 </svelte:head>
 
 <main class="landing-root member-page">
@@ -42,15 +50,19 @@
 		<Avatar name={member.name} slug={member.slug} photo={member.photo} size="lg" />
 		<div class="member-id">
 			<h1 class="member-name">{member.name}</h1>
-			<p class="member-meta">
-				<span class="member-chip">{member.program}</span>
-			</p>
+			{#if member.program}
+				<p class="member-meta">
+					<span class="member-chip">{member.program}</span>
+				</p>
+			{/if}
 			<ul class="member-roles">
 				{#each memberDepts as d (d.department)}
 					<li class="member-role-chip">
 						<span class="member-role-dept">{deptLabel(d.department)}</span>
-						<span class="member-role-sep" aria-hidden="true">·</span>
-						<span>{d.role}</span>
+						{#if d.role}
+							<span class="member-role-sep" aria-hidden="true">·</span>
+							<span>{d.role}</span>
+						{/if}
 					</li>
 				{/each}
 			</ul>
