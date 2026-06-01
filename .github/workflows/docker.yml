@@ -10,10 +10,11 @@ on:
 
 # Registry host comes from the HARBOR_REGISTRY secret (falls back to the known
 # host for fork PRs where secrets are unavailable). The image lives in the
-# shared `library` project, which the CI robot account can push to.
+# dedicated `landing` Harbor project (matches the per-product project layout,
+# e.g. nycu-bus / coz-planner). The k8s deployment pulls landing/web.
 env:
   REGISTRY: ${{ secrets.HARBOR_REGISTRY || 'harbor.nycu.one' }}
-  IMAGE_PATH: library/landing
+  IMAGE_PATH: landing/web
 
 jobs:
   build-and-push:
