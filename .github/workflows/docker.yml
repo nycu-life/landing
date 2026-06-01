@@ -1,0 +1,59 @@
+name: Docker Build and Push
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  # Build on PRs too so Dockerfile / pnpm / build regressions surface
+  # pre-merge. PR runs build the image but never push (gated below).
+  pull_request:
+
+env:
+  REGISTRY: harbor.nycu.one
+  IMAGE: harbor.nycu.one/landing/web
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # Push only on push/tag events to the canonical repo AND only when Harbor
+      # credentials are configured. PRs (incl. forks) verify the build without
+      # pushing, and main stays green even before the secrets are added.
+      - id: guard
+        run: echo "push=${{ github.event_name != 'pull_request' && secrets.HARBOR_USERNAME != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Harbor
+        if: steps.guard.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=long
+            type=semver,pattern={{version}}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ steps.guard.outputs.push == 'true' }}
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
