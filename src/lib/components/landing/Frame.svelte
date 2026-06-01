@@ -5,6 +5,8 @@
 	 * - `phone`: a rounded phone shell with a notch.
 	 * The image itself is the focus; the frame only grounds it as a real product.
 	 */
+	import { withBase } from '$lib/paths';
+
 	let {
 		src,
 		alt,
@@ -14,12 +16,16 @@
 		alt: string;
 		frame?: 'browser' | 'phone';
 	}>();
+
+	// Callers pass root-absolute asset paths; resolve against the base path so
+	// the image also loads under a sub-path deployment (GitHub Pages).
+	const resolved = $derived(withBase(src));
 </script>
 
 {#if frame === 'phone'}
 	<div class="frame frame-phone">
 		<div class="frame-phone-notch" aria-hidden="true"></div>
-		<img class="frame-phone-screen" {src} {alt} loading="lazy" decoding="async" />
+		<img class="frame-phone-screen" src={resolved} {alt} loading="lazy" decoding="async" />
 	</div>
 {:else}
 	<figure class="frame frame-browser">
@@ -28,6 +34,6 @@
 			<span class="frame-dot"></span>
 			<span class="frame-dot"></span>
 		</div>
-		<img class="frame-browser-screen" {src} {alt} loading="lazy" decoding="async" />
+		<img class="frame-browser-screen" src={resolved} {alt} loading="lazy" decoding="async" />
 	</figure>
 {/if}
