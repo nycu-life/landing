@@ -6,6 +6,7 @@
 	import { departmentsOfMember, type SocialKind } from '$lib/content/team';
 	import { deptLabel } from '$lib/content/departments';
 	import type { IconName } from '$lib/content/landing';
+	import { withBase } from '$lib/paths';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -24,8 +25,6 @@
 		youtube: { icon: 'link', label: 'YouTube' },
 		email: { icon: 'mail', label: 'Email' }
 	};
-
-	const withBase = (src: string) => (src.startsWith('http') ? src : base + src);
 </script>
 
 <svelte:head>
