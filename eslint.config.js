@@ -40,10 +40,15 @@ export default defineConfig(
 		}
 	},
 	{
-		// The landing page only navigates via in-page hash anchors and external
-		// URLs (GitHub, store placeholders), never SvelteKit routes, so the
-		// resolve() requirement does not apply here.
-		files: ['src/lib/components/landing/**/*.svelte', 'src/routes/+page.svelte'],
+		// This site intentionally navigates with base-prefixed links
+		// (`{base}/products/`, `{base}/team/<slug>/`) rather than resolve(), so the
+		// same markup works under both the GitHub Pages base path and the
+		// container's root deploy. Disable the resolve() requirement here.
+		files: [
+			'src/lib/components/landing/**/*.svelte',
+			'src/lib/components/glass/**/*.svelte',
+			'src/routes/**/+page.svelte'
+		],
 		rules: {
 			'svelte/no-navigation-without-resolve': 'off'
 		}

@@ -121,7 +121,9 @@ body {
 	backdrop-filter: var(--blur);
 	-webkit-backdrop-filter: var(--blur);
 	border: 1px solid var(--line);
-	box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+	box-shadow:
+		var(--shadow),
+		inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .glass-strong {
 	background: var(--glass-strong);
@@ -130,7 +132,10 @@ body {
 	background: var(--glass-solid);
 }
 .glass-glow {
-	box-shadow: var(--glow), var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+	box-shadow:
+		var(--glow),
+		var(--shadow),
+		inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .grad-text {
 	background: var(--accent-grad);

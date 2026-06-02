@@ -6,41 +6,27 @@
 		onclick,
 		label,
 		size = 44,
-		href,
 		children,
 		...rest
 	}: {
 		onclick?: (e: MouseEvent) => void;
 		label: string;
 		size?: number;
-		href?: string;
 		children?: Snippet;
 		[key: string]: unknown;
 	} = $props();
 </script>
 
-{#if href}
-	<a
-		class="glass-icon-btn glass glass-strong"
-		{href}
-		aria-label={label}
-		style="width:{size}px;height:{size}px;border-radius:{size / 2}px;"
-		{...rest}
-	>
-		{@render children?.()}
-	</a>
-{:else}
-	<button
-		type="button"
-		class="glass-icon-btn glass glass-strong"
-		{onclick}
-		aria-label={label}
-		style="width:{size}px;height:{size}px;border-radius:{size / 2}px;"
-		{...rest}
-	>
-		{@render children?.()}
-	</button>
-{/if}
+<button
+	type="button"
+	class="glass-icon-btn glass glass-strong"
+	{onclick}
+	aria-label={label}
+	style="width:{size}px;height:{size}px;border-radius:{size / 2}px;"
+	{...rest}
+>
+	{@render children?.()}
+</button>
 
 <style>
 	.glass-icon-btn {

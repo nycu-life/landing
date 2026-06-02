@@ -54,6 +54,18 @@
 	"coming_soon_label": "即將推出",
 	"coming_soon_body": "這個區塊正在製作中，內容補齊後就會在這裡與你見面。",
 
+	"about_folder_timeline_title": "創社經歷",
+	"about_folder_timeline_latin": "Timeline",
+	"about_folder_teams_title": "各組介紹",
+	"about_folder_teams_latin": "Teams",
+	"about_folder_faq_title": "常見問題",
+	"about_folder_faq_latin": "FAQ",
+	"about_folder_contact_title": "聯絡・加入",
+	"about_folder_contact_latin": "Contact & join",
+	"about_teams_intro": "團隊依分工分成工程、設計、行政、法務四組，名單會隨夥伴加入持續更新。點任一位夥伴看更多。",
+	"about_contact_intro": "想聊聊、合作，或想加入我們？從這些地方都能找到我們。",
+	"team_count": "{count} 人",
+
 	"why_eyebrow": "為什麼有 NYCU LIFE",
 	"why_title": "從真實的校園痛點出發",
 	"why_lede": "我們都在這所學校生活過，知道哪些事最讓人卡關。NYCU LIFE 想誠實地把這些日常難題，一個一個解開。",

@@ -40,7 +40,12 @@
 		<div class="menu-foot">
 			<div class="menu-foot-contact">
 				<div class="menu-foot-label">{m.menu_contact_label()}</div>
-				<a class="menu-foot-handle" href="https://instagram.com/nycu.life" target="_blank" rel="noreferrer">@nycu.life</a>
+				<a
+					class="menu-foot-handle"
+					href="https://instagram.com/nycu.life"
+					target="_blank"
+					rel="noreferrer">@nycu.life</a
+				>
 			</div>
 			<div class="menu-foot-end">
 				<LocaleSwitch tone="menu" />

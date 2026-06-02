@@ -16,7 +16,11 @@
 	<div class="site-footer-top">
 		<div class="site-footer-brand">
 			<a class="site-footer-mark" href="#top" aria-label={brand.name()}>
-				<img class="site-footer-logo" src="{base}/brand/logo-horizontal-blue.svg" alt={brand.name()} />
+				<img
+					class="site-footer-logo"
+					src="{base}/brand/logo-horizontal-blue.svg"
+					alt={brand.name()}
+				/>
 			</a>
 			<p class="site-footer-tagline">{footer.tagline()}</p>
 		</div>

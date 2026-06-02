@@ -173,6 +173,10 @@ export type Product = {
 	id: string;
 	accent: 'blue' | 'lime' | 'sun';
 	status: ProductStatus;
+	/** Glyph drawn on the tile (see ProductIcon.svelte). */
+	glyph: 'bus' | 'coz' | 'activity' | 'map';
+	/** Short Latin descriptor shown on the tile (same in both locales). */
+	latin: string;
 	/** A real product screenshot, or undefined for not-yet-shipped products. */
 	screenshot?: { src: string; frame: 'browser' | 'phone' };
 	/** Optional link to the live product. */
@@ -201,6 +205,8 @@ export const products: Product[] = [
 		id: 'bus',
 		accent: 'blue',
 		status: 'live',
+		glyph: 'bus',
+		latin: 'Campus shuttle',
 		screenshot: { src: '/products/bus.png', frame: 'browser' },
 		href: 'https://bus.nycu.one',
 		name: m.product_bus_name,
@@ -211,6 +217,8 @@ export const products: Product[] = [
 		id: 'coz',
 		accent: 'lime',
 		status: 'live',
+		glyph: 'coz',
+		latin: 'Course explorer',
 		screenshot: { src: '/products/coz.png', frame: 'browser' },
 		href: 'https://coz.nycu.one',
 		name: m.product_coz_name,
@@ -221,6 +229,8 @@ export const products: Product[] = [
 		id: 'activity',
 		accent: 'sun',
 		status: 'soon',
+		glyph: 'activity',
+		latin: 'Campus events',
 		screenshot: { src: '/products/activity.png', frame: 'browser' },
 		name: m.product_activity_name,
 		summary: m.product_activity_summary,
@@ -234,6 +244,8 @@ export const products: Product[] = [
 		id: 'map',
 		accent: 'blue',
 		status: 'dev',
+		glyph: 'map',
+		latin: 'Campus map',
 		name: m.product_map_name,
 		summary: m.product_map_summary,
 		features: [m.product_map_feature_1, m.product_map_feature_2, m.product_map_feature_3]

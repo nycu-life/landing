@@ -4,10 +4,8 @@
 	// Honest placeholder for sections that have no real content yet. Swap the
 	// host (folder body / route body / product drawer) for a real component when
 	// the data arrives — this carries no fabricated information.
-	let {
-		label = comingSoon.label(),
-		body = comingSoon.body()
-	}: { label?: string; body?: string } = $props();
+	let { label = comingSoon.label(), body = comingSoon.body() }: { label?: string; body?: string } =
+		$props();
 </script>
 
 <div class="coming-soon glass" style="border-radius:22px;">

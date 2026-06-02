@@ -54,6 +54,18 @@
 	"coming_soon_label": "Coming soon",
 	"coming_soon_body": "This section is in the works — it'll show up here once the content is ready.",
 
+	"about_folder_timeline_title": "Our story",
+	"about_folder_timeline_latin": "Timeline",
+	"about_folder_teams_title": "The teams",
+	"about_folder_teams_latin": "Teams",
+	"about_folder_faq_title": "FAQ",
+	"about_folder_faq_latin": "FAQ",
+	"about_folder_contact_title": "Contact & join",
+	"about_folder_contact_latin": "Contact & join",
+	"about_teams_intro": "The team splits into engineering, design, operations, and legal. The roster grows as new members join — tap anyone to learn more.",
+	"about_contact_intro": "Want to chat, collaborate, or join us? Here's where to find us.",
+	"team_count": "{count} members",
+
 	"why_eyebrow": "Why NYCU LIFE",
 	"why_title": "Built around real campus pains",
 	"why_lede": "We have all lived on this campus and know exactly where things get stuck. NYCU LIFE sets out to untangle those everyday problems, honestly, one at a time.",
