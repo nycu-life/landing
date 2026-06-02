@@ -4,18 +4,18 @@ import { render } from 'vitest-browser-svelte';
 import Page from './+page.svelte';
 
 describe('/+page.svelte', () => {
-	it('renders the hero, header nav, and section headings', async () => {
+	it('renders the hero headline and the four destination cards', async () => {
 		render(Page);
 
-		// The hero headline carries the brand name.
+		// The hero headline carries the brand name ("debug your NYCU LIFE problems").
 		const heading = page.getByRole('heading', { level: 1, name: /NYCU LIFE/i });
-		// The header nav exposes a products entry inside the banner.
-		const productsNavLink = page.getByRole('banner').getByRole('link', { name: /產品|products/i });
-		// Each major section renders a level-2 heading.
-		const sectionHeadings = page.getByRole('heading', { level: 2 });
+		// Each burger destination is reachable as a card link from the home page.
+		// (The TopBar / banner now lives in +layout.svelte, not this page.)
+		const productsLink = page.getByRole('link', { name: /所有產品|All products/i });
+		const aboutLink = page.getByRole('link', { name: /認識我們|About us/i });
 
 		await expect.element(heading).toBeInTheDocument();
-		await expect.element(productsNavLink.first()).toBeVisible();
-		await expect.element(sectionHeadings.first()).toBeInTheDocument();
+		await expect.element(productsLink.first()).toBeInTheDocument();
+		await expect.element(aboutLink.first()).toBeInTheDocument();
 	});
 });

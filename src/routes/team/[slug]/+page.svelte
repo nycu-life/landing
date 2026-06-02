@@ -41,7 +41,7 @@
 </svelte:head>
 
 <main class="landing-root member-page">
-	<a class="member-back" href="{base}/#team">
+	<a class="member-back" href="{base}/about/">
 		<Icon name="arrow" class="member-back-icon h-4 w-4" />
 		<span>{m.team_back()}</span>
 	</a>

@@ -66,6 +66,78 @@ export const hero = {
 };
 
 /* -------------------------------------------------------------------------- */
+/* App shell — burger menu IA + home hero                                     */
+/* -------------------------------------------------------------------------- */
+
+/** The four destinations reachable from the burger menu. */
+export type MenuTarget = 'products' | 'about' | 'courses' | 'devlog';
+
+export type MenuItem = {
+	/** Two-digit ordinal shown beside the label, e.g. "01". */
+	num: string;
+	target: MenuTarget;
+	/** Localised label (also used as the destination page's H1). */
+	label: Message;
+	/** Latin sub-label, e.g. "All products". */
+	latin: Message;
+	/** One-line description shown on the home entry cards. */
+	desc: Message;
+	/** Route path (combine with `base` from $app/paths; keep the trailing slash). */
+	path: string;
+};
+
+export const menuItems: MenuItem[] = [
+	{
+		num: '01',
+		target: 'products',
+		label: m.menu_products,
+		latin: m.menu_products_latin,
+		desc: m.menu_products_desc,
+		path: '/products/'
+	},
+	{
+		num: '02',
+		target: 'about',
+		label: m.menu_about,
+		latin: m.menu_about_latin,
+		desc: m.menu_about_desc,
+		path: '/about/'
+	},
+	{
+		num: '03',
+		target: 'courses',
+		label: m.menu_courses,
+		latin: m.menu_courses_latin,
+		desc: m.menu_courses_desc,
+		path: '/courses/'
+	},
+	{
+		num: '04',
+		target: 'devlog',
+		label: m.menu_devlog,
+		latin: m.menu_devlog_latin,
+		desc: m.menu_devlog_desc,
+		path: '/devlog/'
+	}
+];
+
+/** Home hero — the prototype's "debug your NYCU LIFE problems" treatment. */
+export const appHero = {
+	kickerLeft: m.app_kicker_left,
+	kickerRight: m.app_kicker_right,
+	line1: m.app_hero_line1,
+	accent: m.app_hero_accent,
+	line3: m.app_hero_line3,
+	lede: m.app_hero_lede
+};
+
+/** Shared "coming soon" copy for not-yet-real sections. */
+export const comingSoon = {
+	label: m.coming_soon_label,
+	body: m.coming_soon_body
+};
+
+/* -------------------------------------------------------------------------- */
 /* Why NYCU LIFE — pain → answer                                              */
 /* -------------------------------------------------------------------------- */
 
