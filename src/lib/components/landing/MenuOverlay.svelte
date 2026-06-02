@@ -142,19 +142,18 @@
 		padding: 0;
 		flex: 1;
 	}
-	.menu-list li {
-		/* Two-tone hairline: the white edge reads on the dark canvas, the dark
-		   companion keeps it visible where the bright aurora blob washes white out. */
-		border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-		box-shadow: 0 1px 0 rgba(8, 11, 34, 0.18);
-	}
-
 	.menu-row {
 		display: flex;
 		align-items: center;
 		gap: 0.9rem;
 		padding: clamp(1rem, 2.4vw, 1.5rem) 0;
 		color: #fff;
+		/* Divider lives on the row (not the <li>) so it fades in/out with the
+		   menu — hidden while closed, revealed when the overlay opens. Two-tone
+		   hairline: white edge on the dark canvas, dark companion where the
+		   bright aurora blob would wash the white out. */
+		border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+		box-shadow: 0 1px 0 rgba(8, 11, 34, 0.18);
 		opacity: 0;
 		transform: translateY(28px);
 	}
