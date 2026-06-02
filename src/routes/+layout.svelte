@@ -2,12 +2,20 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { afterNavigate, onNavigate } from '$app/navigation';
+	import { page } from '$app/state';
+	import { base } from '$app/paths';
 	import TopBar from '$lib/components/landing/TopBar.svelte';
 	import MenuOverlay from '$lib/components/landing/MenuOverlay.svelte';
 
 	let { children } = $props();
 
 	let menuOpen = $state(false);
+
+	// Home shows the brand on the left; subpages show a back arrow + centred
+	// wordmark (matching the prototype).
+	const isHome = $derived(
+		page.url.pathname === `${base}/` || page.url.pathname === base || page.url.pathname === '/'
+	);
 
 	// Close the menu after any navigation (links inside it trigger nav).
 	afterNavigate(() => {
@@ -38,7 +46,7 @@
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
 <div class="app-shell">
-	<TopBar {menuOpen} ontoggle={() => (menuOpen = !menuOpen)} />
+	<TopBar {menuOpen} home={isHome} ontoggle={() => (menuOpen = !menuOpen)} />
 	<main class="app-main">
 		{@render children()}
 	</main>

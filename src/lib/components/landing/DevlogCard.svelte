@@ -3,69 +3,86 @@
 
 	let { entry }: { entry: DevLogEntry } = $props();
 
-	// 'done' reuses the live label styling; soon/dev map to their product labels.
 	const statusLabel = $derived(entry.status === 'done' ? null : productStatusLabel[entry.status]());
+
+	// Abstract cover gradient by status (no fabricated photos).
+	const cover: Record<string, string> = {
+		done: 'linear-gradient(135deg, #2455a8 0%, #38c6f4 100%)',
+		soon: 'linear-gradient(135deg, #7a4bd0 0%, #fbbf24 120%)',
+		dev: 'linear-gradient(135deg, #2e2a6e 0%, #8b6bff 100%)'
+	};
 </script>
 
 <article class="devcard glass glass-strong devcard-{entry.status}" style="border-radius:20px;">
-	<span class="devcard-accent" aria-hidden="true"></span>
-	<div class="devcard-meta">
-		<span class="devcard-date">{entry.date()}</span>
-		{#if statusLabel}
-			<span class="devcard-status">{statusLabel}</span>
-		{/if}
+	<div class="devcard-cover" style="background:{cover[entry.status]}">
+		<span class="devcard-sheen" aria-hidden="true"></span>
+		<span class="devcard-chip">{entry.date()}</span>
 	</div>
-	<h3 class="devcard-title">{entry.title()}</h3>
-	<p class="devcard-body">{entry.body()}</p>
+	<div class="devcard-body">
+		<div class="devcard-meta">
+			{#if statusLabel}
+				<span class="devcard-status">{statusLabel}</span>
+			{:else}
+				<span class="devcard-status devcard-status-done">已上線</span>
+			{/if}
+		</div>
+		<h3 class="devcard-title">{entry.title()}</h3>
+		<p class="devcard-text">{entry.body()}</p>
+	</div>
 </article>
 
 <style>
 	.devcard {
+		overflow: hidden;
 		position: relative;
-		padding: clamp(1.1rem, 3vw, 1.5rem) clamp(1.2rem, 3vw, 1.6rem) clamp(1.1rem, 3vw, 1.5rem)
-			clamp(1.4rem, 3.5vw, 1.9rem);
+	}
+	.devcard-cover {
+		position: relative;
+		width: 100%;
+		aspect-ratio: 16 / 7;
 		overflow: hidden;
 	}
-	.devcard-accent {
+	.devcard-sheen {
 		position: absolute;
-		left: 0;
-		top: 14px;
-		bottom: 14px;
-		width: 3px;
-		border-radius: 3px;
+		inset: 0;
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, transparent 46%);
 	}
-	.devcard-done .devcard-accent {
-		background: var(--ok);
-		box-shadow: 0 0 12px var(--ok);
+	.devcard-chip {
+		position: absolute;
+		left: 0.85rem;
+		bottom: 0.85rem;
+		padding: 0.25rem 0.7rem;
+		border-radius: 999px;
+		background: rgba(8, 11, 26, 0.5);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		border: 1px solid rgba(255, 255, 255, 0.18);
+		font-family: var(--font-display);
+		font-size: 0.66rem;
+		letter-spacing: 0.08em;
+		font-weight: 600;
+		color: #fff;
 	}
-	.devcard-soon .devcard-accent {
-		background: var(--amber);
-		box-shadow: 0 0 12px var(--amber);
-	}
-	.devcard-dev .devcard-accent {
-		background: var(--accent-grad);
+	.devcard-body {
+		padding: clamp(1rem, 3vw, 1.4rem);
 	}
 	.devcard-meta {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-		margin-bottom: 0.4rem;
-	}
-	.devcard-date {
-		font-family: var(--font-display);
-		font-size: 0.68rem;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		font-weight: 700;
-		color: var(--muted);
+		margin-bottom: 0.5rem;
 	}
 	.devcard-status {
-		padding: 0.15rem 0.55rem;
+		display: inline-block;
+		padding: 0.15rem 0.6rem;
 		border-radius: 999px;
 		font-size: 0.66rem;
 		font-weight: 700;
+		letter-spacing: 0.02em;
 		border: 1px solid var(--line);
 		color: var(--ink-soft);
+	}
+	.devcard-status-done {
+		color: var(--ok);
+		background: var(--ok-soft);
+		border-color: color-mix(in srgb, var(--ok) 40%, transparent);
 	}
 	.devcard-soon .devcard-status {
 		color: var(--amber-ink);
@@ -79,13 +96,13 @@
 	}
 	.devcard-title {
 		margin: 0 0 0.45rem;
-		font-size: 1.15rem;
-		font-weight: 700;
-		letter-spacing: -0.015em;
+		font-size: 1.2rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
 		line-height: 1.3;
 		color: var(--ink);
 	}
-	.devcard-body {
+	.devcard-text {
 		margin: 0;
 		font-size: 0.95rem;
 		line-height: 1.65;

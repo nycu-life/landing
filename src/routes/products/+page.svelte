@@ -41,15 +41,18 @@
 		margin: 0;
 		padding: 0;
 		display: grid;
-		grid-template-columns: 1fr;
-		gap: clamp(0.85rem, 2vw, 1.1rem);
+		/* 2-up on phones (like the prototype), more as the screen widens. */
+		grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+		gap: clamp(0.7rem, 2vw, 1rem);
 	}
 	.ptile {
 		width: 100%;
+		min-height: 11.5rem;
 		display: flex;
-		align-items: center;
-		gap: 1rem;
-		padding: clamp(1.1rem, 3vw, 1.5rem);
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.85rem;
+		padding: clamp(1rem, 2.6vw, 1.35rem);
 		color: var(--ink);
 		text-align: left;
 		cursor: pointer;
@@ -65,19 +68,18 @@
 	}
 	.ptile-text {
 		display: grid;
-		gap: 0.25rem;
-		flex: 1;
+		gap: 0.2rem;
 		min-width: 0;
 	}
 	.ptile-name {
-		font-size: 1.15rem;
+		font-size: 1.05rem;
 		font-weight: 700;
 		letter-spacing: -0.015em;
 	}
 	.ptile-latin {
 		font-family: var(--font-display);
-		font-size: 0.64rem;
-		letter-spacing: 0.16em;
+		font-size: 0.62rem;
+		letter-spacing: 0.14em;
 		text-transform: uppercase;
 		color: var(--muted);
 	}
@@ -85,14 +87,14 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
-		font-size: 0.78rem;
+		margin-top: auto;
+		font-size: 0.76rem;
 		font-weight: 600;
 		color: var(--ink-soft);
-		flex-shrink: 0;
 	}
 	.ptile-dot {
-		width: 0.5rem;
-		height: 0.5rem;
+		width: 0.45rem;
+		height: 0.45rem;
 		border-radius: 50%;
 	}
 	.ptile-dot-live {
@@ -105,19 +107,5 @@
 	}
 	.ptile-dot-dev {
 		background: var(--muted);
-	}
-
-	@media (min-width: 700px) {
-		.product-grid {
-			grid-template-columns: 1fr 1fr;
-		}
-		.ptile {
-			flex-direction: column;
-			align-items: flex-start;
-			min-height: 13rem;
-		}
-		.ptile-status {
-			margin-top: auto;
-		}
 	}
 </style>

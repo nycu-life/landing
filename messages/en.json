@@ -54,6 +54,15 @@
 	"coming_soon_label": "Coming soon",
 	"coming_soon_body": "This section is in the works — it'll show up here once the content is ready.",
 
+	"page_products_lead": "All ",
+	"page_products_accent": "products",
+	"page_about_lead": "About ",
+	"page_about_accent": "us",
+	"page_courses_lead": "",
+	"page_courses_accent": "Courses",
+	"page_devlog_lead": "",
+	"page_devlog_accent": "Devlog",
+
 	"about_folder_timeline_title": "Our story",
 	"about_folder_timeline_latin": "Timeline",
 	"about_folder_teams_title": "The teams",

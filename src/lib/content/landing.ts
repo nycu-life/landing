@@ -23,7 +23,12 @@ export type IconName =
 	| 'github'
 	| 'linkedin'
 	| 'mail'
-	| 'link';
+	| 'link'
+	| 'code'
+	| 'palette'
+	| 'building'
+	| 'scale'
+	| 'users';
 
 /** Brand links used across the site. */
 export const INSTAGRAM_URL = 'https://instagram.com/nycu.life';
@@ -76,12 +81,17 @@ export type MenuItem = {
 	/** Two-digit ordinal shown beside the label, e.g. "01". */
 	num: string;
 	target: MenuTarget;
-	/** Localised label (also used as the destination page's H1). */
+	/** Localised label (used in the burger menu rows). */
 	label: Message;
 	/** Latin sub-label, e.g. "All products". */
 	latin: Message;
-	/** One-line description shown on the home entry cards. */
+	/** One-line description (menu + page lede). */
 	desc: Message;
+	/** Destination page H1, split so the second part renders in the accent gradient. */
+	titleLead: Message;
+	titleAccent: Message;
+	/** Thematic label shown on the right of the page eyebrow (Latin, both locales). */
+	eyebrowRight: string;
 	/** Route path (combine with `base` from $app/paths; keep the trailing slash). */
 	path: string;
 };
@@ -93,6 +103,9 @@ export const menuItems: MenuItem[] = [
 		label: m.menu_products,
 		latin: m.menu_products_latin,
 		desc: m.menu_products_desc,
+		titleLead: m.page_products_lead,
+		titleAccent: m.page_products_accent,
+		eyebrowRight: 'GLASS SHELF',
 		path: '/products/'
 	},
 	{
@@ -101,6 +114,9 @@ export const menuItems: MenuItem[] = [
 		label: m.menu_about,
 		latin: m.menu_about_latin,
 		desc: m.menu_about_desc,
+		titleLead: m.page_about_lead,
+		titleAccent: m.page_about_accent,
+		eyebrowRight: 'STUDENT-BUILT',
 		path: '/about/'
 	},
 	{
@@ -109,6 +125,9 @@ export const menuItems: MenuItem[] = [
 		label: m.menu_courses,
 		latin: m.menu_courses_latin,
 		desc: m.menu_courses_desc,
+		titleLead: m.page_courses_lead,
+		titleAccent: m.page_courses_accent,
+		eyebrowRight: 'LEARN TOGETHER',
 		path: '/courses/'
 	},
 	{
@@ -117,6 +136,9 @@ export const menuItems: MenuItem[] = [
 		label: m.menu_devlog,
 		latin: m.menu_devlog_latin,
 		desc: m.menu_devlog_desc,
+		titleLead: m.page_devlog_lead,
+		titleAccent: m.page_devlog_accent,
+		eyebrowRight: 'NIGHTLY READING',
 		path: '/devlog/'
 	}
 ];

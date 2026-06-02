@@ -2,7 +2,9 @@
 	import {
 		ArrowRight,
 		BookOpen,
+		Building2,
 		Check,
+		Code,
 		Github,
 		Globe,
 		Instagram,
@@ -10,8 +12,11 @@
 		Linkedin,
 		Mail,
 		MapPin,
+		Palette,
 		Route,
-		Sparkles
+		Scale,
+		Sparkles,
+		Users
 	} from '@lucide/svelte';
 	import type { IconName } from '$lib/content/landing';
 
@@ -45,4 +50,14 @@
 	<Mail class={className} aria-hidden="true" strokeWidth={1.8} />
 {:else if name === 'link'}
 	<Link2 class={className} aria-hidden="true" strokeWidth={1.8} />
+{:else if name === 'code'}
+	<Code class={className} aria-hidden="true" strokeWidth={1.8} />
+{:else if name === 'palette'}
+	<Palette class={className} aria-hidden="true" strokeWidth={1.8} />
+{:else if name === 'building'}
+	<Building2 class={className} aria-hidden="true" strokeWidth={1.8} />
+{:else if name === 'scale'}
+	<Scale class={className} aria-hidden="true" strokeWidth={1.8} />
+{:else if name === 'users'}
+	<Users class={className} aria-hidden="true" strokeWidth={1.8} />
 {/if}

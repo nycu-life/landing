@@ -54,6 +54,15 @@
 	"coming_soon_label": "即將推出",
 	"coming_soon_body": "這個區塊正在製作中，內容補齊後就會在這裡與你見面。",
 
+	"page_products_lead": "所有",
+	"page_products_accent": "產品",
+	"page_about_lead": "認識",
+	"page_about_accent": "我們",
+	"page_courses_lead": "課程",
+	"page_courses_accent": "專區",
+	"page_devlog_lead": "開發",
+	"page_devlog_accent": "日誌",
+
 	"about_folder_timeline_title": "創社經歷",
 	"about_folder_timeline_latin": "Timeline",
 	"about_folder_teams_title": "各組介紹",

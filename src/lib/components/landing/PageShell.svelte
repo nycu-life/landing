@@ -24,10 +24,20 @@
 
 <div class="page">
 	<header class="page-head">
-		<Eyebrow left="{item.num} · {item.latin()}" right="NYCU LIFE" />
-		<h1 class="page-title">{item.label()}</h1>
+		<Eyebrow left="{item.num} · {item.latin()}" right={item.eyebrowRight} />
+		<h1 class="page-title">
+			{item.titleLead()}<span class="grad-text">{item.titleAccent()}</span>
+		</h1>
 		<p class="page-lede">{item.desc()}</p>
 	</header>
 
 	{@render children?.()}
 </div>
+
+<style>
+	/* Accent half of the page title — italic gradient, matching the hero. */
+	.page-title :global(.grad-text) {
+		font-style: italic;
+		font-weight: 500;
+	}
+</style>
