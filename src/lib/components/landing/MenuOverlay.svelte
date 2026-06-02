@@ -143,7 +143,10 @@
 		flex: 1;
 	}
 	.menu-list li {
-		border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+		/* Two-tone hairline: the white edge reads on the dark canvas, the dark
+		   companion keeps it visible where the bright aurora blob washes white out. */
+		border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+		box-shadow: 0 1px 0 rgba(8, 11, 34, 0.18);
 	}
 
 	.menu-row {
@@ -204,7 +207,8 @@
 		gap: 1rem;
 		padding-top: 1.25rem;
 		margin-top: 0.5rem;
-		border-top: 1px solid rgba(255, 255, 255, 0.18);
+		border-top: 1px solid rgba(255, 255, 255, 0.3);
+		box-shadow: 0 -1px 0 rgba(8, 11, 34, 0.18);
 		color: rgba(255, 255, 255, 0.82);
 		opacity: 0;
 		transition: opacity 0.4s ease 0.55s;
