@@ -77,11 +77,18 @@
 		position: absolute;
 		inset: 0;
 		overflow: hidden;
-		clip-path: circle(0% at calc(100% - 34px) 38px);
+		/* Reveal origin tracks the burger button's centre. The TopBar is capped
+		   at --shell and centred, so on screens wider than --shell the button
+		   sits at the centred container's right edge, not the viewport edge.
+		   x = button centre from the right; y = topbar padding-top + half button
+		   (TopBar padding 0.85rem, GlassIconBtn size 44 -> 22px). */
+		--menu-origin-x: calc(100% - max(0px, (100vw - var(--shell)) / 2) - var(--gutter) - 22px);
+		--menu-origin-y: calc(0.85rem + 22px);
+		clip-path: circle(0% at var(--menu-origin-x) var(--menu-origin-y));
 		transition: clip-path 0.7s cubic-bezier(0.77, 0, 0.18, 1);
 	}
 	.menu-panel.open {
-		clip-path: circle(150% at calc(100% - 34px) 38px);
+		clip-path: circle(150% at var(--menu-origin-x) var(--menu-origin-y));
 	}
 	.menu-panel-fill {
 		position: absolute;
