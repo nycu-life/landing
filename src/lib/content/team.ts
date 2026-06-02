@@ -67,7 +67,12 @@ export interface Assignment {
 /** Canonical profiles. Add a member here; a static page is generated per slug. */
 export const members: Member[] = [
 	// 工程 / Engineering
-	{ slug: 'yio', name: '游宗易', program: '資工系' },
+	{
+		slug: 'yio',
+		name: '游宗易',
+		program: '資工系',
+		socials: [{ kind: 'github', url: 'https://github.com/yio' }]
+	},
 	{
 		slug: 'jacoblin',
 		name: '林振可',
@@ -81,12 +86,38 @@ export const members: Member[] = [
 		]
 	},
 	{ slug: 'hsuan', name: '張睿玹' },
-	{ slug: 'thc1006', name: '蔡秀吉', program: '百川' },
-	{ slug: 'naup96321', name: '楊皓宇', program: '資工系' },
+	{
+		slug: 'thc1006',
+		name: '蔡秀吉',
+		program: '百川',
+		intro: '跨足資訊與醫療領域，熱衷開源協作，GitHub 上累積了不少專案。',
+		socials: [
+			{ kind: 'github', url: 'https://github.com/thc1006' },
+			{ kind: 'website', url: 'https://cs.nycu.edu.tw/~hctsai1006/' }
+		]
+	},
+	{
+		slug: 'naup96321',
+		name: '楊皓宇',
+		program: '資工系',
+		socials: [{ kind: 'github', url: 'https://github.com/naup96321' }]
+	},
 	{ slug: 'pb', name: '賴柏翰' },
-	{ slug: 'feedc0de', name: '簡煦恩' },
+	{
+		slug: 'feedc0de',
+		name: '簡煦恩',
+		socials: [{ kind: 'github', url: 'https://github.com/feedc0de' }]
+	},
 	{ slug: 'ddd', name: '林育廷' },
-	{ slug: 'takalawang', name: '王重鈞' },
+	{
+		slug: 'takalawang',
+		name: '王重鈞',
+		intro: 'NYCU 碩士生，工程組夥伴。',
+		socials: [
+			{ kind: 'github', url: 'https://github.com/takalawang' },
+			{ kind: 'website', url: 'https://takalawang.github.io/' }
+		]
+	},
 	{ slug: 'lin', name: 'Lin Lee' },
 	// 設計 / Design
 	{ slug: 'ting', name: '陳亭蓁', program: '傳科系' },
