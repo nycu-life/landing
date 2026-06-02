@@ -8,5 +8,4 @@ import { base } from '$app/paths';
  * `SITE_BASE_PATH=/landing`), those paths must be prefixed with `base` or the
  * prerenderer rejects them in strict mode. External URLs are returned as-is.
  */
-export const withBase = (src: string): string =>
-	/^https?:\/\//.test(src) ? src : base + src;
+export const withBase = (src: string): string => (/^https?:\/\//.test(src) ? src : base + src);

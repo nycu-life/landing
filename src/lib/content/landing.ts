@@ -23,7 +23,12 @@ export type IconName =
 	| 'github'
 	| 'linkedin'
 	| 'mail'
-	| 'link';
+	| 'link'
+	| 'code'
+	| 'palette'
+	| 'building'
+	| 'scale'
+	| 'users';
 
 /** Brand links used across the site. */
 export const INSTAGRAM_URL = 'https://instagram.com/nycu.life';
@@ -66,6 +71,95 @@ export const hero = {
 };
 
 /* -------------------------------------------------------------------------- */
+/* App shell — burger menu IA + home hero                                     */
+/* -------------------------------------------------------------------------- */
+
+/** The four destinations reachable from the burger menu. */
+export type MenuTarget = 'products' | 'about' | 'courses' | 'devlog';
+
+export type MenuItem = {
+	/** Two-digit ordinal shown beside the label, e.g. "01". */
+	num: string;
+	target: MenuTarget;
+	/** Localised label (used in the burger menu rows). */
+	label: Message;
+	/** Latin sub-label, e.g. "All products". */
+	latin: Message;
+	/** One-line description (menu + page lede). */
+	desc: Message;
+	/** Destination page H1, split so the second part renders in the accent gradient. */
+	titleLead: Message;
+	titleAccent: Message;
+	/** Thematic label shown on the right of the page eyebrow (Latin, both locales). */
+	eyebrowRight: string;
+	/** Route path (combine with `base` from $app/paths; keep the trailing slash). */
+	path: string;
+};
+
+export const menuItems: MenuItem[] = [
+	{
+		num: '01',
+		target: 'products',
+		label: m.menu_products,
+		latin: m.menu_products_latin,
+		desc: m.menu_products_desc,
+		titleLead: m.page_products_lead,
+		titleAccent: m.page_products_accent,
+		eyebrowRight: 'GLASS SHELF',
+		path: '/products/'
+	},
+	{
+		num: '02',
+		target: 'about',
+		label: m.menu_about,
+		latin: m.menu_about_latin,
+		desc: m.menu_about_desc,
+		titleLead: m.page_about_lead,
+		titleAccent: m.page_about_accent,
+		eyebrowRight: 'STUDENT-BUILT',
+		path: '/about/'
+	},
+	{
+		num: '03',
+		target: 'courses',
+		label: m.menu_courses,
+		latin: m.menu_courses_latin,
+		desc: m.menu_courses_desc,
+		titleLead: m.page_courses_lead,
+		titleAccent: m.page_courses_accent,
+		eyebrowRight: 'LEARN TOGETHER',
+		path: '/courses/'
+	},
+	{
+		num: '04',
+		target: 'devlog',
+		label: m.menu_devlog,
+		latin: m.menu_devlog_latin,
+		desc: m.menu_devlog_desc,
+		titleLead: m.page_devlog_lead,
+		titleAccent: m.page_devlog_accent,
+		eyebrowRight: 'NIGHTLY READING',
+		path: '/devlog/'
+	}
+];
+
+/** Home hero — the prototype's "debug your NYCU LIFE problems" treatment. */
+export const appHero = {
+	kickerLeft: m.app_kicker_left,
+	kickerRight: m.app_kicker_right,
+	line1: m.app_hero_line1,
+	accent: m.app_hero_accent,
+	line3: m.app_hero_line3,
+	lede: m.app_hero_lede
+};
+
+/** Shared "coming soon" copy for not-yet-real sections. */
+export const comingSoon = {
+	label: m.coming_soon_label,
+	body: m.coming_soon_body
+};
+
+/* -------------------------------------------------------------------------- */
 /* Why NYCU LIFE — pain → answer                                              */
 /* -------------------------------------------------------------------------- */
 
@@ -101,6 +195,10 @@ export type Product = {
 	id: string;
 	accent: 'blue' | 'lime' | 'sun';
 	status: ProductStatus;
+	/** Glyph drawn on the tile (see ProductIcon.svelte). */
+	glyph: 'bus' | 'coz' | 'activity' | 'map';
+	/** Short Latin descriptor shown on the tile (same in both locales). */
+	latin: string;
 	/** A real product screenshot, or undefined for not-yet-shipped products. */
 	screenshot?: { src: string; frame: 'browser' | 'phone' };
 	/** Optional link to the live product. */
@@ -129,6 +227,8 @@ export const products: Product[] = [
 		id: 'bus',
 		accent: 'blue',
 		status: 'live',
+		glyph: 'bus',
+		latin: 'Campus shuttle',
 		screenshot: { src: '/products/bus.png', frame: 'browser' },
 		href: 'https://bus.nycu.one',
 		name: m.product_bus_name,
@@ -139,6 +239,8 @@ export const products: Product[] = [
 		id: 'coz',
 		accent: 'lime',
 		status: 'live',
+		glyph: 'coz',
+		latin: 'Course explorer',
 		screenshot: { src: '/products/coz.png', frame: 'browser' },
 		href: 'https://coz.nycu.one',
 		name: m.product_coz_name,
@@ -149,6 +251,8 @@ export const products: Product[] = [
 		id: 'activity',
 		accent: 'sun',
 		status: 'soon',
+		glyph: 'activity',
+		latin: 'Campus events',
 		screenshot: { src: '/products/activity.png', frame: 'browser' },
 		name: m.product_activity_name,
 		summary: m.product_activity_summary,
@@ -162,6 +266,8 @@ export const products: Product[] = [
 		id: 'map',
 		accent: 'blue',
 		status: 'dev',
+		glyph: 'map',
+		latin: 'Campus map',
 		name: m.product_map_name,
 		summary: m.product_map_summary,
 		features: [m.product_map_feature_1, m.product_map_feature_2, m.product_map_feature_3]
