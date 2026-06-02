@@ -91,7 +91,6 @@ export const members: Member[] = [
 	// 設計 / Design
 	{ slug: 'ting', name: '陳亭蓁', program: '傳科系' },
 	{ slug: 'xcc', name: '陳星樺', program: '傳科系' },
-	{ slug: 'ctin512', name: '張庭軒' },
 	{ slug: 'eugene', name: '顏睿軍' },
 	{ slug: 'wkdub', name: '張涓柔' },
 	{ slug: 'einstein706', name: '王子瑜' },
@@ -103,7 +102,6 @@ export const members: Member[] = [
 	{ slug: 'yong0w0', name: '黃少寰' },
 	{ slug: 'kgipj', name: '林雨欣' },
 	{ slug: 'griffith', name: '陳俊宇' },
-	{ slug: 'ariel', name: '連晨熹' },
 	{ slug: 'folksy', name: '尤時晴' },
 	// 法務 / Legal
 	{ slug: 'lizy', name: '李正洋', program: '科法碩' },
@@ -132,7 +130,6 @@ export const assignments: Assignment[] = [
 	// 設計組
 	{ member: 'ting', department: 'design', role: '使用者體驗、流程設計' },
 	{ member: 'xcc', department: 'design', role: '設計規範、美術設計' },
-	{ member: 'ctin512', department: 'design' },
 	{ member: 'eugene', department: 'design' },
 	{ member: 'wkdub', department: 'design' },
 	{ member: 'einstein706', department: 'design' },
@@ -144,7 +141,6 @@ export const assignments: Assignment[] = [
 	{ member: 'yong0w0', department: 'admin' },
 	{ member: 'kgipj', department: 'admin' },
 	{ member: 'griffith', department: 'admin' },
-	{ member: 'ariel', department: 'admin' },
 	{ member: 'folksy', department: 'admin' },
 	// 法務組
 	{ member: 'lizy', department: 'legal', role: '法務、風險評估' },
