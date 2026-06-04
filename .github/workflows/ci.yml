@@ -30,6 +30,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Playwright browser
+        # Needed by both the vitest browser-mode unit tests and the e2e tests.
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Type check
         run: pnpm run check
 
@@ -38,9 +42,6 @@ jobs:
 
       - name: Unit tests
         run: pnpm run test:unit -- --run
-
-      - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E tests
         run: pnpm run test:e2e
