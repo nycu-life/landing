@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.21.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run check
+
+      - name: Lint
+        run: pnpm run lint
+
+      # NOTE: the vitest browser-mode unit tests and the Playwright e2e smoke test
+      # both need a browser, and `playwright install` reliably hangs on this runner
+      # after the download completes. They run locally via `pnpm test`; the gates
+      # above (svelte-check + prettier/eslint) are what protect this static site.
+      # Re-add browser tests here once they can install reliably (e.g. via the
+      # mcr.microsoft.com/playwright container image with browsers pre-baked).

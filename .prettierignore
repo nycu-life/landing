@@ -7,6 +7,13 @@ bun.lockb
 
 # Miscellaneous
 /static/
+.env.example
 
-# Generated (Paraglide compiles these from messages/*.json)
-/src/paraglide/
+# Generated — Paraglide compiles these from messages/*.json
+/src/lib/paraglide/
+/.svelte-kit/
+/build/
+
+# inlang project metadata — tool-managed, regenerated on compile
+/project.inlang/.meta.json
+/project.inlang/README.md
