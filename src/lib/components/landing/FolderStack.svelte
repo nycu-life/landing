@@ -4,20 +4,26 @@
 
 	let { folders, body }: { folders: AboutFolder[]; body: Snippet<[AboutFolder]> } = $props();
 
-	let openIdx = $state<number | null>(null);
-	const toggle = (i: number) => (openIdx = openIdx === i ? null : i);
+	// Single-open accordion: clicking the open folder closes it again.
+	let activeIdx = $state<number | null>(null);
+	const toggle = (i: number) => (activeIdx = activeIdx === i ? null : i);
 </script>
 
 <div class="folder-stack">
 	{#each folders as folder, i (folder.id)}
 		<section
 			class="folder"
-			class:open={openIdx === i}
-			class:last={i === folders.length - 1}
-			style="--accent:{folder.accent}; z-index:{openIdx === i ? 50 : i + 1};"
+			class:open={activeIdx === i}
+			class:dimmed={activeIdx !== null && activeIdx !== i}
+			style="--accent:{folder.accent}; --accent-glow:{folder.accent}55; z-index:{activeIdx === i
+				? 50
+				: i + 1};"
 		>
+			<!-- accent glow wash at the tab -->
 			<span class="folder-glow" aria-hidden="true"></span>
-			<button class="folder-tab" aria-expanded={openIdx === i} onclick={() => toggle(i)}>
+
+			<!-- Tab — always visible -->
+			<button class="folder-tab" aria-expanded={activeIdx === i} onclick={() => toggle(i)}>
 				<span class="folder-tab-text">
 					<span class="folder-meta">
 						<span class="folder-num">{folder.num}</span>
@@ -25,22 +31,27 @@
 					</span>
 					<span class="folder-title">{folder.title()}</span>
 				</span>
-				<span class="folder-chevron" class:open={openIdx === i} aria-hidden="true">
-					<svg
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.8"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M6 9l6 6 6-6" />
-					</svg>
+				<!-- Frameless light-shadow chevron -->
+				<span class="folder-chevron" aria-hidden="true">
+					<span class="folder-chevron-glyph">
+						<svg
+							width="22"
+							height="22"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M6 9l6 6 6-6" />
+						</svg>
+					</span>
 				</span>
 			</button>
-			<div class="folder-body" class:open={openIdx === i}>
+
+			<!-- Body — collapses -->
+			<div class="folder-body">
 				<div class="folder-body-inner">
 					{@render body(folder)}
 				</div>
@@ -51,124 +62,167 @@
 
 <style>
 	.folder-stack {
-		display: block;
+		padding: 6px 0;
 	}
+
 	.folder {
 		position: relative;
-		background: var(--glass-strong);
-		backdrop-filter: var(--blur);
-		-webkit-backdrop-filter: var(--blur);
-		border: 1px solid var(--line);
-		border-bottom: none;
-		border-radius: 22px 22px 0 0;
-		box-shadow:
-			0 -8px 28px rgba(2, 5, 20, 0.45),
-			inset 0 1px 0 rgba(255, 255, 255, 0.14);
+		background: rgba(255, 255, 255, 0.05);
+		backdrop-filter: blur(24px) saturate(140%);
+		-webkit-backdrop-filter: blur(24px) saturate(140%);
+		color: var(--ink);
+		/* only a thin top rim-light — no side/bottom borders, so overlaps read
+		   as a hairline of light */
+		border: none;
+		border-top: 1px solid var(--rim);
+		border-radius: 16px;
+		transform: scale(1);
+		transform-origin: center top;
+		box-shadow: var(--shadow);
 		overflow: hidden;
+		transition:
+			opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+			transform 0.5s var(--ease-glass),
+			backdrop-filter 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+			margin-top 0.55s var(--ease-glass),
+			margin-bottom 0.55s var(--ease-glass),
+			box-shadow 0.45s var(--ease-glass),
+			background 0.45s ease;
 	}
 	.folder:not(:first-child) {
-		margin-top: -16px;
+		margin-top: -14px;
 	}
-	.folder.last {
-		border-bottom: 1px solid var(--line);
-		border-radius: 22px;
+	.folder.open {
+		background: rgba(255, 255, 255, 0.08);
+		backdrop-filter: blur(28px) saturate(150%);
+		-webkit-backdrop-filter: blur(28px) saturate(150%);
+		margin-bottom: 16px;
+		transform: scale(1.02);
+		box-shadow: var(--shadow-float);
 	}
+	.folder.dimmed {
+		opacity: 0.45;
+		backdrop-filter: blur(24px) saturate(120%);
+		-webkit-backdrop-filter: blur(24px) saturate(120%);
+	}
+
 	.folder-glow {
 		position: absolute;
 		top: -40px;
 		left: -20px;
 		width: 220px;
 		height: 120px;
-		background: radial-gradient(circle at 30% 50%, var(--accent) 0%, transparent 70%);
-		opacity: 0.33;
+		background: radial-gradient(circle at 30% 50%, var(--accent-glow) 0%, transparent 70%);
 		filter: blur(8px);
 		pointer-events: none;
 	}
+
 	.folder-tab {
 		position: relative;
 		width: 100%;
+		padding: 20px 22px;
+		background: transparent;
+		border: none;
+		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 1rem;
-		padding: clamp(1.1rem, 3vw, 1.4rem) clamp(1.25rem, 3.5vw, 1.6rem);
-		background: transparent;
+		gap: 12px;
 		text-align: left;
-		cursor: pointer;
-		color: var(--ink);
+		color: inherit;
 	}
 	.folder-tab-text {
-		display: grid;
-		gap: 0.2rem;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
 	}
 	.folder-meta {
 		display: flex;
 		align-items: baseline;
-		gap: 0.6rem;
+		gap: 10px;
 	}
 	.folder-num {
-		font-family: var(--font-display);
-		font-size: 0.7rem;
-		font-weight: 700;
-		letter-spacing: 0.14em;
+		font-size: 11px;
+		opacity: 0.7;
+		letter-spacing: 0.16em;
+		font-weight: 600;
 		color: var(--accent);
 	}
 	.folder-latin {
-		font-family: var(--font-display);
-		font-size: 0.6rem;
+		font-size: 10px;
+		opacity: 0.5;
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
-		color: var(--muted);
+		font-weight: 600;
+		color: #fff;
 	}
 	.folder-title {
-		font-size: clamp(1.4rem, 4vw, 1.85rem);
+		font-size: 28px;
 		font-weight: 700;
-		letter-spacing: -0.02em;
+		letter-spacing: -0.01em;
 		line-height: 1.1;
+		color: #fff;
+		font-family: var(--font-cjk);
 	}
+
 	.folder-chevron {
+		width: 38px;
+		height: 38px;
+		flex-shrink: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 38px;
-		height: 38px;
-		border-radius: 50%;
-		border: 1px solid var(--line);
-		background: var(--glass);
-		color: var(--ink);
-		flex-shrink: 0;
-		transition:
-			transform 0.35s ease,
-			background 0.35s ease,
-			color 0.35s ease;
+		transition: transform 0.4s var(--ease-app);
 	}
-	.folder-chevron.open {
+	.folder.open .folder-chevron {
 		transform: rotate(180deg);
-		background: var(--accent);
-		color: #0c1230;
 	}
+	.folder-chevron-glyph {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		opacity: 0.6;
+		color: #fff;
+		filter: drop-shadow(0 1px 3px rgba(8, 12, 28, 0.45))
+			drop-shadow(0 0 6px rgba(255, 255, 255, 0.25));
+		transition: opacity 0.3s ease;
+	}
+	.folder.open .folder-chevron-glyph {
+		opacity: 0.95;
+	}
+	.folder:not(.open) .folder-tab:hover .folder-chevron-glyph {
+		opacity: 0.9;
+		animation: nlChevBounce 1.1s ease-in-out infinite;
+	}
+
 	.folder-body {
-		display: grid;
-		grid-template-rows: 0fr;
-		transition: grid-template-rows 0.55s var(--ease-app);
+		max-height: 0;
+		opacity: 0;
+		transform: translateY(-6px);
+		overflow: hidden;
+		transition:
+			max-height 0.6s var(--ease-glass),
+			opacity 0.45s var(--ease-glass) 0.12s,
+			transform 0.5s var(--ease-glass) 0.1s;
 	}
-	.folder-body.open {
-		grid-template-rows: 1fr;
+	.folder.open .folder-body {
+		max-height: 6000px;
+		opacity: 1;
+		transform: translateY(0);
 	}
 	.folder-body-inner {
-		min-height: 0;
-		overflow: hidden;
-	}
-	.folder-body.open .folder-body-inner {
-		padding: 0 clamp(1.25rem, 3.5vw, 1.6rem) clamp(1.5rem, 4vw, 2rem);
+		padding: 4px 22px 24px;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.folder,
+		.folder-chevron,
+		.folder-chevron-glyph,
 		.folder-body {
 			transition: none;
 		}
-		.folder-chevron {
-			transition: none;
+		.folder:not(.open) .folder-tab:hover .folder-chevron-glyph {
+			animation: none;
 		}
 	}
 </style>

@@ -19,10 +19,10 @@
 
 <button
 	type="button"
-	class="glass-icon-btn glass glass-strong"
+	class="glass-icon-btn liquid-glass-btn-circle"
 	{onclick}
 	aria-label={label}
-	style="width:{size}px;height:{size}px;border-radius:{size / 2}px;"
+	style="width:{size}px;height:{size}px;"
 	{...rest}
 >
 	{@render children?.()}
@@ -30,19 +30,6 @@
 
 <style>
 	.glass-icon-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0;
-		color: var(--ink);
-		cursor: pointer;
-		transition:
-			background 0.25s ease,
-			transform 0.25s ease,
-			box-shadow 0.25s ease;
-	}
-	.glass-icon-btn:hover {
-		transform: translateY(-1px);
-		box-shadow: var(--glow), var(--shadow);
+		color: inherit;
 	}
 </style>

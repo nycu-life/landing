@@ -1,55 +1,63 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
+	import { fade } from 'svelte/transition';
 	import { m } from '$lib/paraglide/messages';
-	import { brand } from '$lib/content/landing';
-	import FoxMark from '$lib/components/glass/FoxMark.svelte';
 	import GlassIconBtn from '$lib/components/glass/GlassIconBtn.svelte';
 	import BurgerIcon from '$lib/components/glass/BurgerIcon.svelte';
 
+	// App chrome above the page stage: logo + burger on home, back arrow +
+	// centred logo + burger on subpages. The burger only opens the menu —
+	// the overlay carries its own close button (prototype behaviour).
+	// `light` flips the chrome for the light hero surface; the desktop story
+	// turns it off once the backdrop goes vivid, while staying in home mode.
 	let {
-		menuOpen = false,
 		home = true,
-		ontoggle
-	}: { menuOpen?: boolean; home?: boolean; ontoggle?: () => void } = $props();
+		light = home,
+		onmenu
+	}: { home?: boolean; light?: boolean; onmenu?: () => void } = $props();
 </script>
 
-<header class="topbar" class:subpage={!home}>
+<header class="topbar" class:subpage={!home} class:on-light={light}>
 	{#if home}
 		<a class="topbar-brand" href="{base}/" aria-label={m.menu_home()}>
-			<FoxMark size={32} />
-			<span class="topbar-wordmark">{brand.name()}</span>
+			<img
+				src="{base}/brand/logo-horizontal-{light ? 'blue' : 'white'}.svg"
+				alt="NYCU LIFE"
+				class="topbar-logo"
+			/>
 		</a>
 	{:else}
-		<GlassIconBtn label={m.team_back()} onclick={() => goto(`${base}/`)}>
-			<svg
-				width="22"
-				height="22"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<path d="M19 12H5M12 19l-7-7 7-7" />
-			</svg>
-		</GlassIconBtn>
+		<span in:fade={{ duration: 250 }}>
+			<GlassIconBtn label={m.team_back()} onclick={() => goto(`${base}/`)}>
+				<svg
+					width="22"
+					height="22"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M19 12H5M12 19l-7-7 7-7" />
+				</svg>
+			</GlassIconBtn>
+		</span>
 		<a class="topbar-brand topbar-brand-center" href="{base}/" aria-label={m.menu_home()}>
-			<FoxMark size={28} />
-			<span class="topbar-wordmark">{brand.name()}</span>
+			<img src="{base}/brand/logo-horizontal-white.svg" alt="NYCU LIFE" class="topbar-logo small" />
 		</a>
 	{/if}
-	<GlassIconBtn label={menuOpen ? m.menu_close() : m.menu_open()} onclick={ontoggle}>
-		<BurgerIcon open={menuOpen} />
+	<GlassIconBtn label={m.menu_open()} onclick={onmenu}>
+		<BurgerIcon open={false} />
 	</GlassIconBtn>
 </header>
 
 <style>
 	.topbar {
-		position: sticky;
-		top: 0;
-		z-index: 100;
+		flex: none;
+		position: relative;
+		z-index: 10;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -57,7 +65,12 @@
 		width: 100%;
 		max-width: var(--shell);
 		margin-inline: auto;
-		padding: 0.85rem var(--gutter);
+		padding: calc(env(safe-area-inset-top, 0px) + 0.9rem) var(--gutter) 0.75rem;
+		color: var(--ink);
+	}
+	/* Over the light home surface the chrome flips dark. */
+	.topbar.on-light {
+		color: #1a2350;
 	}
 	/* Subpages: back (start) · wordmark (centre) · burger (end). */
 	.topbar.subpage {
@@ -68,19 +81,16 @@
 	.topbar-brand {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.6rem;
-		color: var(--ink);
 	}
 	.topbar-brand-center {
 		justify-self: center;
 	}
-	.topbar-wordmark {
-		font-family: var(--font-display);
-		font-weight: 700;
-		font-size: 1.05rem;
-		letter-spacing: 0.01em;
+	.topbar-logo {
+		height: 1.85rem;
+		width: auto;
+		display: block;
 	}
-	.topbar.subpage .topbar-wordmark {
-		font-size: 0.98rem;
+	.topbar-logo.small {
+		height: 1.6rem;
 	}
 </style>

@@ -17,15 +17,18 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.4.1(jiti@2.6.1))
+      '@firecms/neat':
+        specifier: ^0.9.0
+        version: 0.9.0
       '@fontsource-variable/noto-sans-tc':
         specifier: ^5.2.10
         version: 5.2.10
-      '@fontsource/caveat':
-        specifier: ^5.2.8
-        version: 5.2.8
-      '@fontsource/space-grotesk':
+      '@fontsource/roboto':
         specifier: ^5.2.10
         version: 5.2.10
+      '@fontsource/ubuntu':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@inlang/paraglide-js':
         specifier: ^2.10.0
         version: 2.13.2
@@ -92,6 +95,9 @@ importers:
       globals:
         specifier: ^17.6.0
         version: 17.6.0
+      gsap:
+        specifier: ^3.15.0
+        version: 3.15.0
       playwright:
         specifier: ^1.58.2
         version: 1.58.2
@@ -397,14 +403,17 @@ packages:
     resolution: {integrity: sha512-+CNAzxglkrpNf/kKywqQfk74QjtceuOE7Qm+AF8miRvPF/wmmK5+OJOgVh3AVTT3RP2mH3+FOaxlE5v72owk0A==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
+  '@firecms/neat@0.9.0':
+    resolution: {integrity: sha512-9TMY4Y9IV/S+ar05lRah5fz3XffqzK1nf/Zuf2V0lm29kM0jIyOqRVSyZtzTDbrZvF5GHnLvODyjR5SkEhkNrA==}
+
   '@fontsource-variable/noto-sans-tc@5.2.10':
     resolution: {integrity: sha512-COVssWiIp9VVfdGuHpbrcH8u9H5JK4Lm6U7oee2BD6aLwKzPshj49KGmmQe/r3Fcp4e4SSuCaqyN/BtDKxHOGQ==}
 
-  '@fontsource/caveat@5.2.8':
-    resolution: {integrity: sha512-9fUUfFE2IQFKbx+xOcaeQxxmh8iJguEb8z+j1PeueO4UUx+XfT4pRm/B04ZDvFA794/iRxY/IibmP8ZKtIf4rw==}
+  '@fontsource/roboto@5.2.10':
+    resolution: {integrity: sha512-8HlA5FtSfz//oFSr2eL7GFXAiE7eIkcGOtx7tjsLKq+as702x9+GU7K95iDeWFapHC4M2hv9RrpXKRTGGBI8Zg==}
 
-  '@fontsource/space-grotesk@5.2.10':
-    resolution: {integrity: sha512-XNXEbT74OIITPqw2H6HXwPDp85fy43uxfBwFR5PU+9sLnjuLj12KlhVM9nZVN6q6dlKjkuN8JisW/OBxwxgUew==}
+  '@fontsource/ubuntu@5.2.8':
+    resolution: {integrity: sha512-esSJCpgigwWOm4Ug9f7AMozUyBq5Iobea5C9QYsl2OlCb62wZABBUbXahHLdFv5Ru4lJCD9tUX6xEAeLwUTNBg==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -1790,6 +1799,9 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
+  gsap@3.15.0:
+    resolution: {integrity: sha512-dMW4CWBTUK1AEEDeZc1g4xpPGIrSf9fJF960qbTZmN/QwZIWY5wgliS6JWl9/25fpTGJrMRtSjGtOmPnfjZB+A==}
+
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
@@ -2835,11 +2847,13 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
+  '@firecms/neat@0.9.0': {}
+
   '@fontsource-variable/noto-sans-tc@5.2.10': {}
 
-  '@fontsource/caveat@5.2.8': {}
+  '@fontsource/roboto@5.2.10': {}
 
-  '@fontsource/space-grotesk@5.2.10': {}
+  '@fontsource/ubuntu@5.2.8': {}
 
   '@humanfs/core@0.19.1': {}
 
@@ -4128,6 +4142,8 @@ snapshots:
   globals@17.6.0: {}
 
   graceful-fs@4.2.11: {}
+
+  gsap@3.15.0: {}
 
   has-flag@4.0.0: {}
 

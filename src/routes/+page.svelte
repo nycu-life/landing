@@ -1,8 +1,29 @@
 <script lang="ts">
-	import { appHero, pageMeta } from '$lib/content/landing';
-	import Aurora from '$lib/components/glass/Aurora.svelte';
-	import Eyebrow from '$lib/components/glass/Eyebrow.svelte';
-	import OrbitWheel from '$lib/components/landing/OrbitWheel.svelte';
+	import { onMount } from 'svelte';
+	import { pageMeta } from '$lib/content/landing';
+	import { vividOverride } from '$lib/stores/backdrop';
+	import HomeHero from '$lib/components/landing/HomeHero.svelte';
+	import StoryChapters from '$lib/components/landing/StoryChapters.svelte';
+
+	// Mobile: the hero IS the page (app-style; destinations live behind the
+	// burger). Desktop (≥64rem): the hero opens a storytelling scroll — the
+	// chapters render below and the persistent WebGL backdrop crossfades to
+	// the vivid palette once the hero scrolls away.
+	let heroEl: HTMLElement;
+
+	onMount(() => {
+		const observer = new IntersectionObserver(
+			([entry]) => {
+				vividOverride.set(entry.intersectionRatio < 0.35);
+			},
+			{ threshold: [0, 0.35, 0.7, 1] }
+		);
+		observer.observe(heroEl);
+		return () => {
+			observer.disconnect();
+			vividOverride.set(false);
+		};
+	});
 </script>
 
 <svelte:head>
@@ -10,86 +31,13 @@
 	<meta name="description" content={pageMeta.description()} />
 </svelte:head>
 
-<Aurora tint="violet" />
-
-<div class="page home">
-	<section class="home-hero">
-		<Eyebrow left={appHero.kickerLeft()} right="{appHero.kickerRight()} ——" />
-		<h1 class="home-title">
-			<span class="home-title-line">{appHero.line1()}</span>
-			<span class="home-title-accent grad-text">{appHero.accent()}</span>
-			<span class="home-title-line">{appHero.line3()}</span>
-		</h1>
-		<p class="home-lede">{appHero.lede()}</p>
-	</section>
-
-	<div class="home-wheel">
-		<OrbitWheel />
-	</div>
-
-	<div class="home-cues">
-		<span>DRAG THE WHEEL ↻</span>
-		<span>4 / 8</span>
-	</div>
+<div class="home-hero-slot" bind:this={heroEl}>
+	<HomeHero />
 </div>
+<StoryChapters />
 
 <style>
-	.home {
-		display: flex;
-		flex-direction: column;
-		min-height: calc(100svh - 5rem);
-		padding-bottom: 1.5rem;
-	}
-
-	.home-hero {
-		display: grid;
-		gap: 1.1rem;
-		max-width: 40rem;
-		padding-top: clamp(0.5rem, 3vw, 1.5rem);
-	}
-	.home-title {
-		margin: 0;
-		font-family: var(--font-display);
-		font-weight: 700;
-		font-size: clamp(2.7rem, 12vw, 5.5rem);
-		line-height: 0.92;
-		letter-spacing: -0.045em;
-		color: var(--ink);
-		display: grid;
-	}
-	.home-title-accent {
-		font-style: italic;
-		font-weight: 500;
-	}
-	.home-lede {
-		margin: 0.3rem 0 0;
-		max-width: 30rem;
-		font-size: clamp(1rem, 1.6vw, 1.18rem);
-		line-height: 1.7;
-		color: var(--ink-soft);
-	}
-
-	.home-wheel {
-		position: relative;
-		flex: 1;
-		min-height: 300px;
-		overflow: hidden;
-	}
-
-	.home-cues {
-		display: flex;
-		justify-content: space-between;
-		font-family: var(--font-display);
-		font-size: 0.66rem;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
-		color: var(--muted);
-		font-weight: 600;
-	}
-
-	@media (min-width: 768px) {
-		.home-hero {
-			max-width: 48rem;
-		}
+	.home-hero-slot {
+		height: 100%;
 	}
 </style>
