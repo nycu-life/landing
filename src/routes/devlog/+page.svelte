@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import PageShell from '$lib/components/landing/PageShell.svelte';
 
 	const stories = [
@@ -53,7 +54,7 @@
 					<p>{item[0]}</p>
 					<h3>{item[1]}</h3>
 					<span>記錄這次迭代後的問題與選擇。</span>
-					<a href="/devlog/">READ MORE ↗</a>
+					<a href="{base}/devlog/">READ MORE ↗</a>
 				</article>
 			{/each}
 		</div>
