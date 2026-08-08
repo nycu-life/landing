@@ -55,15 +55,13 @@
 	}
 	.folder {
 		position: relative;
-		background: var(--glass-strong);
+		background: rgba(255, 255, 255, 0.92);
 		backdrop-filter: var(--blur);
 		-webkit-backdrop-filter: var(--blur);
 		border: 1px solid var(--line);
 		border-bottom: none;
 		border-radius: 22px 22px 0 0;
-		box-shadow:
-			0 -8px 28px rgba(2, 5, 20, 0.45),
-			inset 0 1px 0 rgba(255, 255, 255, 0.14);
+		box-shadow: var(--shadow);
 		overflow: hidden;
 	}
 	.folder:not(:first-child) {
@@ -134,7 +132,7 @@
 		height: 38px;
 		border-radius: 50%;
 		border: 1px solid var(--line);
-		background: var(--glass);
+		background: var(--surface-2);
 		color: var(--ink);
 		flex-shrink: 0;
 		transition:
@@ -144,8 +142,8 @@
 	}
 	.folder-chevron.open {
 		transform: rotate(180deg);
-		background: var(--accent);
-		color: #0c1230;
+		background: var(--brand);
+		color: #fff;
 	}
 	.folder-body {
 		display: grid;

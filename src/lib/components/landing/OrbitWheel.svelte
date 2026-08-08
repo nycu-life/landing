@@ -8,8 +8,8 @@
 	type Tile = { kind: 'coz' | 'bus' | 'life' | 'blank'; active?: boolean };
 	const tiles: Tile[] = [
 		{ kind: 'coz' },
-		{ kind: 'blank' },
 		{ kind: 'bus' },
+		{ kind: 'life' },
 		{ kind: 'blank' },
 		{ kind: 'life', active: true },
 		{ kind: 'blank' },
@@ -78,7 +78,7 @@
 					{:else if tile.kind === 'bus'}
 						<span class="orbit-bus">BUS</span>
 					{:else if tile.kind === 'life'}
-						<FoxMark size={tile.active ? 52 : 40} />
+						<FoxMark size={tile.active ? 52 : 40} light />
 					{/if}
 				</div>
 			</div>
@@ -105,7 +105,7 @@
 		height: 460px;
 		margin-left: -230px;
 		border-radius: 50%;
-		border: 1px dashed var(--line-strong);
+		border: 1px dashed rgba(47, 96, 218, 0.2);
 	}
 	.orbit-pos {
 		position: absolute;
@@ -116,13 +116,13 @@
 		width: 72px;
 		height: 72px;
 		border-radius: 22px;
-		background: var(--glass);
+		background: rgba(255, 255, 255, 0.72);
 		backdrop-filter: var(--blur);
 		-webkit-backdrop-filter: var(--blur);
-		border: 1px solid var(--line);
+		border: 1px solid rgba(20, 30, 60, 0.05);
 		box-shadow:
-			var(--shadow),
-			inset 0 1px 0 rgba(255, 255, 255, 0.16);
+			0 6px 16px rgba(20, 30, 60, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.8);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -131,28 +131,24 @@
 	.orbit-tile.active {
 		width: 92px;
 		height: 92px;
-		background: var(--glass-strong);
+		background: #fff;
 		box-shadow:
-			var(--glow),
-			var(--shadow),
-			inset 0 1px 0 rgba(255, 255, 255, 0.16);
+			0 16px 34px rgba(47, 96, 218, 0.2),
+			inset 0 1px 0 rgba(255, 255, 255, 0.8);
 	}
 	.orbit-coz {
 		font-family: var(--font-hand);
 		font-style: italic;
 		font-weight: 700;
 		font-size: 1.5rem;
-		background: var(--accent-grad);
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
-		color: transparent;
+		color: #2f60da;
 	}
 	.orbit-bus {
 		font-family: var(--font-display);
 		font-weight: 800;
 		font-size: 0.82rem;
 		letter-spacing: 0.16em;
+		color: #2f60da;
 	}
 
 	@media (min-width: 768px) {

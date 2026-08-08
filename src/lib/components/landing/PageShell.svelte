@@ -20,7 +20,7 @@
 	<meta name="description" content={item.desc()} />
 </svelte:head>
 
-<Aurora {tint} />
+<Aurora {tint} light />
 
 <div class="page">
 	<header class="page-head">
@@ -35,9 +35,22 @@
 </div>
 
 <style>
-	/* Accent half of the page title — italic gradient, matching the hero. */
+	/* Destination headings stay solid in the prototype; colour belongs to the field, not the text. */
 	.page-title :global(.grad-text) {
-		font-style: italic;
+		font-style: normal;
+		font-weight: 600;
+		background: none;
+		-webkit-text-fill-color: currentColor;
+		color: var(--ink);
+	}
+	.page-title {
+		font-family: var(--font-sans);
 		font-weight: 500;
+		letter-spacing: -0.03em;
+	}
+	.page-lede {
+		max-width: 34rem;
+		font-size: 0.95rem;
+		color: var(--ink-soft);
 	}
 </style>

@@ -2,9 +2,10 @@
 	import { getLocale, setLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 
-	let { tone = 'glass' }: { tone?: 'glass' | 'menu' } = $props();
+	let { tone = 'glass', compact = false }: { tone?: 'glass' | 'menu'; compact?: boolean } =
+		$props();
 
-	const current = getLocale();
+	let current = $state(getLocale());
 	const options = [
 		{ code: 'zh-tw' as const, short: m.nav_locale_zh() },
 		{ code: 'en' as const, short: m.nav_locale_en() }
@@ -12,17 +13,34 @@
 </script>
 
 <div class="locale" class:menu={tone === 'menu'} role="group" aria-label={m.nav_locale()}>
-	{#each options as option (option.code)}
+	{#if compact}
 		<button
 			type="button"
-			class="locale-btn"
-			class:active={option.code === current}
-			aria-pressed={option.code === current}
-			onclick={() => setLocale(option.code)}
+			class="locale-btn locale-compact"
+			aria-label={m.nav_locale()}
+			onclick={() => {
+				current = current === 'zh-tw' ? 'en' : 'zh-tw';
+				setLocale(current);
+			}}
 		>
-			{option.short}
+			文A
 		</button>
-	{/each}
+	{:else}
+		{#each options as option (option.code)}
+			<button
+				type="button"
+				class="locale-btn"
+				class:active={option.code === current}
+				aria-pressed={option.code === current}
+				onclick={() => {
+					current = option.code;
+					setLocale(option.code);
+				}}
+			>
+				{option.short}
+			</button>
+		{/each}
+	{/if}
 </div>
 
 <style>
@@ -58,5 +76,14 @@
 	.locale-btn.active {
 		background: var(--accent-grad);
 		color: #0c1230;
+	}
+	.locale-compact {
+		width: 2.5rem;
+		height: 2.5rem;
+		padding: 0;
+		border-radius: 50%;
+		background: var(--surface);
+		color: var(--ink);
+		font-size: 0.85rem;
 	}
 </style>

@@ -7,7 +7,7 @@
 
 	// Abstract cover gradient by status (no fabricated photos).
 	const cover: Record<string, string> = {
-		done: 'linear-gradient(135deg, #2455a8 0%, #38c6f4 100%)',
+		done: 'linear-gradient(135deg, #1399e1 0%, #64c5f3 100%)',
 		soon: 'linear-gradient(135deg, #7a4bd0 0%, #fbbf24 120%)',
 		dev: 'linear-gradient(135deg, #2e2a6e 0%, #8b6bff 100%)'
 	};
@@ -53,7 +53,7 @@
 		bottom: 0.85rem;
 		padding: 0.25rem 0.7rem;
 		border-radius: 999px;
-		background: rgba(8, 11, 26, 0.5);
+		background: rgba(255, 255, 255, 0.88);
 		backdrop-filter: blur(8px);
 		-webkit-backdrop-filter: blur(8px);
 		border: 1px solid rgba(255, 255, 255, 0.18);
@@ -61,7 +61,7 @@
 		font-size: 0.66rem;
 		letter-spacing: 0.08em;
 		font-weight: 600;
-		color: #fff;
+		color: var(--brand);
 	}
 	.devcard-body {
 		padding: clamp(1rem, 3vw, 1.4rem);

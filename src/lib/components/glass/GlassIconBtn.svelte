@@ -6,12 +6,14 @@
 		onclick,
 		label,
 		size = 44,
+		light = false,
 		children,
 		...rest
 	}: {
 		onclick?: (e: MouseEvent) => void;
 		label: string;
 		size?: number;
+		light?: boolean;
 		children?: Snippet;
 		[key: string]: unknown;
 	} = $props();
@@ -20,6 +22,7 @@
 <button
 	type="button"
 	class="glass-icon-btn glass glass-strong"
+	class:light
 	{onclick}
 	aria-label={label}
 	style="width:{size}px;height:{size}px;border-radius:{size / 2}px;"
@@ -44,5 +47,16 @@
 	.glass-icon-btn:hover {
 		transform: translateY(-1px);
 		box-shadow: var(--glow), var(--shadow);
+	}
+	.glass-icon-btn.light {
+		color: #1a2350;
+		background: rgba(255, 255, 255, 0.72);
+		border-color: rgba(20, 30, 60, 0.08);
+		box-shadow:
+			0 6px 16px rgba(20, 30, 60, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.6);
+	}
+	.glass-icon-btn.light:hover {
+		background: rgba(255, 255, 255, 0.92);
 	}
 </style>

@@ -1,7 +1,17 @@
 <script lang="ts">
+	import { base } from '$app/paths';
+
 	// A rounded gradient tile holding a per-product glyph. Only the four real
 	// products have artwork; everything here maps to a shipped/known product.
-	let { kind, size = 56 }: { kind: 'bus' | 'coz' | 'activity' | 'map'; size?: number } = $props();
+	let {
+		kind,
+		size = 56,
+		variant = 'solid'
+	}: {
+		kind: 'bus' | 'coz' | 'activity' | 'map';
+		size?: number;
+		variant?: 'solid' | 'soft';
+	} = $props();
 
 	const grad: Record<string, string> = {
 		bus: 'linear-gradient(150deg, #2E8FE0, #1E5FB8)',
@@ -9,34 +19,32 @@
 		activity: 'linear-gradient(150deg, #FBBF24, #F97316)',
 		map: 'linear-gradient(150deg, #38C6F4, #2E8FE0)'
 	};
+	const softGrad: Record<string, string> = {
+		bus: 'linear-gradient(150deg, #dfe9ff, #edf3ff)',
+		coz: 'linear-gradient(150deg, #e5f2d7, #f2f8e8)',
+		activity: 'linear-gradient(150deg, #faedc7, #fff6df)',
+		map: 'linear-gradient(150deg, #e1e9fc, #f0f4ff)'
+	};
 </script>
 
 <div
 	class="picon"
-	style="width:{size}px;height:{size}px;border-radius:{size > 70 ? 22 : 15}px;background:{grad[
-		kind
-	]};"
+	class:soft={variant === 'soft'}
+	style="width:{size}px;height:{size}px;border-radius:{size > 70
+		? 22
+		: 15}px;background:{variant === 'soft' ? softGrad[kind] : grad[kind]};"
 >
 	{#if kind === 'bus'}
-		<svg
-			width={size * 0.5}
-			height={size * 0.5}
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="#fff"
-			stroke-width="1.8"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			aria-hidden="true"
-		>
-			<path d="M4 17h16M4 7h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1z" />
-			<rect x="6" y="8" width="5" height="6" rx="0.5" />
-			<rect x="13" y="8" width="5" height="6" rx="0.5" />
-			<circle cx="8" cy="20" r="1.5" />
-			<circle cx="16" cy="20" r="1.5" />
-		</svg>
+		<img
+			class="product-mark"
+			class:soft-mark={variant === 'soft'}
+			src="{base}/brand/logo-bus.svg"
+			alt=""
+		/>
 	{:else if kind === 'coz'}
-		<span class="picon-coz" style="font-size:{size * 0.5}px;">Coz</span>
+		<span class="picon-coz" class:soft-text={variant === 'soft'} style="font-size:{size * 0.5}px;"
+			>Coz</span
+		>
 	{:else if kind === 'activity'}
 		<svg
 			width={size * 0.52}
@@ -83,6 +91,15 @@
 			inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 		flex-shrink: 0;
 	}
+	.product-mark {
+		width: 62%;
+		height: 62%;
+		object-fit: contain;
+		filter: brightness(0) invert(1);
+	}
+	.soft-mark {
+		filter: none;
+	}
 	.picon-coz {
 		font-family: var(--font-hand);
 		font-weight: 700;
@@ -90,5 +107,8 @@
 		color: #fff;
 		line-height: 1;
 		letter-spacing: -0.02em;
+	}
+	.soft-text {
+		color: #4f39bb;
 	}
 </style>

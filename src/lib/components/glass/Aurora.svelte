@@ -4,7 +4,7 @@
 	// sections. Each page picks a `tint` to shift the palette for variety.
 	export type AuroraTint = 'violet' | 'cyan' | 'magenta' | 'blue';
 
-	let { tint = 'violet' }: { tint?: AuroraTint } = $props();
+	let { tint = 'violet', light = false }: { tint?: AuroraTint; light?: boolean } = $props();
 
 	const tints: Record<AuroraTint, [string, string, string]> = {
 		violet: ['rgba(140,108,255,0.70)', 'rgba(45,220,245,0.52)', 'rgba(92,118,255,0.58)'],
@@ -19,7 +19,7 @@
 	});
 </script>
 
-<div class="aurora" aria-hidden="true">
+<div class="aurora" class:light aria-hidden="true">
 	<div
 		class="nl-blob aurora-a"
 		style="background: radial-gradient(circle at 50% 50%, {blobs[0]} 0%, transparent 66%)"
@@ -44,6 +44,22 @@
 		background: var(--base);
 		z-index: 0;
 		pointer-events: none;
+	}
+	.aurora.light {
+		background: #f4f6fb;
+	}
+	.aurora.light .nl-blob {
+		opacity: 0.26;
+		filter: blur(58px);
+	}
+	.aurora.light .aurora-sheen {
+		background:
+			radial-gradient(120% 70% at 50% -8%, rgba(255, 255, 255, 0.48) 0%, transparent 52%),
+			linear-gradient(180deg, rgba(237, 240, 245, 0.3), rgba(237, 240, 245, 0.58));
+	}
+	.aurora.light .aurora-grain {
+		opacity: 0.02;
+		mix-blend-mode: multiply;
 	}
 
 	.aurora-a {

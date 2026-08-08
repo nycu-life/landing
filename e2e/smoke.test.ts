@@ -8,3 +8,23 @@ test('home page renders the NYCU LIFE hero', async ({ page }) => {
 
 	await expect(page.getByRole('heading', { level: 1, name: /NYCU LIFE/i })).toBeVisible();
 });
+
+test('theme toggle persists and mobile navigation stays usable', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/');
+
+	await expect(page.locator('.topbar-nav')).toBeHidden();
+	await page.getByRole('button', { name: '切換至深色模式' }).click();
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await expect(page.locator('.topbar-brand img').first()).toHaveAttribute(
+		'src',
+		/logo-white\.svg$/
+	);
+
+	await page.reload();
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await page.getByRole('button', { name: '開啟選單' }).click();
+	await expect(page.locator('.menu.open')).toBeVisible();
+	await expect(page).toHaveURL(/\/$/);
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});

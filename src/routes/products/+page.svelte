@@ -42,20 +42,23 @@
 		padding: 0;
 		display: grid;
 		/* 2-up on phones (like the prototype), more as the screen widens. */
-		grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-		gap: clamp(0.7rem, 2vw, 1rem);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: clamp(0.9rem, 2.4vw, 1.5rem);
 	}
 	.ptile {
 		width: 100%;
-		min-height: 11.5rem;
+		min-height: 15rem;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 0.85rem;
-		padding: clamp(1rem, 2.6vw, 1.35rem);
+		gap: 1rem;
+		padding: clamp(1.2rem, 2.8vw, 1.75rem);
 		color: var(--ink);
 		text-align: left;
 		cursor: pointer;
+		border: 1px solid var(--line);
+		background: color-mix(in srgb, var(--surface) 92%, transparent);
+		box-shadow: var(--shadow);
 		transition:
 			transform 0.18s var(--ease-out),
 			box-shadow 0.25s ease,
@@ -63,7 +66,7 @@
 	}
 	.ptile:hover {
 		transform: translateY(-3px);
-		border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+		border-color: var(--brand);
 		box-shadow: var(--glow), var(--shadow);
 	}
 	.ptile-text {
@@ -72,8 +75,8 @@
 		min-width: 0;
 	}
 	.ptile-name {
-		font-size: 1.05rem;
-		font-weight: 700;
+		font-size: 1.15rem;
+		font-weight: 600;
 		letter-spacing: -0.015em;
 	}
 	.ptile-latin {
@@ -90,7 +93,7 @@
 		margin-top: auto;
 		font-size: 0.76rem;
 		font-weight: 600;
-		color: var(--ink-soft);
+		color: var(--brand-ink);
 	}
 	.ptile-dot {
 		width: 0.45rem;
@@ -107,5 +110,10 @@
 	}
 	.ptile-dot-dev {
 		background: var(--muted);
+	}
+	@media (min-width: 720px) {
+		.product-grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
 	}
 </style>

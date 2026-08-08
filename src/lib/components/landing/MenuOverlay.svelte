@@ -93,8 +93,8 @@
 	.menu-panel-fill {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(160deg, rgba(54, 40, 112, 0.95) 0%, rgba(24, 28, 68, 0.97) 100%);
-		backdrop-filter: blur(30px) saturate(170%);
+		background: rgba(15, 23, 42, 0.86);
+		backdrop-filter: blur(32px) saturate(200%);
 		-webkit-backdrop-filter: blur(30px) saturate(170%);
 	}
 	.menu-blob-a {
@@ -102,7 +102,7 @@
 		height: 440px;
 		top: -12%;
 		right: -18%;
-		background: radial-gradient(circle at 50% 50%, rgba(150, 118, 255, 0.85) 0%, transparent 64%);
+		background: radial-gradient(circle at 50% 50%, rgba(109, 155, 255, 0.55) 0%, transparent 64%);
 		animation-duration: 28s;
 	}
 	.menu-blob-b {
@@ -110,7 +110,7 @@
 		height: 400px;
 		bottom: -16%;
 		left: -14%;
-		background: radial-gradient(circle at 50% 50%, rgba(45, 220, 245, 0.62) 0%, transparent 66%);
+		background: radial-gradient(circle at 50% 50%, rgba(80, 110, 230, 0.42) 0%, transparent 66%);
 		animation-duration: 34s;
 		animation-delay: -10s;
 	}
@@ -120,7 +120,7 @@
 		inset: 0;
 		display: flex;
 		flex-direction: column;
-		padding: clamp(6rem, 14vh, 9rem) var(--gutter) 2.5rem;
+		padding: clamp(7rem, 14vh, 9rem) var(--gutter) 2.5rem;
 		max-width: var(--shell);
 		margin-inline: auto;
 		overflow: auto;
@@ -181,8 +181,8 @@
 	.menu-row-label {
 		flex: 1;
 		font-family: var(--font-sans);
-		font-size: clamp(1.9rem, 6vw, 3rem);
-		font-weight: 500;
+		font-size: clamp(1.9rem, 6vw, 2.5rem);
+		font-weight: 400;
 		line-height: 1;
 		letter-spacing: -0.03em;
 	}

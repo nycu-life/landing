@@ -105,7 +105,7 @@
 		position: fixed;
 		inset: 0;
 		z-index: 120;
-		background: rgba(2, 5, 20, 0.55);
+		background: rgba(17, 24, 39, 0.38);
 		backdrop-filter: blur(2px);
 		-webkit-backdrop-filter: blur(2px);
 	}
@@ -118,11 +118,11 @@
 		width: min(28rem, 92vw);
 		display: flex;
 		flex-direction: column;
-		background: rgba(10, 13, 30, 0.86);
+		background: rgba(255, 255, 255, 0.96);
 		backdrop-filter: blur(28px) saturate(160%);
 		-webkit-backdrop-filter: blur(28px) saturate(160%);
-		border-left: 1px solid var(--line-strong);
-		box-shadow: -30px 0 60px rgba(2, 5, 20, 0.5);
+		border-left: 1px solid var(--line);
+		box-shadow: -30px 0 60px rgba(55, 65, 81, 0.16);
 	}
 	.drawer-close {
 		position: absolute;

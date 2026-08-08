@@ -26,7 +26,7 @@ export const aboutFolders: AboutFolder[] = [
 		num: '01',
 		title: m.about_folder_timeline_title,
 		latin: m.about_folder_timeline_latin,
-		accent: '#8B6BFF',
+		accent: '#2F60DA',
 		state: 'soon'
 	},
 	{
@@ -34,7 +34,7 @@ export const aboutFolders: AboutFolder[] = [
 		num: '02',
 		title: m.about_folder_teams_title,
 		latin: m.about_folder_teams_latin,
-		accent: '#38C6F4',
+		accent: '#527AE0',
 		state: 'ready'
 	},
 	{
@@ -42,7 +42,7 @@ export const aboutFolders: AboutFolder[] = [
 		num: '03',
 		title: m.about_folder_faq_title,
 		latin: m.about_folder_faq_latin,
-		accent: '#6D7BFF',
+		accent: '#A3E052',
 		state: 'soon'
 	},
 	{
@@ -50,7 +50,7 @@ export const aboutFolders: AboutFolder[] = [
 		num: '04',
 		title: m.about_folder_contact_title,
 		latin: m.about_folder_contact_latin,
-		accent: '#B66BFF',
+		accent: '#E5B54D',
 		state: 'ready'
 	}
 ];

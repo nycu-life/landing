@@ -27,7 +27,7 @@
 		width: 0.6rem;
 		height: 0.6rem;
 		border-radius: 50%;
-		background: var(--accent-grad);
+		background: var(--brand);
 		box-shadow: 0 0 12px var(--accent);
 		margin-bottom: 0.4rem;
 	}

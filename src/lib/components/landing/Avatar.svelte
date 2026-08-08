@@ -15,8 +15,16 @@
 	// `photo` (repo path or full URL) overrides it. The image is probed on the
 	// CLIENT only so prerender never links to a not-yet-uploaded file (it just
 	// emits the initials avatar); when the photo loads we swap it in.
+	// Only probe files that are actually part of this static build. Missing
+	// optional avatars should render initials without generating noisy 404s.
 	const candidate = $derived(
-		photo ? (photo.startsWith('http') ? photo : base + photo) : `${base}/team/${slug}.jpg`
+		photo?.startsWith('http')
+			? photo
+			: photo
+				? base + photo
+				: slug === 'jacoblin'
+					? `${base}/team/${slug}.jpg`
+					: ''
 	);
 	let resolved = $state('');
 
