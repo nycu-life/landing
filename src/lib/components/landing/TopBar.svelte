@@ -21,14 +21,15 @@
 	} = $props();
 
 	const themeLabel = () => (darkMode ? '切換至淺色模式' : '切換至深色模式');
-	const logoSrc = $derived(`${base}/brand/${darkMode ? 'logo-white.svg' : 'logo.svg'}`);
+	const logoSrc = $derived(
+		`${base}/brand/${darkMode ? 'logo-horizontal-white.svg' : 'logo-horizontal-blue.svg'}`
+	);
 </script>
 
 <header class="topbar" class:subpage={!home} class:menu-open={menuOpen}>
 	{#if home}
 		<a class="topbar-brand" href="{base}/" aria-label={m.menu_home()}>
-			<img src={logoSrc} alt="" />
-			<span>NYCU LIFE</span>
+			<img src={logoSrc} alt="NYCU LIFE" />
 		</a>
 		<nav class="topbar-nav" aria-label="主要導覽">
 			<a href="#products">所有產品</a>
@@ -83,8 +84,7 @@
 			</svg>
 		</GlassIconBtn>
 		<a class="topbar-brand topbar-brand-center" href="{base}/" aria-label={m.menu_home()}>
-			<img src={logoSrc} alt="" />
-			<span>NYCU LIFE</span>
+			<img src={logoSrc} alt="NYCU LIFE" />
 		</a>
 	{/if}
 	{#if !home}
@@ -150,14 +150,9 @@
 		color: var(--ink);
 	}
 	.topbar-brand img {
-		width: 2.25rem;
-		height: 2.25rem;
+		width: clamp(8rem, 14vw, 10.5rem);
+		height: auto;
 		display: block;
-	}
-	.topbar-brand span {
-		font: 700 1.05rem var(--font-display);
-		color: var(--brand);
-		letter-spacing: -0.02em;
 	}
 	.topbar-brand-center {
 		justify-self: center;
@@ -231,18 +226,11 @@
 		.topbar {
 			gap: 0.5rem;
 		}
-		.topbar-brand span {
-			display: none;
-		}
-		.topbar-brand-center span {
-			display: inline;
+		.topbar-brand img {
+			width: 8rem;
 		}
 	}
 	.topbar.subpage .topbar-brand img {
-		width: 1.8rem;
-		height: 1.8rem;
-	}
-	.topbar.subpage .topbar-brand span {
-		font-size: 0.95rem;
+		width: 8.5rem;
 	}
 </style>
