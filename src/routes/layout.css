@@ -64,8 +64,6 @@
 	);
 	--hero-start: #e5ebfa;
 	--hero-end: #c9d8fb;
-	--hero-badge: rgba(180, 201, 255, 0.42);
-	--hero-badge-ink: #175cb6;
 	--hero-accent: #2458db;
 	--section-alt: #f0f2f7;
 	--course-start: #3f76e7;
@@ -131,8 +129,6 @@
 	--accent-grad-soft: linear-gradient(135deg, rgba(121, 164, 255, 0.24), rgba(54, 104, 220, 0.2));
 	--hero-start: #172b53;
 	--hero-end: #0d1a33;
-	--hero-badge: rgba(121, 164, 255, 0.18);
-	--hero-badge-ink: #c1d5ff;
 	--hero-accent: #9fc0ff;
 	--section-alt: #101b2e;
 	--course-start: #2458b8;

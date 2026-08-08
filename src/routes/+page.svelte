@@ -79,7 +79,6 @@
 	<section class="marketing-hero" aria-labelledby="hero-title">
 		<div class="hero-inner">
 			<div class="hero-copy">
-				<div class="hero-badge"><span></span>由陽明交大學生打造</div>
 				<h1 id="hero-title">Debug your<br /><em>NYCU LIFE</em><br />problems</h1>
 				<p>校園生活 交給我們 Debug</p>
 				<div class="hero-stats">
@@ -252,24 +251,6 @@
 	.hero-copy {
 		position: relative;
 		z-index: 1;
-	}
-	.hero-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.45rem 0.9rem;
-		border-radius: 999px;
-		background: var(--hero-badge);
-		color: var(--hero-badge-ink);
-		font-family: var(--font-display);
-		font-size: 0.72rem;
-		letter-spacing: 0.08em;
-	}
-	.hero-badge span {
-		width: 0.45rem;
-		height: 0.45rem;
-		border-radius: 50%;
-		background: var(--lime);
 	}
 	.hero-copy h1 {
 		margin: 1.5rem 0 0;
