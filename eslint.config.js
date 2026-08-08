@@ -43,8 +43,8 @@ export default defineConfig(
 	{
 		// This site intentionally navigates with base-prefixed links
 		// (`{base}/products/`, `{base}/team/<slug>/`) rather than resolve(), so the
-		// same markup works under both the GitHub Pages base path and the
-		// container's root deploy. Disable the resolve() requirement here.
+		// same markup works under optional sub-path previews and the container's
+		// root deploy. Disable the resolve() requirement here.
 		files: [
 			'src/lib/components/landing/**/*.svelte',
 			'src/lib/components/glass/**/*.svelte',

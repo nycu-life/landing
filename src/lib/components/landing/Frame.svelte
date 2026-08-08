@@ -18,7 +18,7 @@
 	}>();
 
 	// Callers pass root-absolute asset paths; resolve against the base path so
-	// the image also loads under a sub-path deployment (GitHub Pages).
+	// the image also loads under an optional sub-path preview.
 	const resolved = $derived(withBase(src));
 </script>
 

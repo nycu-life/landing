@@ -16,7 +16,7 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 # The image is served at its own domain root, so the SvelteKit base path stays
-# empty (SITE_BASE_PATH is only set for the GitHub Pages sub-path build).
+# empty.
 RUN pnpm run build
 
 FROM nginx:1.27-alpine AS runtime

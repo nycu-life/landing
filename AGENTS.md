@@ -1,8 +1,8 @@
 # AGENTS.md — NYCU LIFE Landing
 
 The official NYCU LIFE marketing site (`官網`). A **static** SvelteKit app —
-prerendered with `adapter-static` and served either from **GitHub Pages** or a
-**Docker/nginx** container. No backend, no runtime server.
+prerendered with `adapter-static` and served from a **Docker/nginx** container.
+No backend, no runtime server.
 
 ## Stack
 
@@ -54,11 +54,11 @@ editing here, match this repo's tokens; don't import the other system.
 
 ## Deploy
 
-- **GitHub Pages**: `deploy-pages.yml` builds on push to `main` with
-  `SITE_BASE_PATH=/<repo>` so assets resolve under the Pages sub-path.
-- **Docker**: `Dockerfile` builds the static output behind nginx for cluster
-  hosting. With no `SITE_BASE_PATH`, the site is served at root.
-- `svelte.config.js` reads `SITE_BASE_PATH` (must be empty or start with `/`).
+- **Production**: `.github/workflows/docker.yml` builds and pushes
+  `harbor.nycu.one/landing/web:latest`; ArgoCD deploys
+  `nycu-life/k8s-manifests/apps/landing/overlays/prod` to `nycu.life`.
+- **Docker**: `Dockerfile` serves the static output behind nginx at the root.
+- `svelte.config.js` reads `SITE_BASE_PATH` for optional sub-path previews.
 
 ## Gotchas
 
