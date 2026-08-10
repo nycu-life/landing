@@ -18,7 +18,7 @@ test('theme toggle persists and mobile navigation stays usable', async ({ page }
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 	await expect(page.locator('.topbar-brand img').first()).toHaveAttribute(
 		'src',
-		/logo-white\.svg$/
+		/logo-horizontal-white\.svg$/
 	);
 
 	await page.reload();

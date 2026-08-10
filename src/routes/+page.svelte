@@ -204,8 +204,7 @@
 			<div class="footer-main">
 				<div>
 					<div class="footer-brand">
-						<img src="{base}/brand/logo.svg" alt={m.brand_name()} /><strong>{m.brand_name()}</strong
-						>
+						<img src="{base}/brand/logo-horizontal-blue.svg" alt={m.brand_name()} />
 					</div>
 					<p>{m.footer_tagline()}</p>
 				</div>
@@ -696,18 +695,13 @@
 	.footer-brand {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
-		color: var(--brand);
 	}
 	.footer-brand img {
-		width: 2.25rem;
-		height: 2.25rem;
+		width: 10rem;
+		height: auto;
 	}
 	:global([data-theme='dark']) .footer-brand img {
 		filter: grayscale(1) brightness(0) invert(1);
-	}
-	.footer-brand strong {
-		font: 700 1.15rem var(--font-display);
 	}
 	.footer-main > div > p {
 		margin: 1rem 0 0;
