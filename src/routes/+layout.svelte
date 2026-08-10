@@ -7,6 +7,7 @@
 	import { base } from '$app/paths';
 	import TopBar from '$lib/components/landing/TopBar.svelte';
 	import MenuOverlay from '$lib/components/landing/MenuOverlay.svelte';
+	import { initAnalytics, trackCampaignVisit } from '$lib/analytics';
 
 	let { children } = $props();
 
@@ -41,6 +42,8 @@
 	// Close the menu after any navigation (links inside it trigger nav).
 	afterNavigate(() => {
 		menuOpen = false;
+		initAnalytics();
+		trackCampaignVisit();
 	});
 
 	// Cross-fade between routes via the View Transitions API. Skipped when the

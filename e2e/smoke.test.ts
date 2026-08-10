@@ -28,3 +28,11 @@ test('theme toggle persists and mobile navigation stays usable', async ({ page }
 	await expect(page).toHaveURL(/\/$/);
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
+
+test('language switcher stays in the navbar', async ({ page }) => {
+	await page.goto('/');
+
+	const navbar = page.getByRole('banner');
+	await expect(navbar.getByRole('group', { name: '語言' })).toBeVisible();
+	await expect(page.locator('footer').getByRole('group', { name: '語言' })).toHaveCount(0);
+});
