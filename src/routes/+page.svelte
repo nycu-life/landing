@@ -4,7 +4,6 @@
 	import FoxMark from '$lib/components/glass/FoxMark.svelte';
 	import ProductIcon from '$lib/components/landing/ProductIcon.svelte';
 	import Icon from '$lib/components/landing/Icon.svelte';
-	import LocaleSwitch from '$lib/components/landing/LocaleSwitch.svelte';
 	import { products, INSTAGRAM_URL, type Product } from '$lib/content/landing';
 
 	const productTags: Record<Product['id'], string> = {
@@ -75,7 +74,7 @@
 	<meta name="description" content={m.meta_description()} />
 </svelte:head>
 
-<main class="marketing-page">
+<div class="marketing-page">
 	<section class="marketing-hero" aria-labelledby="hero-title">
 		<div class="hero-inner">
 			<div class="hero-copy">
@@ -205,27 +204,28 @@
 			<div class="footer-main">
 				<div>
 					<div class="footer-brand">
-						<img src="{base}/brand/logo.svg" alt="NYCU LIFE" /><strong>NYCU LIFE</strong>
+						<img src="{base}/brand/logo.svg" alt={m.brand_name()} /><strong>{m.brand_name()}</strong
+						>
 					</div>
-					<p>一群陽明交大學生，讓你的校園生活更便利</p>
+					<p>{m.footer_tagline()}</p>
 				</div>
 				<div class="footer-columns">
 					<div>
-						<b>Explore</b><a href="#products">所有產品</a><a href="#about">認識我們</a><a
-							href="#courses">課程專區</a
-						><a href="#devlog">開發日誌</a>
+						<b>{m.footer_links_label()}</b><a href="#products">{m.nav_products()}</a><a
+							href="#about">{m.menu_about()}</a
+						><a href="#courses">{m.nav_courses()}</a><a href="#devlog">{m.nav_devlog()}</a>
 					</div>
 					<div>
-						<b>Contact</b><a href="mailto:hello@nycu.life">hello@nycu.life</a><LocaleSwitch />
+						<b>{m.menu_contact_label()}</b><a href="mailto:hello@nycu.life">hello@nycu.life</a>
 					</div>
 				</div>
 			</div>
 			<div class="footer-bottom">
-				<span>© 2026 NYCU LIFE</span><span>Designed to the NYCU LIFE UI Style Guide · v1.0</span>
+				<span>© 2026 {m.brand_name()}</span><span>{m.footer_rights()}</span>
 			</div>
 		</div>
 	</footer>
-</main>
+</div>
 
 <style>
 	.marketing-page {

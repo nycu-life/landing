@@ -30,15 +30,15 @@
 			<img src={logoSrc} alt="" />
 			<span>NYCU LIFE</span>
 		</a>
-		<nav class="topbar-nav" aria-label="主要導覽">
-			<a href="#products">所有產品</a>
-			<a href="#about">認識我們</a>
-			<a href="#courses">課程專區</a>
-			<a href="#devlog">開發日誌</a>
-			<a href="#join">加入我們</a>
+		<nav class="topbar-nav" aria-label={m.nav_aria()}>
+			<a href="#products">{m.nav_products()}</a>
+			<a href="#about">{m.menu_about()}</a>
+			<a href="#courses">{m.nav_courses()}</a>
+			<a href="#devlog">{m.nav_devlog()}</a>
+			<a href="#join">{m.nav_join()}</a>
 		</nav>
 		<div class="topbar-actions">
-			<LocaleSwitch compact />
+			<LocaleSwitch />
 			<button
 				class="theme-toggle"
 				type="button"
@@ -89,6 +89,7 @@
 	{/if}
 	{#if !home}
 		<div class="subpage-actions">
+			<LocaleSwitch />
 			<button
 				class="theme-toggle"
 				type="button"
