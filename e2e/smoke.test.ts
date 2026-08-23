@@ -28,6 +28,103 @@ test('scroll story reaches the product, FAQ, and join chapters', async ({ page }
 	await expect(collaborationQuestion).toHaveAttribute('aria-expanded', 'true');
 });
 
+test('scroll story keeps every chapter readable across viewport sizes', async ({ page }) => {
+	test.slow();
+
+	const viewports = [
+		{ width: 1920, height: 1080 },
+		{ width: 1440, height: 900 },
+		{ width: 1280, height: 720 },
+		{ width: 1024, height: 768 },
+		{ width: 768, height: 1024 },
+		{ width: 430, height: 932 },
+		{ width: 390, height: 844 },
+		{ width: 320, height: 568 }
+	];
+	const chapters = [
+		{ progress: 0, selector: '.story-hero-copy' },
+		{ progress: 0.21, selector: '.capsule' },
+		{ progress: 0.39, selector: '.about-card' },
+		{ progress: 0.55, selector: '.phone-rig' },
+		{ progress: 0.63, selector: '.product-course' },
+		{ progress: 0.8, selector: '.product-bus' },
+		{ progress: 0.87, selector: '.product-activity' },
+		{ progress: 0.925, selector: '.notebook' },
+		{ progress: 0.99, selector: '.join-folder' }
+	];
+
+	await page.goto('/');
+
+	for (const viewport of viewports) {
+		await page.setViewportSize(viewport);
+
+		for (const chapter of chapters) {
+			const result = await page
+				.locator('.scroll-story')
+				.evaluate(async (story, { progress, selector }) => {
+					const storyTop = story.getBoundingClientRect().top + window.scrollY;
+					document.documentElement.style.scrollBehavior = 'auto';
+					window.scrollTo(
+						0,
+						storyTop + (story.offsetHeight - window.innerHeight) * progress
+					);
+					await new Promise<void>((resolve) =>
+						requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+					);
+
+					const stage = story.querySelector<HTMLElement>('.story-stage');
+					const target = story.querySelector<HTMLElement>(selector);
+					if (!stage || !target) throw new Error(`Missing responsive story target: ${selector}`);
+
+					const stageRect = stage.getBoundingClientRect();
+					const targetRect = target.getBoundingClientRect();
+					const intersectionWidth = Math.max(
+						0,
+						Math.min(stageRect.right, targetRect.right) - Math.max(stageRect.left, targetRect.left)
+					);
+					const intersectionHeight = Math.max(
+						0,
+						Math.min(stageRect.bottom, targetRect.bottom) - Math.max(stageRect.top, targetRect.top)
+					);
+					const visibleRatio =
+						(intersectionWidth * intersectionHeight) /
+						Math.max(1, targetRect.width * targetRect.height);
+
+					let effectiveOpacity = 1;
+					for (
+						let element: HTMLElement | null = target;
+						element && element !== story;
+						element = element.parentElement
+					) {
+						effectiveOpacity *= Number.parseFloat(getComputedStyle(element).opacity);
+					}
+
+					return {
+						effectiveOpacity,
+						visibleRatio,
+						overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+					};
+				}, chapter);
+
+			expect
+				.soft(result.overflow, `${viewport.width}x${viewport.height} at ${chapter.progress}`)
+				.toBe(0);
+			expect
+				.soft(
+					result.visibleRatio,
+					`${chapter.selector} clipped at ${viewport.width}x${viewport.height}`
+				)
+				.toBeGreaterThanOrEqual(0.75);
+			expect
+				.soft(
+					result.effectiveOpacity,
+					`${chapter.selector} hidden at ${viewport.width}x${viewport.height}`
+				)
+				.toBeGreaterThanOrEqual(0.08);
+		}
+	}
+});
+
 test('theme toggle persists and mobile navigation stays usable', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');
