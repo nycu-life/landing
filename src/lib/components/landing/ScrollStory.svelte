@@ -91,9 +91,9 @@
 
 		<section
 			class="story-scene about-story"
-			class:scene-active={reducedMotion || (progress >= 0.3 && progress <= 0.51)}
+			class:scene-active={reducedMotion || (progress >= 0.29 && progress <= 0.5)}
 			aria-label={m.story_about_label()}
-			aria-hidden={!reducedMotion && (progress < 0.3 || progress > 0.51)}
+			aria-hidden={!reducedMotion && (progress < 0.29 || progress > 0.5)}
 		>
 			<article class="team-film">
 				<div><span aria-hidden="true">▶</span><small>{m.story_about_film()}</small></div>
@@ -109,9 +109,9 @@
 
 		<section
 			class="story-scene product-story"
-			class:scene-active={reducedMotion || (progress >= 0.43 && progress <= 0.9)}
+			class:scene-active={reducedMotion || (progress >= 0.465 && progress <= 0.915)}
 			aria-label={m.story_products_label()}
-			aria-hidden={!reducedMotion && (progress < 0.43 || progress > 0.9)}
+			aria-hidden={!reducedMotion && (progress < 0.465 || progress > 0.915)}
 		>
 			<article class="product-copy product-course">
 				<span>{m.story_product_1()}</span>
@@ -178,9 +178,9 @@
 
 		<section
 			class="story-scene faq-story"
-			class:scene-active={reducedMotion || (progress >= 0.86 && progress <= 0.96)}
+			class:scene-active={reducedMotion || (progress >= 0.885 && progress <= 0.975)}
 			aria-label={m.story_faq_label()}
-			aria-hidden={!reducedMotion && (progress < 0.86 || progress > 0.96)}
+			aria-hidden={!reducedMotion && (progress < 0.885 || progress > 0.975)}
 		>
 			<article class="faq-copy">
 				<span>{m.story_faq_eyebrow()}</span>
@@ -208,9 +208,9 @@
 
 		<section
 			class="story-scene join-story"
-			class:scene-active={reducedMotion || progress >= 0.94}
+			class:scene-active={reducedMotion || progress >= 0.955}
 			aria-label={m.story_join_label()}
-			aria-hidden={!reducedMotion && progress < 0.94}
+			aria-hidden={!reducedMotion && progress < 0.955}
 		>
 			<div class="join-folder">
 				<img src="{base}/story/designer/join-board.svg" alt={m.story_join_alt()} />
@@ -344,7 +344,7 @@
 		right: 1vw;
 		top: 1vh;
 		transform: translateY(calc(clamp(0, calc((var(--story-progress) - 0.08) * 12.5), 1) * -64vh));
-		opacity: clamp(0, calc((0.315 - var(--story-progress)) * 50), 1);
+		opacity: clamp(0, calc((0.195 - var(--story-progress)) * 40), 1);
 	}
 	.gacha-machine img {
 		position: absolute;
@@ -371,7 +371,7 @@
 		opacity: clamp(
 			0,
 			calc((var(--story-progress) - 0.15) * 50),
-			calc((0.315 - var(--story-progress)) * 50)
+			calc((0.325 - var(--story-progress)) * 50)
 		);
 		transform: translateY(calc(clamp(0, calc((var(--story-progress) - 0.16) * 14.3), 1) * 44vh))
 			rotate(calc(clamp(0, calc((var(--story-progress) - 0.16) * 14.3), 1) * 210deg));
@@ -408,10 +408,10 @@
 		z-index: 3;
 		opacity: clamp(
 			0,
-			calc((var(--story-progress) - 0.305) * 50),
-			calc((0.5 - var(--story-progress)) * 24)
+			calc((var(--story-progress) - 0.292) * 48),
+			calc((0.49 - var(--story-progress)) * 30)
 		);
-		transform: scale(calc(0.88 + clamp(0, calc((var(--story-progress) - 0.305) * 18), 1) * 0.12));
+		transform: scale(calc(0.9 + clamp(0, calc((var(--story-progress) - 0.292) * 20), 1) * 0.1));
 	}
 	.team-film,
 	.about-card {
@@ -427,12 +427,12 @@
 	}
 	.team-film {
 		left: 7vw;
-		transform: translateX(calc((0.3 - var(--story-progress)) * -70vw));
+		transform: translateX(calc((0.292 - var(--story-progress)) * -70vw));
 	}
 	.about-card {
 		right: 7vw;
 		padding: 3rem;
-		transform: translateX(calc((0.3 - var(--story-progress)) * 70vw));
+		transform: translateX(calc((0.292 - var(--story-progress)) * 70vw));
 	}
 	.team-film > div {
 		height: 31vh;
@@ -490,8 +490,8 @@
 	.product-story {
 		opacity: clamp(
 			0,
-			calc((var(--story-progress) - 0.43) * 18),
-			calc((0.895 - var(--story-progress)) * 40)
+			calc((var(--story-progress) - 0.47) * 30),
+			calc((0.915 - var(--story-progress)) * 50)
 		);
 	}
 	.phone-rig {
@@ -509,7 +509,7 @@
 						clamp(0, calc((var(--story-progress) - 0.805) * 16), 1) * 48vw
 				)
 			)
-			scale(calc(1.8 - clamp(0, calc((var(--story-progress) - 0.43) * 13), 1) * 1.12));
+			scale(calc(1.06 - clamp(0, calc((var(--story-progress) - 0.47) * 11), 1) * 0.34));
 		transform-origin: 52% 50%;
 	}
 	.phone-rig > img {
@@ -676,15 +676,15 @@
 		opacity: clamp(
 			0,
 			calc((var(--story-progress) - 0.72) * 20),
-			calc((0.82 - var(--story-progress)) * 24)
+			calc((0.84 - var(--story-progress)) * 36)
 		);
 		transform: translateX(calc((0.77 - var(--story-progress)) * 40vw));
 	}
 	.product-activity {
 		opacity: clamp(
 			0,
-			calc((var(--story-progress) - 0.805) * 28),
-			calc((0.9 - var(--story-progress)) * 28)
+			calc((var(--story-progress) - 0.81) * 32),
+			calc((0.91 - var(--story-progress)) * 50)
 		);
 		transform: translateX(calc((0.83 - var(--story-progress)) * -40vw));
 	}
@@ -710,8 +710,8 @@
 	.faq-story {
 		opacity: clamp(
 			0,
-			calc((var(--story-progress) - 0.865) * 30),
-			calc((0.95 - var(--story-progress)) * 25)
+			calc((var(--story-progress) - 0.895) * 45),
+			calc((0.97 - var(--story-progress)) * 50)
 		);
 	}
 	.faq-copy {
@@ -726,8 +726,8 @@
 		top: 9vh;
 		width: min(48vw, 41rem);
 		height: 82vh;
-		transform: translateX(calc((0.88 - var(--story-progress)) * 110vw))
-			rotate(calc((0.88 - var(--story-progress)) * 20deg));
+		transform: translateX(calc(clamp(0, calc((0.915 - var(--story-progress)) * 33.333), 1) * 110vw))
+			rotate(calc(clamp(0, calc((0.915 - var(--story-progress)) * 33.333), 1) * 12deg));
 		filter: drop-shadow(0 1.5rem 2rem rgba(24, 55, 98, 0.16));
 		overflow: hidden;
 	}
@@ -774,19 +774,20 @@
 		line-height: 1.55;
 	}
 	.join-story {
-		opacity: clamp(0, calc((var(--story-progress) - 0.94) * 35), 1);
+		opacity: clamp(0, calc((var(--story-progress) - 0.955) * 35), 1);
 		background: var(--section-alt);
 	}
 	.join-folder {
 		position: absolute;
 		left: 50%;
-		top: 3vh;
-		width: min(62vw, 49rem);
-		height: 94vh;
+		top: 50%;
+		width: min(58vw, 47rem);
+		height: min(88%, 52rem);
 		transform: translate(
-			-50%,
-			calc((1 - clamp(0, calc((var(--story-progress) - 0.94) * 18), 1)) * -105vh)
-		);
+				-50%,
+				calc(-50% + (1 - clamp(0, calc((var(--story-progress) - 0.955) * 50), 1)) * 55vh)
+			)
+			scale(calc(0.94 + clamp(0, calc((var(--story-progress) - 0.955) * 50), 1) * 0.06));
 		filter: drop-shadow(0 2rem 3.5rem rgba(25, 54, 100, 0.16));
 		overflow: hidden;
 	}
@@ -879,91 +880,108 @@
 			transform-origin: bottom;
 		}
 	}
-	@media (max-width: 760px) {
+	@media (max-width: 900px) {
 		.scroll-story {
 			height: 980vh;
 		}
 		.story-stage {
-			min-height: min(34rem, calc(100svh - 4.75rem));
+			min-height: 0;
 		}
 		.story-hero-copy {
-			left: 8vw;
-			top: 10vh;
-			width: 84vw;
+			left: 6vw;
+			top: clamp(2.5rem, 8svh, 5.5rem);
+			width: 88vw;
 			text-align: center;
 		}
 		.story-hero-copy h1 {
-			font-size: clamp(2.55rem, 11vw, 3.4rem);
+			font-size: clamp(2.15rem, 8.8vw, 3.4rem);
+			line-height: 1.02;
+		}
+		.story-hero-copy p {
+			margin-inline: auto;
 		}
 		.gacha-machine {
-			width: 110vw;
+			width: min(110vw, 50rem);
 			right: -5vw;
-			top: 55%;
-			height: 55vw;
+			top: auto;
+			bottom: 2%;
+			height: 52%;
 		}
 		.capsule {
-			width: 7rem;
-			height: 7rem;
-			left: calc(50% - 3.5rem);
+			width: clamp(6.5rem, 22vw, 9rem);
+			height: clamp(6.5rem, 22vw, 9rem);
+			left: 50%;
+			top: 15%;
+			margin-left: clamp(-4.5rem, -11vw, -3.25rem);
+		}
+		.about-story {
+			display: grid;
+			align-content: center;
+			gap: clamp(0.55rem, 2svh, 1.2rem);
+			padding: clamp(0.75rem, 3vw, 1.75rem) 7vw;
 		}
 		.team-film,
 		.about-card {
-			width: 84vw;
-			left: 8vw;
-			right: auto;
+			position: relative;
+			inset: auto;
+			width: 100%;
 			min-height: 0;
 		}
-		.team-film {
-			top: 10vh;
-		}
 		.about-card {
-			top: 57vh;
-			padding: 1.6rem;
+			padding: clamp(1.1rem, 4vw, 2rem);
 		}
 		.team-film > div {
-			height: 27vh;
+			height: clamp(8.5rem, 25svh, 17rem);
 		}
 		.about-card h2,
 		.product-copy h2,
 		.faq-copy h2,
 		.join-folder h2 {
-			font-size: 1.8rem;
+			font-size: clamp(1.45rem, 6.5vw, 1.9rem);
 		}
 		.about-card p,
 		.product-copy p,
 		.faq-copy p,
 		.join-folder p {
-			font-size: 0.82rem;
+			font-size: clamp(0.74rem, 2.4vw, 0.9rem);
+			line-height: 1.55;
 		}
 		.phone-rig {
-			width: 94vw;
+			width: min(92vw, 32rem);
 			top: 35%;
 			transform: translate(-50%, -50%)
-				scale(calc(1.35 - clamp(0, calc((var(--story-progress) - 0.43) * 13), 1) * 0.52));
+				scale(calc(0.98 - clamp(0, calc((var(--story-progress) - 0.47) * 11), 1) * 0.2));
 		}
 		.product-copy,
 		.product-bus,
 		.product-activity {
-			left: 8vw;
+			left: 6vw;
 			right: auto;
-			top: 59vh;
-			width: 84vw;
+			top: auto;
+			bottom: clamp(0.8rem, 4%, 2.5rem);
+			width: 88vw;
 			text-align: center;
 		}
 		.product-copy > div {
 			justify-content: center;
+			margin-top: clamp(0.8rem, 2svh, 1.3rem);
+		}
+		.product-copy a {
+			padding: 0.7rem 1rem;
+			font-size: clamp(0.78rem, 2.6vw, 0.92rem);
 		}
 		.faq-copy {
-			left: 8vw;
-			top: 10vh;
-			width: 84vw;
+			left: 6vw;
+			top: clamp(1.5rem, 7%, 4rem);
+			width: 88vw;
 			text-align: center;
 		}
 		.notebook {
 			right: 2vw;
-			top: 37vh;
+			top: auto;
+			bottom: 1%;
 			width: 96vw;
-			height: 61vh;
+			height: 58%;
 		}
 		.faq-list {
 			top: 18%;
@@ -974,14 +992,15 @@
 		}
 		.faq-item button {
 			padding: 0.35rem 0;
-			font-size: 0.62rem;
+			font-size: clamp(0.62rem, 1.8vw, 0.85rem);
 		}
 		.faq-item p {
-			font-size: 0.52rem;
+			font-size: clamp(0.52rem, 1.55vw, 0.68rem);
 			margin-bottom: 0.3rem;
 		}
 		.join-folder {
-			width: 108vw;
+			width: min(130vw, 58rem);
+			height: 88%;
 		}
 		.join-folder article {
 			left: 25%;
@@ -989,10 +1008,96 @@
 			top: 49%;
 		}
 		.join-folder h2 {
-			font-size: 1.65rem;
+			font-size: clamp(1.4rem, 5.8vw, 1.8rem);
 		}
 		.story-percent {
 			right: 0.7rem;
+		}
+	}
+	@media (min-width: 601px) and (max-width: 900px) {
+		.notebook {
+			right: 5vw;
+			width: 90vw;
+			height: 53%;
+		}
+		.join-folder {
+			width: min(98vw, 52rem);
+			height: 80%;
+		}
+	}
+	@media (max-width: 900px) and (max-height: 680px) {
+		.story-hero-copy {
+			top: 2.5rem;
+		}
+		.story-hero-copy h1 {
+			font-size: clamp(2rem, 8.3vw, 2.75rem);
+		}
+		.story-hero-copy > span,
+		.about-card > span,
+		.product-copy > span,
+		.faq-copy > span,
+		.join-folder article > span {
+			margin-bottom: 0.55rem;
+		}
+		.about-story {
+			gap: 0.45rem;
+			padding-block: 0.55rem;
+		}
+		.team-film,
+		.about-card {
+			border-radius: 1.2rem;
+			padding: 0.85rem;
+		}
+		.team-film > div {
+			height: 21svh;
+		}
+		.team-film > p {
+			margin-top: 0.65rem;
+			font-size: 0.74rem;
+		}
+		.about-card h2,
+		.product-copy h2,
+		.faq-copy h2,
+		.join-folder h2 {
+			font-size: clamp(1.3rem, 6.2vw, 1.65rem);
+		}
+		.about-card p,
+		.product-copy p,
+		.faq-copy p,
+		.join-folder p {
+			font-size: 0.72rem;
+			line-height: 1.4;
+		}
+		.about-card a {
+			margin-top: 0.35rem;
+		}
+		.phone-rig {
+			width: min(82vw, 25rem);
+			top: 32%;
+		}
+		.product-copy,
+		.product-bus,
+		.product-activity {
+			bottom: 0.55rem;
+		}
+		.product-copy > div {
+			margin-top: 0.55rem;
+		}
+		.product-copy a {
+			padding: 0.55rem 0.8rem;
+		}
+		.faq-copy {
+			top: 1rem;
+		}
+		.notebook {
+			height: 57%;
+		}
+		.join-folder {
+			height: 94%;
+		}
+		.join-folder a {
+			margin-top: 0.35rem;
+			padding: 0.65rem 0.9rem;
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
@@ -1099,7 +1204,7 @@
 			display: none;
 		}
 	}
-	@media (prefers-reduced-motion: reduce) and (max-width: 760px) {
+	@media (prefers-reduced-motion: reduce) and (max-width: 900px) {
 		.about-story {
 			grid-template-columns: 1fr;
 			padding: 3rem 8vw;
