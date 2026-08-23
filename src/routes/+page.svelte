@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { base } from '$app/paths';
-	import FoxMark from '$lib/components/glass/FoxMark.svelte';
 	import ProductIcon from '$lib/components/landing/ProductIcon.svelte';
 	import Icon from '$lib/components/landing/Icon.svelte';
+	import ScrollStory from '$lib/components/landing/ScrollStory.svelte';
 	import { products, INSTAGRAM_URL, type Product } from '$lib/content/landing';
 
 	const productTags: Record<Product['id'], string> = {
@@ -75,27 +75,7 @@
 </svelte:head>
 
 <div class="marketing-page">
-	<section class="marketing-hero" aria-labelledby="hero-title">
-		<div class="hero-inner">
-			<div class="hero-copy">
-				<h1 id="hero-title">Debug your<br /><em>NYCU LIFE</em><br />problems</h1>
-				<p>校園生活 交給我們 Debug</p>
-				<div class="hero-stats">
-					<div><strong>3+</strong><span>上線產品</span></div>
-					<div><strong>30</strong><span>團隊組員</span></div>
-				</div>
-			</div>
-			<div class="hero-orbit" aria-hidden="true">
-				<div class="orbit-ring orbit-ring-large"></div>
-				<div class="orbit-ring orbit-ring-small"></div>
-				<div class="orbit-center"><FoxMark size={88} light /></div>
-				<div class="orbit-tile orbit-one"><Icon name="book" class="h-7 w-7" /></div>
-				<div class="orbit-tile orbit-two"><Icon name="pin" class="h-7 w-7" /></div>
-				<div class="orbit-tile orbit-three"><Icon name="spark" class="h-7 w-7" /></div>
-				<div class="orbit-tile orbit-four"><Icon name="route" class="h-7 w-7" /></div>
-			</div>
-		</div>
-	</section>
+	<ScrollStory />
 
 	<section
 		id="products"
@@ -232,116 +212,6 @@
 		z-index: 1;
 		background: var(--base);
 		color: var(--ink);
-	}
-	.marketing-hero {
-		overflow: hidden;
-		background: linear-gradient(160deg, var(--hero-start), var(--hero-end));
-	}
-	.hero-inner {
-		width: min(75rem, 100%);
-		min-height: 39rem;
-		margin: 0 auto;
-		padding: 5rem var(--gutter) 5.5rem;
-		display: grid;
-		grid-template-columns: 1.15fr 0.85fr;
-		gap: 3rem;
-		align-items: center;
-	}
-	.hero-copy {
-		position: relative;
-		z-index: 1;
-	}
-	.hero-copy h1 {
-		margin: 1.5rem 0 0;
-		font-family: var(--font-display);
-		font-size: clamp(3.3rem, 7vw, 4.9rem);
-		line-height: 1.02;
-		letter-spacing: -0.04em;
-	}
-	.hero-copy h1 em {
-		color: var(--hero-accent);
-		font-weight: 500;
-	}
-	.hero-copy > p {
-		margin: 1.2rem 0 0;
-		font-size: 1.1rem;
-		color: var(--ink-soft);
-	}
-	.hero-stats {
-		display: flex;
-		gap: 2.5rem;
-		margin-top: 3rem;
-	}
-	.hero-stats div {
-		display: grid;
-		gap: 0.15rem;
-	}
-	.hero-stats strong {
-		font: 700 2rem var(--font-display);
-	}
-	.hero-stats span {
-		font-size: 0.78rem;
-		color: var(--muted);
-	}
-	.hero-orbit {
-		position: relative;
-		height: 26rem;
-		display: grid;
-		place-items: center;
-	}
-	.orbit-ring {
-		position: absolute;
-		border: 1px dashed color-mix(in srgb, var(--brand) 28%, transparent);
-		border-radius: 50%;
-		animation: orbit-spin 40s linear infinite;
-	}
-	.orbit-ring-large {
-		width: 18rem;
-		height: 18rem;
-	}
-	.orbit-ring-small {
-		width: 12.5rem;
-		height: 12.5rem;
-		animation-direction: reverse;
-		animation-duration: 28s;
-	}
-	.orbit-center {
-		display: grid;
-		place-items: center;
-		width: 9.5rem;
-		height: 9.5rem;
-		border-radius: 2.25rem;
-		background: var(--surface);
-		box-shadow: var(--shadow);
-	}
-	.orbit-tile {
-		position: absolute;
-		display: grid;
-		place-items: center;
-		width: 4rem;
-		height: 4rem;
-		border-radius: 1.25rem;
-		background: var(--surface);
-		box-shadow: var(--shadow);
-	}
-	.orbit-tile :global(.picon) {
-		box-shadow: none;
-	}
-	.orbit-one {
-		top: 10%;
-		right: 18%;
-	}
-	.orbit-two {
-		top: 30%;
-		right: 0;
-	}
-	.orbit-three {
-		bottom: 13%;
-		left: 14%;
-	}
-	.orbit-four {
-		bottom: 5%;
-		right: 12%;
 	}
 	.marketing-section {
 		width: min(75rem, 100%);
@@ -741,15 +611,7 @@
 		color: var(--muted);
 		font-size: 0.7rem;
 	}
-	@keyframes orbit-spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
 	@media (prefers-reduced-motion: reduce) {
-		.orbit-ring {
-			animation: none;
-		}
 		.product-card:hover,
 		.course-card:hover,
 		.story-card:hover {
@@ -757,16 +619,8 @@
 		}
 	}
 	@media (max-width: 800px) {
-		.hero-inner,
 		.about-inner {
 			grid-template-columns: 1fr;
-		}
-		.hero-inner {
-			min-height: auto;
-			padding-top: 3.5rem;
-		}
-		.hero-orbit {
-			height: 20rem;
 		}
 		.product-cards,
 		.course-cards,
@@ -813,22 +667,6 @@
 		}
 		.footer-button {
 			flex: 1 1 10rem;
-		}
-		.hero-inner {
-			padding-inline: 1.1rem;
-		}
-		.hero-copy h1 {
-			font-size: clamp(2.8rem, 14vw, 4rem);
-		}
-		.hero-stats {
-			gap: 1.5rem;
-			margin-top: 2rem;
-		}
-		.hero-orbit {
-			height: 17rem;
-			transform: scale(0.82);
-			transform-origin: center top;
-			margin-bottom: -2.5rem;
 		}
 	}
 </style>

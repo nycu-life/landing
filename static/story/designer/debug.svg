@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_圖層_1" data-name="圖層 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+  <defs>
+    <style>
+      .cls-1 {
+        letter-spacing: 0em;
+      }
+
+      .cls-2 {
+        fill: #4d4d4d;
+        font-family: NotoSansCJKHK-Bold, 'Noto Sans CJK HK';
+        font-size: 40px;
+        font-variation-settings: 'wght' 700;
+        font-weight: 700;
+      }
+    </style>
+  </defs>
+  <g id="_1-2文字" data-name="1-2文字">
+    <text class="cls-2" transform="translate(165.02 176.6)"><tspan x="0" y="0">debug </tspan><tspan class="cls-1" x="133.2" y="0">y</tspan><tspan x="155.84" y="0">our</tspan></text>
+  </g>
+</svg>
