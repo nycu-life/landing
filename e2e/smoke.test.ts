@@ -9,6 +9,25 @@ test('home page renders the NYCU LIFE hero', async ({ page }) => {
 	await expect(page.getByRole('heading', { level: 1, name: /NYCU LIFE/i })).toBeVisible();
 });
 
+test('scroll story reaches the product, FAQ, and join chapters', async ({ page }) => {
+	await page.goto('/');
+
+	const story = page.getByRole('region', { name: 'NYCU LIFE 捲動互動故事' });
+	await expect(story.getByRole('link', { name: '略過動畫' })).toBeVisible();
+	await expect(story).toContainText('PRODUCT 03');
+	await expect(story).toContainText('下一個解法，也許由你開始。');
+
+	await story.evaluate((element) => {
+		const progress = 0.91;
+		window.scrollTo(0, element.offsetTop + (element.scrollHeight - window.innerHeight) * progress);
+	});
+
+	const collaborationQuestion = story.getByRole('button', { name: /可以和你們合作嗎？/ });
+	await expect(collaborationQuestion).toBeVisible();
+	await collaborationQuestion.click();
+	await expect(collaborationQuestion).toHaveAttribute('aria-expanded', 'true');
+});
+
 test('theme toggle persists and mobile navigation stays usable', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');
