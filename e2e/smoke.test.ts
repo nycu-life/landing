@@ -35,4 +35,12 @@ test('language switcher stays in the navbar', async ({ page }) => {
 	const navbar = page.getByRole('banner');
 	await expect(navbar.getByRole('group', { name: '語言' })).toBeVisible();
 	await expect(page.locator('footer').getByRole('group', { name: '語言' })).toHaveCount(0);
+
+	await navbar.getByRole('button', { name: 'EN' }).click();
+	await expect(
+		page.getByRole('heading', {
+			level: 1,
+			name: /Campus problems, solved one capsule at a time/i
+		})
+	).toBeVisible();
 });
