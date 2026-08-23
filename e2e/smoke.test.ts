@@ -64,10 +64,7 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 				.evaluate(async (story, { progress, selector }) => {
 					const storyTop = story.getBoundingClientRect().top + window.scrollY;
 					document.documentElement.style.scrollBehavior = 'auto';
-					window.scrollTo(
-						0,
-						storyTop + (story.offsetHeight - window.innerHeight) * progress
-					);
+					window.scrollTo(0, storyTop + (story.offsetHeight - window.innerHeight) * progress);
 					await new Promise<void>((resolve) =>
 						requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
 					);
