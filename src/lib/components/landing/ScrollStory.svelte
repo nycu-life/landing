@@ -890,6 +890,75 @@
 			transform-origin: bottom;
 		}
 	}
+	/*
+	 * 1440p displays need their own composition. The regular desktop caps are
+	 * intentionally conservative for laptops, but they leave the designer art
+	 * looking like small stickers in a 2560×1440 canvas. Scale the main visual
+	 * anchors with both viewport axes so they grow on large screens without
+	 * overflowing shorter ultrawide displays.
+	 */
+	@media (min-width: 1800px) and (min-height: 1000px) {
+		.story-hero-copy {
+			left: clamp(7rem, 5.5vw, 11rem);
+			top: 12.5%;
+			width: min(48vw, 62rem);
+		}
+		.story-hero-copy h1 {
+			font-size: clamp(7rem, 5.65vw, 9rem);
+		}
+		.story-hero-copy > span,
+		.faq-copy > span,
+		.join-folder article > span {
+			font-size: 0.82rem;
+		}
+		.story-hero-copy p {
+			font-size: clamp(1.2rem, 1vw, 1.45rem);
+		}
+		.gacha-machine {
+			width: min(58vw, 96svh, 82rem);
+			height: 96%;
+			right: -1.5vw;
+			top: 0;
+		}
+		.faq-copy {
+			left: clamp(7rem, 5.5vw, 11rem);
+			top: 22%;
+			width: min(36vw, 46rem);
+		}
+		.faq-copy h2 {
+			font-size: clamp(5rem, 4.1vw, 6.5rem);
+		}
+		.faq-copy p {
+			font-size: clamp(1.15rem, 0.95vw, 1.35rem);
+		}
+		.notebook {
+			right: 2.5vw;
+			width: min(58vw, 112svh, 82rem);
+		}
+		.faq-list > strong {
+			font-size: clamp(5rem, 4.4vw, 6.25rem);
+		}
+		.faq-item button {
+			font-size: clamp(1.15rem, 1vw, 1.4rem);
+		}
+		.faq-item p {
+			font-size: clamp(0.95rem, 0.82vw, 1.15rem);
+		}
+		.join-folder {
+			width: min(46vw, 86svh, 60rem);
+		}
+		.join-folder h2 {
+			font-size: clamp(3.5rem, 3vw, 4.5rem);
+		}
+		.join-folder p {
+			max-width: 30rem;
+			font-size: clamp(1.12rem, 0.95vw, 1.3rem);
+		}
+		.join-folder a {
+			padding: 0.95rem 1.45rem;
+			font-size: 1.08rem;
+		}
+	}
 	@media (max-width: 900px) {
 		.scroll-story {
 			height: 980vh;
