@@ -42,15 +42,15 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 		{ width: 320, height: 568 }
 	];
 	const chapters = [
-		{ progress: 0, selector: '.story-hero-copy' },
-		{ progress: 0.21, selector: '.capsule' },
-		{ progress: 0.39, selector: '.about-card' },
-		{ progress: 0.55, selector: '.phone-rig' },
-		{ progress: 0.63, selector: '.product-course' },
-		{ progress: 0.8, selector: '.product-bus' },
-		{ progress: 0.87, selector: '.product-activity' },
-		{ progress: 0.925, selector: '.notebook' },
-		{ progress: 0.99, selector: '.join-folder' }
+		{ progress: 0, selector: '.story-hero-copy', insetSelector: null },
+		{ progress: 0.21, selector: '.capsule', insetSelector: null },
+		{ progress: 0.39, selector: '.about-card', insetSelector: null },
+		{ progress: 0.55, selector: '.phone-rig', insetSelector: null },
+		{ progress: 0.63, selector: '.product-course', insetSelector: null },
+		{ progress: 0.8, selector: '.product-bus', insetSelector: null },
+		{ progress: 0.87, selector: '.product-activity', insetSelector: null },
+		{ progress: 0.925, selector: '.notebook', insetSelector: '.faq-list' },
+		{ progress: 0.99, selector: '.join-folder', insetSelector: 'article' }
 	];
 
 	await page.goto('/');
@@ -61,7 +61,7 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 		for (const chapter of chapters) {
 			const result = await page
 				.locator('.scroll-story')
-				.evaluate(async (story, { progress, selector }) => {
+				.evaluate(async (story, { progress, selector, insetSelector }) => {
 					const storyTop = story.getBoundingClientRect().top + window.scrollY;
 					document.documentElement.style.scrollBehavior = 'auto';
 					window.scrollTo(0, storyTop + (story.offsetHeight - window.innerHeight) * progress);
@@ -75,6 +75,8 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 
 					const stageRect = stage.getBoundingClientRect();
 					const targetRect = target.getBoundingClientRect();
+					const inset = insetSelector ? target.querySelector<HTMLElement>(insetSelector) : null;
+					const insetRect = inset?.getBoundingClientRect();
 					const intersectionWidth = Math.max(
 						0,
 						Math.min(stageRect.right, targetRect.right) - Math.max(stageRect.left, targetRect.left)
@@ -97,6 +99,12 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 					}
 
 					return {
+						insetContained:
+							!insetRect ||
+							(insetRect.left >= targetRect.left - 1 &&
+								insetRect.right <= targetRect.right + 1 &&
+								insetRect.top >= targetRect.top - 1 &&
+								insetRect.bottom <= targetRect.bottom + 1),
 						effectiveOpacity,
 						visibleRatio,
 						overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -118,6 +126,12 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 					`${chapter.selector} hidden at ${viewport.width}x${viewport.height}`
 				)
 				.toBeGreaterThanOrEqual(0.08);
+			expect
+				.soft(
+					result.insetContained,
+					`${chapter.insetSelector} escaped ${chapter.selector} at ${viewport.width}x${viewport.height}`
+				)
+				.toBe(true);
 		}
 	}
 });
