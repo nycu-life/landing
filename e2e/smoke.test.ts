@@ -81,6 +81,31 @@ test('one gesture plays one fixed story step without skipping and supports rever
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });
 
+test('the first gesture is buffered before hydration and waits for first-scene assets', async ({
+	page
+}) => {
+	test.slow();
+	await page.route('**/_app/immutable/**/*.js', async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 800));
+		await route.continue();
+	});
+	await page.route('**/story/designer/*.svg', async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 1100));
+		await route.continue();
+	});
+
+	await page.goto('/?motion=on', { waitUntil: 'commit' });
+	const story = page.locator('.scroll-story');
+	await story.waitFor({ state: 'attached' });
+	await page.mouse.move(195, 420);
+	await page.mouse.wheel(0, 80);
+
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	await expect(story).toHaveAttribute('data-story-ready', 'true', { timeout: 6000 });
+	await expect(story).toHaveAttribute('data-story-animating', 'true');
+	await expect(story).toHaveAttribute('data-story-step-name', 'about', { timeout: 4000 });
+});
+
 test('motion preview opt-in plays the story even when the system prefers reduced motion', async ({
 	page
 }) => {
@@ -389,6 +414,49 @@ test('product copy and phone stay visually centered on mobile and portrait table
 	}
 });
 
+test('the phone hand clears all product titles on compact mobile viewports', async ({ page }) => {
+	await page.goto('/?motion=on');
+
+	for (const viewport of [
+		{ width: 430, height: 760 },
+		{ width: 390, height: 844 },
+		{ width: 320, height: 568 }
+	]) {
+		await page.setViewportSize(viewport);
+
+		for (const chapter of [
+			{ progress: 0.65, selector: '.product-course' },
+			{ progress: 0.8, selector: '.product-bus' },
+			{ progress: 0.87, selector: '.product-activity' }
+		]) {
+			const result = await page
+				.locator('.scroll-story')
+				.evaluate(async (story, { progress, selector }) => {
+					story.style.setProperty('--story-progress', String(progress));
+					await new Promise<void>((resolve) =>
+						requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+					);
+
+					const phone = story.querySelector<HTMLElement>('.phone-rig');
+					const title = story.querySelector<HTMLElement>(`${selector} h2`);
+					if (!phone || !title) throw new Error('Missing product layout');
+
+					const phoneRect = phone.getBoundingClientRect();
+					const titleRect = title.getBoundingClientRect();
+					return {
+						gap: titleRect.top - phoneRect.bottom,
+						overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+					};
+				}, chapter);
+
+			expect
+				.soft(result.gap, `${chapter.selector} artwork gap at ${viewport.width}x${viewport.height}`)
+				.toBeGreaterThanOrEqual(20);
+			expect.soft(result.overflow, `overflow at ${viewport.width}x${viewport.height}`).toBe(0);
+		}
+	}
+});
+
 test('mobile FAQ and join artwork keep their intended scale, spacing, and optical center', async ({
 	page
 }) => {
@@ -468,6 +536,11 @@ test('theme toggle persists and mobile navigation stays usable', async ({ page }
 	await expect(page.locator('.faq-list > strong')).toHaveCSS('color', 'rgb(23, 34, 53)');
 	await expect(page.locator('.faq-item button').first()).toHaveCSS('color', 'rgb(23, 34, 53)');
 	await expect(page.locator('.faq-item p').first()).toHaveCSS('color', 'rgb(102, 117, 138)');
+	await page.locator('.scroll-story').evaluate((story) => {
+		story.style.setProperty('--story-progress', '0.99');
+	});
+	await expect(page.locator('.join-folder h2')).toHaveCSS('color', 'rgb(23, 34, 53)');
+	await expect(page.locator('.join-folder p')).toHaveCSS('color', 'rgb(102, 117, 138)');
 
 	await page.reload();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

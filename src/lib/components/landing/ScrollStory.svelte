@@ -37,10 +37,17 @@
 	let isAnimating = $state(false);
 	let phoneSlide = $state(0);
 	let phoneAnimating = $state(false);
+	let storyReady = $state(false);
 	let activeFaq = $state(0);
 	let reducedMotion = $state(false);
 	let animationFrame = 0;
 	let phoneAnimationFrame = 0;
+	let queuedDirection = 0;
+
+	type StoryBootstrap = {
+		consume: () => number;
+		cleanup: () => void;
+	};
 
 	const clamp = (value: number) => Math.min(1, Math.max(0, value));
 	const easeInOutCubic = (value: number) =>
@@ -127,8 +134,19 @@
 		return true;
 	};
 	const jumpToStoryEnd = () => goToStep(lastStepIndex, true);
+	const requestStep = (direction: number) => {
+		if (!storyReady) {
+			queuedDirection = direction;
+			return true;
+		}
+		return goToStep(stepIndex + direction);
+	};
 
 	onMount(() => {
+		const bootstrap = (window as Window & { __nycuStoryBootstrap?: StoryBootstrap })
+			.__nycuStoryBootstrap;
+		const initialIntent = bootstrap?.consume() ?? 0;
+		bootstrap?.cleanup();
 		const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 		const forceMotion = new URLSearchParams(window.location.search).get('motion') === 'on';
 		let wheelIntent = 0;
@@ -137,6 +155,7 @@
 		let touchStartY = 0;
 		let touchStartedInStory = false;
 		let touchConsumed = false;
+		let disposed = false;
 
 		const updateMotionPreference = () => {
 			reducedMotion = motionQuery.matches && !forceMotion;
@@ -198,7 +217,7 @@
 
 			wheelConsumed = true;
 			wheelIntent = 0;
-			goToStep(stepIndex + direction);
+			requestStep(direction);
 		};
 		const onTouchStart = (event: TouchEvent) => {
 			const target = event.target;
@@ -219,7 +238,7 @@
 				return;
 
 			touchConsumed = true;
-			goToStep(stepIndex + direction);
+			requestStep(direction);
 		};
 		const onTouchEnd = () => {
 			touchStartedInStory = false;
@@ -247,12 +266,40 @@
 			if (!direction || (!isAnimating && isOutwardBoundary(direction))) return;
 
 			event.preventDefault();
-			if (!event.repeat && !isAnimating && !phoneAnimating) goToStep(stepIndex + direction);
+			if (!event.repeat && !isAnimating && !phoneAnimating) requestStep(direction);
+		};
+		const prepareFirstScene = async () => {
+			const images = Array.from(storyEl.querySelectorAll<HTMLImageElement>('.gacha-machine img'));
+			await Promise.allSettled(
+				images.map(async (image) => {
+					if (!image.complete) {
+						await new Promise<void>((resolve) => {
+							const settle = () => {
+								image.removeEventListener('load', settle);
+								image.removeEventListener('error', settle);
+								resolve();
+							};
+							image.addEventListener('load', settle, { once: true });
+							image.addEventListener('error', settle, { once: true });
+							if (image.complete) resolve();
+						});
+					}
+					if (image.naturalWidth > 0) await image.decode();
+				})
+			);
+			if (disposed) return;
+			storyReady = true;
+			const direction = queuedDirection;
+			queuedDirection = 0;
+			if (direction && !reducedMotion && !isOutwardBoundary(direction)) {
+				goToStep(stepIndex + direction);
+			}
 		};
 
 		updateMotionPreference();
 		setProgress(storySteps[stepIndex].progress);
 		setPhoneSlide(phoneSlideForStep(stepIndex));
+		queuedDirection = initialIntent;
 		window.addEventListener('wheel', onWheel, { passive: false });
 		window.addEventListener('touchstart', onTouchStart, { passive: true });
 		window.addEventListener('touchmove', onTouchMove, { passive: false });
@@ -260,7 +307,9 @@
 		window.addEventListener('touchcancel', onTouchEnd, { passive: true });
 		window.addEventListener('keydown', onKeyDown);
 		motionQuery.addEventListener('change', updateMotionPreference);
+		void prepareFirstScene();
 		return () => {
+			disposed = true;
 			window.removeEventListener('wheel', onWheel);
 			window.removeEventListener('touchstart', onTouchStart);
 			window.removeEventListener('touchmove', onTouchMove);
@@ -284,6 +333,7 @@
 	data-story-animating={isAnimating}
 	data-phone-animating={phoneAnimating}
 	data-phone-slide={phoneSlide.toFixed(3)}
+	data-story-ready={storyReady ? 'true' : 'false'}
 	data-reduced-motion={reducedMotion ? 'true' : 'false'}
 >
 	<div class="story-stage">
@@ -1025,6 +1075,9 @@
 		background: var(--section-alt);
 	}
 	.join-folder {
+		--join-paper-ink: #172235;
+		--join-paper-muted: #66758a;
+		--join-paper-brand: #325ee8;
 		position: absolute;
 		left: 50%;
 		top: 50%;
@@ -1050,7 +1103,11 @@
 		left: 31%;
 		right: 14%;
 		top: 18%;
+		color: var(--join-paper-ink);
 		text-align: center;
+	}
+	.join-folder article > span {
+		color: var(--join-paper-brand);
 	}
 	.join-folder h2 {
 		font-size: clamp(2.3rem, 3vw, 3.25rem);
@@ -1058,6 +1115,7 @@
 	.join-folder p {
 		max-width: 22rem;
 		margin-inline: auto;
+		color: var(--join-paper-muted);
 		font-size: clamp(0.95rem, 1vw, 1.08rem);
 	}
 	.join-folder a {
@@ -1277,11 +1335,12 @@
 			line-height: 1.55;
 		}
 		.phone-rig {
+			--phone-copy-lift: clamp(2svh, calc((53rem - 100svh) * 1.2), 12svh);
 			left: calc(50% - min(12vw, 3.85rem));
 			width: min(105vw, 36rem);
 			top: 36%;
 			bottom: auto;
-			transform: translate(-50%, -50%)
+			transform: translate(-50%, calc(-50% - var(--phone-copy-lift)))
 				scale(calc(0.98 - clamp(0, calc((var(--story-progress) - 0.47) * 11), 1) * 0.08));
 		}
 		.product-copy,
@@ -1382,7 +1441,7 @@
 			width: min(78vw, 56svh, 44rem);
 			top: 40%;
 			bottom: auto;
-			transform: translate(-50%, -50%)
+			transform: translate(-50%, calc(-50% - 6svh))
 				scale(calc(0.98 - clamp(0, calc((var(--story-progress) - 0.47) * 11), 1) * 0.08));
 		}
 		.product-copy,
