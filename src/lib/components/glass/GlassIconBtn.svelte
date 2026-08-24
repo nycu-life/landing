@@ -7,6 +7,7 @@
 		label,
 		size = 44,
 		light = false,
+		class: className = '',
 		children,
 		...rest
 	}: {
@@ -14,6 +15,7 @@
 		label: string;
 		size?: number;
 		light?: boolean;
+		class?: string;
 		children?: Snippet;
 		[key: string]: unknown;
 	} = $props();
@@ -21,7 +23,7 @@
 
 <button
 	type="button"
-	class="glass-icon-btn glass glass-strong"
+	class="glass-icon-btn glass glass-strong {className}"
 	class:light
 	{onclick}
 	aria-label={label}

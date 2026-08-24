@@ -19,10 +19,13 @@ test('scroll story reaches the product, FAQ, and join chapters', async ({ page }
 	await expect(story).toContainText('下一個解法，也許由你開始。');
 
 	await page.mouse.move(720, 450);
-	for (let step = 1; step <= 8; step += 1) {
+	for (let step = 1; step <= 5; step += 1) {
 		await page.mouse.wheel(0, 80);
-		await expect(story).toHaveAttribute('data-story-step', String(step), { timeout: 2500 });
+		await expect(story).toHaveAttribute('data-story-step', String(step), {
+			timeout: step === 1 ? 3500 : 2500
+		});
 		await expect(story).toHaveAttribute('data-story-animating', 'false');
+		await expect(story).toHaveAttribute('data-phone-animating', 'false', { timeout: 2000 });
 	}
 
 	const collaborationQuestion = story.getByRole('button', { name: /可以和你們合作嗎？/ });
@@ -45,21 +48,52 @@ test('one gesture plays one fixed story step without skipping and supports rever
 	await expect(story).toHaveAttribute('data-story-animating', 'true');
 	await page.waitForTimeout(180);
 	await expect(story).toHaveAttribute('data-story-step', '0');
-	await expect(story).toHaveAttribute('data-story-step', '1', { timeout: 2500 });
-	await expect(story).toHaveAttribute('data-story-step-name', 'capsule-drop');
+	await expect
+		.poll(() =>
+			page.locator('.capsule').evaluate((element) => Number(getComputedStyle(element).opacity))
+		)
+		.toBeGreaterThan(0.2);
+	await page.waitForTimeout(1400);
+	await expect(story).toHaveAttribute('data-story-animating', 'true');
+	await expect
+		.poll(() =>
+			page.locator('.capsule').evaluate((element) => Number(getComputedStyle(element).opacity))
+		)
+		.toBeGreaterThan(0.2);
+	await expect(story).toHaveAttribute('data-story-step', '1', { timeout: 2000 });
+	await expect(story).toHaveAttribute('data-story-step-name', 'about');
 	await expect(story).toHaveAttribute('data-story-animating', 'false');
 
 	await page.mouse.wheel(0, 80);
 	await expect(story).toHaveAttribute('data-story-step', '2', { timeout: 2500 });
+	await expect(story).toHaveAttribute('data-story-animating', 'false');
+	await expect(story).toHaveAttribute('data-phone-animating', 'true');
+	await expect(story).toHaveAttribute('data-phone-animating', 'false', { timeout: 2000 });
+	await expect(story).toHaveAttribute('data-phone-slide', '1.000');
 	await page.keyboard.press('ArrowUp');
 	await expect(story).toHaveAttribute('data-story-step', '1', { timeout: 2500 });
 
 	await story.getByRole('link', { name: '略過動畫' }).click();
-	await expect(story).toHaveAttribute('data-story-step', '9');
+	await expect(story).toHaveAttribute('data-story-step', '6');
 	await expect(page).toHaveURL(/#products$/);
 	await page.evaluate(() => window.scrollTo(0, 0));
 	await page.mouse.wheel(0, 300);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+});
+
+test('motion preview opt-in plays the story even when the system prefers reduced motion', async ({
+	page
+}) => {
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.goto('/?motion=on');
+
+	const story = page.locator('.scroll-story');
+	await expect(story).toHaveAttribute('data-reduced-motion', 'false');
+	await page.mouse.move(720, 450);
+	await page.mouse.wheel(0, 80);
+
+	await expect(story).toHaveAttribute('data-story-animating', 'true');
+	await expect(story).toHaveAttribute('data-story-step-name', 'about', { timeout: 3500 });
 });
 
 test('a mobile swipe advances exactly one story step', async ({ page }) => {
@@ -106,8 +140,8 @@ test('a mobile swipe advances exactly one story step', async ({ page }) => {
 		);
 	});
 
-	await expect(story).toHaveAttribute('data-story-step', '1', { timeout: 2500 });
-	await expect(story).toHaveAttribute('data-story-step-name', 'capsule-drop');
+	await expect(story).toHaveAttribute('data-story-step', '1', { timeout: 3500 });
+	await expect(story).toHaveAttribute('data-story-step-name', 'about');
 	await page.waitForTimeout(250);
 	await expect(story).toHaveAttribute('data-story-step', '1');
 });
@@ -128,13 +162,11 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 	];
 	const chapters = [
 		{ progress: 0, selector: '.story-hero-copy', insetSelector: null },
-		{ progress: 0.21, selector: '.capsule', insetSelector: null },
 		{ progress: 0.39, selector: '.about-card', insetSelector: null },
-		{ progress: 0.55, selector: '.phone-rig', insetSelector: null },
-		{ progress: 0.63, selector: '.product-course', insetSelector: null },
+		{ progress: 0.65, selector: '.product-course', insetSelector: null },
 		{ progress: 0.8, selector: '.product-bus', insetSelector: null },
 		{ progress: 0.87, selector: '.product-activity', insetSelector: null },
-		{ progress: 0.925, selector: '.notebook', insetSelector: '.faq-list' },
+		{ progress: 0.935, selector: '.notebook', insetSelector: '.faq-list' },
 		{ progress: 0.99, selector: '.join-folder', insetSelector: 'article' }
 	];
 
@@ -199,12 +231,14 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 			expect
 				.soft(result.overflow, `${viewport.width}x${viewport.height} at ${chapter.progress}`)
 				.toBe(0);
+			const minimumVisibleRatio =
+				chapter.selector === '.notebook' && viewport.width <= 900 ? 0.6 : 0.75;
 			expect
 				.soft(
 					result.visibleRatio,
 					`${chapter.selector} clipped at ${viewport.width}x${viewport.height}`
 				)
-				.toBeGreaterThanOrEqual(0.75);
+				.toBeGreaterThanOrEqual(minimumVisibleRatio);
 			expect
 				.soft(
 					result.effectiveOpacity,
@@ -251,6 +285,172 @@ test('scroll story fills a 2560x1440 canvas with readable focal elements', async
 	expect(sizes.joinFolder.width).toBeGreaterThanOrEqual(950);
 });
 
+test('about cards separate and the large-screen phone stops at the bottom without rebounding', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 2048, height: 1235 });
+	await page.goto('/?motion=on');
+
+	const result = await page.locator('.scroll-story').evaluate(async (story) => {
+		story.style.setProperty('--story-progress', '0.39');
+		await new Promise<void>((resolve) =>
+			requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+		);
+
+		const film = story.querySelector<HTMLElement>('.team-film');
+		const card = story.querySelector<HTMLElement>('.about-card');
+		const phone = story.querySelector<HTMLImageElement>('.phone-rig > img');
+		if (!film || !card || !phone) throw new Error('Missing story assets');
+		const filmRect = film.getBoundingClientRect();
+		const cardRect = card.getBoundingClientRect();
+		const stage = story.querySelector<HTMLElement>('.story-stage');
+		if (!stage) throw new Error('Missing story stage');
+		const phonePositions = [];
+		for (const progress of [0.47, 0.5, 0.55, 0.6, 0.65]) {
+			story.style.setProperty('--story-progress', String(progress));
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+			const rect = phone.getBoundingClientRect();
+			phonePositions.push({
+				centerX: rect.left + rect.width / 2,
+				bottomGap: stage.getBoundingClientRect().bottom - rect.bottom,
+				width: rect.width
+			});
+		}
+		return {
+			gap: cardRect.left - filmRect.right,
+			phoneSource: phone.getAttribute('src'),
+			phonePositions
+		};
+	});
+
+	expect(result.gap).toBeGreaterThanOrEqual(160);
+	expect(result.phoneSource).toContain('/story/phone-transparent.png');
+	expect(result.phonePositions.at(-1)?.width).toBeGreaterThanOrEqual(700);
+	for (const position of result.phonePositions) {
+		expect(Math.abs(position.bottomGap)).toBeLessThanOrEqual(2);
+	}
+	for (let index = 1; index < result.phonePositions.length; index += 1) {
+		expect(result.phonePositions[index].centerX).toBeGreaterThanOrEqual(
+			result.phonePositions[index - 1].centerX - 1
+		);
+	}
+});
+
+test('product copy and phone stay visually centered on mobile and portrait tablets', async ({
+	page
+}) => {
+	await page.goto('/?motion=on');
+
+	for (const viewport of [
+		{ width: 390, height: 844 },
+		{ width: 768, height: 1024 },
+		{ width: 1024, height: 1366 }
+	]) {
+		await page.setViewportSize(viewport);
+
+		for (const chapter of [
+			{ progress: 0.65, selector: '.product-course' },
+			{ progress: 0.8, selector: '.product-bus' },
+			{ progress: 0.87, selector: '.product-activity' }
+		]) {
+			const result = await page
+				.locator('.scroll-story')
+				.evaluate(async (story, { progress, selector }) => {
+					story.style.setProperty('--story-progress', String(progress));
+					await new Promise<void>((resolve) =>
+						requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+					);
+
+					const copy = story.querySelector<HTMLElement>(selector);
+					const title = copy?.querySelector<HTMLElement>('h2');
+					const subtitle = copy?.querySelector<HTMLElement>('p');
+					const phoneScreen = story.querySelector<HTMLElement>('.phone-screen');
+					if (!copy || !title || !subtitle || !phoneScreen)
+						throw new Error('Missing product layout');
+
+					const centerOffset = (element: HTMLElement) => {
+						const rect = element.getBoundingClientRect();
+						return rect.left + rect.width / 2 - innerWidth / 2;
+					};
+					return {
+						copy: centerOffset(copy),
+						title: centerOffset(title),
+						subtitle: centerOffset(subtitle),
+						phoneScreen: centerOffset(phoneScreen)
+					};
+				}, chapter);
+
+			for (const [name, offset] of Object.entries(result)) {
+				expect
+					.soft(Math.abs(offset), `${name} at ${viewport.width}x${viewport.height}`)
+					.toBeLessThan(4);
+			}
+		}
+	}
+});
+
+test('mobile FAQ and join artwork keep their intended scale, spacing, and optical center', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/?motion=on');
+
+	const result = await page.locator('.scroll-story').evaluate(async (story) => {
+		const settle = async (progress: number) => {
+			story.style.setProperty('--story-progress', String(progress));
+			await new Promise<void>((resolve) =>
+				requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+			);
+		};
+
+		await settle(0.935);
+		const notebook = story.querySelector<HTMLElement>('.notebook');
+		const faqTitle = story.querySelector<HTMLElement>('.faq-copy h2');
+		const faqSubtitle = story.querySelector<HTMLElement>('.faq-copy p');
+		if (!notebook || !faqTitle || !faqSubtitle) throw new Error('Missing FAQ layout');
+		const notebookRect = notebook.getBoundingClientRect();
+		const faqTitleRect = faqTitle.getBoundingClientRect();
+		const faqSubtitleRect = faqSubtitle.getBoundingClientRect();
+
+		await settle(0.99);
+		const folder = story.querySelector<HTMLElement>('.join-folder');
+		const article = folder?.querySelector<HTMLElement>('article');
+		const joinTitle = article?.querySelector<HTMLElement>('h2');
+		const joinSubtitle = article?.querySelector<HTMLElement>('p');
+		if (!folder || !article || !joinTitle || !joinSubtitle) throw new Error('Missing join layout');
+		const folderRect = folder.getBoundingClientRect();
+		const articleRect = article.getBoundingClientRect();
+		const joinTitleRect = joinTitle.getBoundingClientRect();
+		const joinSubtitleRect = joinSubtitle.getBoundingClientRect();
+
+		const menu = document.querySelector<HTMLElement>('.mobile-menu-btn');
+		const menuIcon = menu?.querySelector<SVGElement>('svg');
+		if (!menu || !menuIcon) throw new Error('Missing menu button');
+		const menuRect = menu.getBoundingClientRect();
+		const menuIconRect = menuIcon.getBoundingClientRect();
+
+		return {
+			notebookWidth: notebookRect.width,
+			faqGap: faqSubtitleRect.top - faqTitleRect.bottom,
+			folderWidth: folderRect.width,
+			joinCenterOffset: articleRect.left + articleRect.width / 2 - innerWidth / 2,
+			joinGap: joinSubtitleRect.top - joinTitleRect.bottom,
+			menuIconCenterOffset: {
+				x: menuIconRect.left + menuIconRect.width / 2 - (menuRect.left + menuRect.width / 2),
+				y: menuIconRect.top + menuIconRect.height / 2 - (menuRect.top + menuRect.height / 2)
+			}
+		};
+	});
+
+	expect(result.notebookWidth).toBeGreaterThanOrEqual(390 * 1.2);
+	expect(result.faqGap).toBeGreaterThanOrEqual(20);
+	expect(result.folderWidth).toBeGreaterThanOrEqual(390 * 1.1);
+	expect(Math.abs(result.joinCenterOffset)).toBeLessThanOrEqual(4);
+	expect(result.joinGap).toBeGreaterThanOrEqual(16);
+	expect(Math.abs(result.menuIconCenterOffset.x)).toBeLessThanOrEqual(1);
+	expect(Math.abs(result.menuIconCenterOffset.y)).toBeLessThanOrEqual(1);
+});
+
 test('theme toggle persists and mobile navigation stays usable', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');
@@ -262,6 +462,12 @@ test('theme toggle persists and mobile navigation stays usable', async ({ page }
 		'src',
 		/logo-horizontal-white\.svg$/
 	);
+	await page.locator('.scroll-story').evaluate((story) => {
+		story.style.setProperty('--story-progress', '0.935');
+	});
+	await expect(page.locator('.faq-list > strong')).toHaveCSS('color', 'rgb(23, 34, 53)');
+	await expect(page.locator('.faq-item button').first()).toHaveCSS('color', 'rgb(23, 34, 53)');
+	await expect(page.locator('.faq-item p').first()).toHaveCSS('color', 'rgb(102, 117, 138)');
 
 	await page.reload();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
