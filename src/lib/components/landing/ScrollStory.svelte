@@ -20,15 +20,12 @@
 	];
 	const storySteps = [
 		{ id: 'hero', progress: 0, duration: 0 },
-		{ id: 'capsule-drop', progress: 0.18, duration: 1100 },
-		{ id: 'capsule-open', progress: 0.31, duration: 1000 },
-		{ id: 'about', progress: 0.39, duration: 900 },
-		{ id: 'phone', progress: 0.52, duration: 1000 },
-		{ id: 'course', progress: 0.63, duration: 1000 },
-		{ id: 'bus', progress: 0.77, duration: 1000 },
-		{ id: 'activity', progress: 0.84, duration: 900 },
-		{ id: 'faq', progress: 0.925, duration: 1000 },
-		{ id: 'join', progress: 0.99, duration: 1100 }
+		{ id: 'about', progress: 0.39, duration: 2600 },
+		{ id: 'course', progress: 0.65, duration: 1250 },
+		{ id: 'bus', progress: 0.8, duration: 1100 },
+		{ id: 'activity', progress: 0.87, duration: 950 },
+		{ id: 'faq', progress: 0.935, duration: 1050 },
+		{ id: 'join', progress: 0.99, duration: 1050 }
 	] as const;
 	const lastStepIndex = storySteps.length - 1;
 	const wheelThreshold = 32;
@@ -38,9 +35,12 @@
 	let progress = $state(0);
 	let stepIndex = $state(0);
 	let isAnimating = $state(false);
+	let phoneSlide = $state(0);
+	let phoneAnimating = $state(false);
 	let activeFaq = $state(0);
 	let reducedMotion = $state(false);
 	let animationFrame = 0;
+	let phoneAnimationFrame = 0;
 
 	const clamp = (value: number) => Math.min(1, Math.max(0, value));
 	const easeInOutCubic = (value: number) =>
@@ -49,8 +49,48 @@
 		progress = clamp(value);
 		storyEl?.style.setProperty('--story-progress', String(progress));
 	};
+	const setPhoneSlide = (value: number) => {
+		phoneSlide = clamp(value / 3) * 3;
+		storyEl?.style.setProperty('--phone-slide', String(phoneSlide));
+	};
+	const phoneSlideForStep = (index: number) => {
+		if (index <= 1) return 0;
+		if (index >= 5) return 3;
+		return index - 1;
+	};
+	const playPhoneSlide = (nextIndex: number, immediate = false) => {
+		const target = phoneSlideForStep(nextIndex);
+		const shouldAnimate = nextIndex >= 2 && nextIndex <= 4 && target !== phoneSlide;
+		if (!shouldAnimate || immediate || reducedMotion) {
+			phoneAnimating = false;
+			setPhoneSlide(target);
+			return;
+		}
+
+		const from = phoneSlide;
+		const startedAt = performance.now();
+		const duration = 1050;
+		phoneAnimating = true;
+		const tick = (now: number) => {
+			const elapsed = clamp((now - startedAt) / duration);
+			setPhoneSlide(from + (target - from) * easeInOutCubic(elapsed));
+			if (elapsed < 1) {
+				phoneAnimationFrame = requestAnimationFrame(tick);
+				return;
+			}
+			phoneAnimationFrame = 0;
+			phoneAnimating = false;
+		};
+		phoneAnimationFrame = requestAnimationFrame(tick);
+	};
 	const goToStep = (nextIndex: number, immediate = false) => {
-		if (isAnimating || nextIndex < 0 || nextIndex > lastStepIndex || nextIndex === stepIndex) {
+		if (
+			isAnimating ||
+			phoneAnimating ||
+			nextIndex < 0 ||
+			nextIndex > lastStepIndex ||
+			nextIndex === stepIndex
+		) {
 			return false;
 		}
 
@@ -60,6 +100,7 @@
 		if (immediate || reducedMotion) {
 			stepIndex = nextIndex;
 			setProgress(target);
+			playPhoneSlide(nextIndex, true);
 			return true;
 		}
 
@@ -70,7 +111,8 @@
 
 		const tick = (now: number) => {
 			const elapsed = clamp((now - startedAt) / duration);
-			setProgress(from + (target - from) * easeInOutCubic(elapsed));
+			const eased = fromIndex === 0 && nextIndex === 1 ? elapsed : easeInOutCubic(elapsed);
+			setProgress(from + (target - from) * eased);
 			if (elapsed < 1) {
 				animationFrame = requestAnimationFrame(tick);
 				return;
@@ -78,6 +120,7 @@
 			animationFrame = 0;
 			stepIndex = nextIndex;
 			isAnimating = false;
+			playPhoneSlide(nextIndex);
 		};
 
 		animationFrame = requestAnimationFrame(tick);
@@ -87,6 +130,7 @@
 
 	onMount(() => {
 		const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+		const forceMotion = new URLSearchParams(window.location.search).get('motion') === 'on';
 		let wheelIntent = 0;
 		let wheelConsumed = false;
 		let wheelResetTimer: ReturnType<typeof setTimeout> | undefined;
@@ -95,7 +139,7 @@
 		let touchConsumed = false;
 
 		const updateMotionPreference = () => {
-			reducedMotion = motionQuery.matches;
+			reducedMotion = motionQuery.matches && !forceMotion;
 			if (reducedMotion && animationFrame) {
 				cancelAnimationFrame(animationFrame);
 				animationFrame = 0;
@@ -105,6 +149,13 @@
 					storySteps.findIndex((step) => step.progress >= progress)
 				);
 				setProgress(storySteps[stepIndex].progress);
+				playPhoneSlide(stepIndex, true);
+			}
+			if (reducedMotion && phoneAnimationFrame) {
+				cancelAnimationFrame(phoneAnimationFrame);
+				phoneAnimationFrame = 0;
+				phoneAnimating = false;
+				setPhoneSlide(phoneSlideForStep(stepIndex));
 			}
 		};
 		const storyIsEngaged = () => {
@@ -136,7 +187,7 @@
 
 			event.preventDefault();
 			resetWheelGestureSoon();
-			if (isAnimating || wheelConsumed) {
+			if (isAnimating || phoneAnimating || wheelConsumed) {
 				wheelConsumed = true;
 				return;
 			}
@@ -164,7 +215,8 @@
 			if (!direction || (!isAnimating && isOutwardBoundary(direction))) return;
 
 			event.preventDefault();
-			if (isAnimating || touchConsumed || Math.abs(distance) < touchThreshold) return;
+			if (isAnimating || phoneAnimating || touchConsumed || Math.abs(distance) < touchThreshold)
+				return;
 
 			touchConsumed = true;
 			goToStep(stepIndex + direction);
@@ -195,11 +247,12 @@
 			if (!direction || (!isAnimating && isOutwardBoundary(direction))) return;
 
 			event.preventDefault();
-			if (!event.repeat && !isAnimating) goToStep(stepIndex + direction);
+			if (!event.repeat && !isAnimating && !phoneAnimating) goToStep(stepIndex + direction);
 		};
 
 		updateMotionPreference();
 		setProgress(storySteps[stepIndex].progress);
+		setPhoneSlide(phoneSlideForStep(stepIndex));
 		window.addEventListener('wheel', onWheel, { passive: false });
 		window.addEventListener('touchstart', onTouchStart, { passive: true });
 		window.addEventListener('touchmove', onTouchMove, { passive: false });
@@ -217,6 +270,7 @@
 			motionQuery.removeEventListener('change', updateMotionPreference);
 			if (wheelResetTimer) clearTimeout(wheelResetTimer);
 			if (animationFrame) cancelAnimationFrame(animationFrame);
+			if (phoneAnimationFrame) cancelAnimationFrame(phoneAnimationFrame);
 		};
 	});
 </script>
@@ -228,6 +282,9 @@
 	data-story-step={stepIndex}
 	data-story-step-name={storySteps[stepIndex].id}
 	data-story-animating={isAnimating}
+	data-phone-animating={phoneAnimating}
+	data-phone-slide={phoneSlide.toFixed(3)}
+	data-reduced-motion={reducedMotion ? 'true' : 'false'}
 >
 	<div class="story-stage">
 		<div class="story-progress" style:transform={`scaleX(${progress})`}></div>
@@ -321,7 +378,7 @@
 				</div>
 			</article>
 			<div class="phone-rig">
-				<img src="{base}/story/phone.png" alt={m.story_phone_alt()} />
+				<img src="{base}/story/phone-transparent.png" alt={m.story_phone_alt()} />
 				<div class="phone-screen" aria-hidden="true">
 					<div class="phone-track">
 						<div class="phone-home">
@@ -347,7 +404,9 @@
 						</div>
 					</div>
 				</div>
-				<span class="swipe-indicator" aria-hidden="true">↑</span>
+				<span class="swipe-indicator" class:phone-swiping={phoneAnimating} aria-hidden="true"
+					>↑</span
+				>
 			</div>
 		</section>
 
@@ -407,6 +466,7 @@
 <style>
 	.scroll-story {
 		--story-progress: 0;
+		--phone-slide: 0;
 		position: relative;
 		height: calc(100svh - 4.75rem);
 		background: var(--base);
@@ -536,7 +596,7 @@
 		transform: translateY(calc(clamp(0, calc((var(--story-progress) - 0.08) * 12), 1) * -2.5vh));
 	}
 	.gacha-machine .machine-knob {
-		transform: rotate(calc(clamp(0, calc((var(--story-progress) - 0.16) * 14.3), 1) * 270deg));
+		transform: rotate(calc(clamp(0, calc((var(--story-progress) - 0.02) * 7.143), 1) * 270deg));
 	}
 	.capsule {
 		position: absolute;
@@ -547,11 +607,11 @@
 		height: 10.6rem;
 		opacity: clamp(
 			0,
-			calc((var(--story-progress) - 0.15) * 50),
-			calc((0.325 - var(--story-progress)) * 50)
+			calc((var(--story-progress) - 0.01) * 50),
+			calc((0.39 - var(--story-progress)) * 33.333)
 		);
-		transform: translateY(calc(clamp(0, calc((var(--story-progress) - 0.16) * 14.3), 1) * 44vh))
-			rotate(calc(clamp(0, calc((var(--story-progress) - 0.16) * 14.3), 1) * 210deg));
+		transform: translateY(calc(clamp(0, calc((var(--story-progress) - 0.03) * 5.882), 1) * 44vh))
+			rotate(calc(clamp(0, calc((var(--story-progress) - 0.03) * 5.882), 1) * 210deg));
 	}
 	.capsule-half {
 		position: absolute;
@@ -570,25 +630,25 @@
 		border-radius: 7rem 7rem 0.25rem 0.25rem;
 		background: var(--brand);
 		color: white;
-		transform: translateY(calc(clamp(0, calc((var(--story-progress) - 0.23) * 12.5), 1) * -20vh))
-			rotate(calc(clamp(0, calc((var(--story-progress) - 0.23) * 12.5), 1) * -22deg));
+		transform: translateY(calc(clamp(0, calc((var(--story-progress) - 0.14) * 4.545), 1) * -20vh))
+			rotate(calc(clamp(0, calc((var(--story-progress) - 0.14) * 4.545), 1) * -22deg));
 		transform-origin: bottom right;
 	}
 	.capsule-bottom {
 		bottom: 0;
 		border-radius: 0.25rem 0.25rem 7rem 7rem;
-		transform: translateY(calc(clamp(0, calc((var(--story-progress) - 0.23) * 12.5), 1) * 20vh))
-			rotate(calc(clamp(0, calc((var(--story-progress) - 0.23) * 12.5), 1) * 18deg));
+		transform: translateY(calc(clamp(0, calc((var(--story-progress) - 0.14) * 4.545), 1) * 20vh))
+			rotate(calc(clamp(0, calc((var(--story-progress) - 0.14) * 4.545), 1) * 18deg));
 		transform-origin: top left;
 	}
 	.about-story {
 		z-index: 3;
 		opacity: clamp(
 			0,
-			calc((var(--story-progress) - 0.292) * 48),
+			calc((var(--story-progress) - 0.35) * 25),
 			calc((0.49 - var(--story-progress)) * 30)
 		);
-		transform: scale(calc(0.9 + clamp(0, calc((var(--story-progress) - 0.292) * 20), 1) * 0.1));
+		transform: scale(calc(0.96 + clamp(0, calc((var(--story-progress) - 0.35) * 25), 1) * 0.04));
 	}
 	.team-film,
 	.about-card {
@@ -604,12 +664,16 @@
 	}
 	.team-film {
 		left: 7vw;
-		transform: translateX(calc((0.292 - var(--story-progress)) * -70vw));
+		transform: translateX(
+			calc((1 - clamp(0, calc((var(--story-progress) - 0.35) * 25), 1)) * -12vw)
+		);
 	}
 	.about-card {
 		right: 7vw;
 		padding: 3rem;
-		transform: translateX(calc((0.292 - var(--story-progress)) * 70vw));
+		transform: translateX(
+			calc((1 - clamp(0, calc((var(--story-progress) - 0.35) * 25), 1)) * 12vw)
+		);
 	}
 	.team-film > div {
 		height: 31vh;
@@ -672,13 +736,15 @@
 		);
 	}
 	.phone-rig {
+		--phone-scale-change: 0.34;
 		position: absolute;
 		z-index: 6;
 		left: 50%;
-		top: 50%;
+		top: auto;
+		bottom: 0;
 		width: min(41vw, 34rem);
 		aspect-ratio: 781/984;
-		transform: translate(-50%, -50%)
+		transform: translateX(-50%)
 			translateX(
 				calc(
 					clamp(0, calc((var(--story-progress) - 0.5) * 10), 1) * 24vw -
@@ -686,8 +752,12 @@
 						clamp(0, calc((var(--story-progress) - 0.805) * 16), 1) * 48vw
 				)
 			)
-			scale(calc(1.06 - clamp(0, calc((var(--story-progress) - 0.47) * 11), 1) * 0.34));
-		transform-origin: 52% 50%;
+			scale(
+				calc(
+					1.06 - clamp(0, calc((var(--story-progress) - 0.47) * 11), 1) * var(--phone-scale-change)
+				)
+			);
+		transform-origin: 52% 100%;
 	}
 	.phone-rig > img {
 		position: absolute;
@@ -710,13 +780,7 @@
 	}
 	.phone-track {
 		height: 400%;
-		transform: translateY(
-			calc(
-				clamp(0, calc((var(--story-progress) - 0.56) * 13), 1) * -25% -
-					clamp(0, calc((var(--story-progress) - 0.72) * 15), 1) * 25% -
-					clamp(0, calc((var(--story-progress) - 0.805) * 18), 1) * 25%
-			)
-		);
+		transform: translateY(calc(var(--phone-slide) * -25%));
 	}
 	.phone-home,
 	.phone-app {
@@ -818,18 +882,12 @@
 		background: rgba(255, 255, 255, 0.38);
 		color: var(--brand);
 		box-shadow: 0 0.4rem 1rem rgba(31, 55, 78, 0.12);
-		opacity: clamp(
-			0,
-			calc((var(--story-progress) - 0.555) * 50),
-			calc((0.845 - var(--story-progress)) * 30)
-		);
-		transform: translateY(
-			calc(
-				clamp(0, calc((var(--story-progress) - 0.56) * 16), 1) * -7vh +
-					clamp(0, calc((var(--story-progress) - 0.7) * 18), 1) * 7vh -
-					clamp(0, calc((var(--story-progress) - 0.805) * 20), 1) * 7vh
-			)
-		);
+		opacity: 0;
+		transform: translateY(1rem);
+	}
+	.swipe-indicator.phone-swiping {
+		opacity: 1;
+		animation: phone-swipe 1.05s ease-in-out both;
 	}
 	.product-copy {
 		position: absolute;
@@ -905,6 +963,9 @@
 	}
 	.notebook {
 		--notebook-y: -50%;
+		--notebook-ink: #172235;
+		--notebook-muted: #66758a;
+		--notebook-line: rgba(57, 83, 125, 0.16);
 		position: absolute;
 		right: clamp(2rem, 4vw, 6rem);
 		top: 50%;
@@ -929,6 +990,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.4rem;
+		color: var(--notebook-ink);
 	}
 	.faq-list > strong {
 		margin-bottom: 0.1rem;
@@ -936,7 +998,7 @@
 		letter-spacing: -0.06em;
 	}
 	.faq-item {
-		border-bottom: 1px solid var(--line);
+		border-bottom: 1px solid var(--notebook-line);
 	}
 	.faq-item button {
 		display: flex;
@@ -946,7 +1008,7 @@
 		border: 0;
 		background: transparent;
 		padding: clamp(0.55rem, 0.8vh, 0.8rem) 0;
-		color: var(--ink);
+		color: var(--notebook-ink);
 		text-align: left;
 		font-size: clamp(0.95rem, 1.05vw, 1.15rem);
 		font-weight: 700;
@@ -954,7 +1016,7 @@
 	}
 	.faq-item p {
 		margin: 0 0 0.65rem;
-		color: var(--ink-soft);
+		color: var(--notebook-muted);
 		font-size: clamp(0.78rem, 0.85vw, 0.95rem);
 		line-height: 1.6;
 	}
@@ -1064,6 +1126,20 @@
 			transform-origin: bottom;
 		}
 	}
+	@keyframes phone-swipe {
+		0% {
+			opacity: 0;
+			transform: translateY(1.25rem);
+		}
+		18%,
+		72% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			transform: translateY(-1.25rem);
+		}
+	}
 	/*
 	 * 1440p displays need their own composition. The regular desktop caps are
 	 * intentionally conservative for laptops, but they leave the designer art
@@ -1093,6 +1169,10 @@
 			height: 96%;
 			right: -1.5vw;
 			top: 0;
+		}
+		.phone-rig {
+			--phone-scale-change: 0.18;
+			width: min(46vw, 80svh, 52rem);
 		}
 		.faq-copy {
 			left: clamp(7rem, 5.5vw, 11rem);
@@ -1197,10 +1277,12 @@
 			line-height: 1.55;
 		}
 		.phone-rig {
-			width: min(92vw, 32rem);
-			top: 35%;
+			left: calc(50% - min(12vw, 3.85rem));
+			width: min(105vw, 36rem);
+			top: 36%;
+			bottom: auto;
 			transform: translate(-50%, -50%)
-				scale(calc(0.98 - clamp(0, calc((var(--story-progress) - 0.47) * 11), 1) * 0.2));
+				scale(calc(0.98 - clamp(0, calc((var(--story-progress) - 0.47) * 11), 1) * 0.08));
 		}
 		.product-copy,
 		.product-bus,
@@ -1208,9 +1290,14 @@
 			left: 6vw;
 			right: auto;
 			top: auto;
-			bottom: clamp(0.8rem, 4%, 2.5rem);
+			bottom: clamp(5rem, 10svh, 8rem);
 			width: 88vw;
 			text-align: center;
+			transform: none;
+		}
+		.product-copy h2,
+		.product-copy p {
+			margin-inline: auto;
 		}
 		.product-copy > div {
 			justify-content: center;
@@ -1226,38 +1313,55 @@
 			width: 88vw;
 			text-align: center;
 		}
+		.faq-copy h2 {
+			margin-bottom: clamp(1rem, 2.8svh, 1.6rem);
+		}
+		.faq-copy p {
+			margin: 0 auto;
+			max-width: 34rem;
+		}
 		.notebook {
 			--notebook-y: 0%;
-			right: -2vw;
+			left: 50%;
+			right: auto;
 			top: auto;
-			bottom: 14%;
-			width: min(104vw, 82svh);
+			bottom: 24%;
+			width: min(122vw, 102svh, 42rem);
+			transform: translateX(
+					calc(-50% + clamp(0, calc((0.915 - var(--story-progress)) * 33.333), 1) * 110vw)
+				)
+				rotate(calc(clamp(0, calc((0.915 - var(--story-progress)) * 33.333), 1) * 12deg));
 		}
 		.faq-list {
 			top: 10%;
-			gap: 0.15rem;
+			gap: 0.25rem;
 		}
 		.faq-list > strong {
-			font-size: clamp(2.25rem, 8vw, 3.25rem);
+			font-size: clamp(3.25rem, 13vw, 4.25rem);
 		}
 		.faq-item button {
-			padding: 0.35rem 0;
-			font-size: clamp(0.78rem, 2.5vw, 0.95rem);
+			padding: 0.5rem 0;
+			font-size: clamp(1rem, 3.8vw, 1.2rem);
 		}
 		.faq-item p {
-			font-size: clamp(0.66rem, 2vw, 0.82rem);
-			margin-bottom: 0.3rem;
+			font-size: clamp(0.82rem, 3vw, 1rem);
+			margin-bottom: 0.45rem;
 		}
 		.join-folder {
-			width: min(102vw, 78svh, 36rem);
+			left: calc(50% - min(6vw, 2.5rem));
+			width: min(112vw, 84svh, 39rem);
 		}
 		.join-folder article {
-			left: 31%;
-			right: 14%;
+			left: 29%;
+			right: 17%;
 			top: 18%;
 		}
 		.join-folder h2 {
 			font-size: clamp(1.45rem, 6vw, 2rem);
+			margin-bottom: clamp(0.9rem, 2.4svh, 1.35rem);
+		}
+		.join-folder p {
+			margin: 0 auto;
 		}
 		.story-percent {
 			right: 0.7rem;
@@ -1265,11 +1369,39 @@
 	}
 	@media (min-width: 601px) and (max-width: 900px) {
 		.notebook {
-			right: 4vw;
-			width: min(92vw, 82svh);
+			bottom: 14%;
+			width: min(118vw, 102svh, 50rem);
 		}
 		.join-folder {
 			width: min(78vw, 76svh, 40rem);
+		}
+	}
+	@media (min-width: 901px) and (max-width: 1200px) and (orientation: portrait) {
+		.phone-rig {
+			left: calc(50% - min(8vw, 4.75rem));
+			width: min(78vw, 56svh, 44rem);
+			top: 40%;
+			bottom: auto;
+			transform: translate(-50%, -50%)
+				scale(calc(0.98 - clamp(0, calc((var(--story-progress) - 0.47) * 11), 1) * 0.08));
+		}
+		.product-copy,
+		.product-bus,
+		.product-activity {
+			left: 6vw;
+			right: auto;
+			top: auto;
+			bottom: clamp(4rem, 7svh, 7rem);
+			width: 88vw;
+			text-align: center;
+			transform: none;
+		}
+		.product-copy h2,
+		.product-copy p {
+			margin-inline: auto;
+		}
+		.product-copy > div {
+			justify-content: center;
 		}
 	}
 	@media (max-width: 900px) and (max-height: 680px) {
@@ -1319,13 +1451,13 @@
 			margin-top: 0.35rem;
 		}
 		.phone-rig {
-			width: min(82vw, 25rem);
-			top: 32%;
+			width: min(100vw, 30rem);
+			top: 34%;
 		}
 		.product-copy,
 		.product-bus,
 		.product-activity {
-			bottom: 0.55rem;
+			bottom: clamp(2.5rem, 7svh, 4rem);
 		}
 		.product-copy > div {
 			margin-top: 0.55rem;
@@ -1337,7 +1469,8 @@
 			top: 1rem;
 		}
 		.notebook {
-			width: min(88vw, 76svh);
+			bottom: 4%;
+			width: min(130vw, 98svh, 38rem);
 		}
 		.join-folder {
 			width: min(84vw, 80svh, 32rem);
@@ -1347,122 +1480,117 @@
 			padding: 0.65rem 0.9rem;
 		}
 	}
-	@media (prefers-reduced-motion: reduce) {
-		.scroll-cue i {
-			animation: none;
-		}
-		.scroll-story {
-			height: auto;
-			overflow: clip;
-		}
-		.story-stage {
-			position: relative;
-			top: 0;
-			height: auto;
-			overflow: visible;
-		}
-		.story-scene {
-			position: relative;
-			min-height: 100vh;
-			opacity: 1 !important;
-			transform: none !important;
-		}
-		.story-hero-copy,
-		.gacha-machine,
-		.capsule,
-		.team-film,
-		.about-card,
-		.phone-rig,
-		.product-copy,
-		.faq-copy,
-		.notebook,
-		.join-folder {
-			transform: none !important;
-			opacity: 1 !important;
-		}
-		.gacha-scene {
-			min-height: 115vh;
-		}
-		.capsule {
-			display: none;
-		}
-		.about-story {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: 2rem;
-			padding: 7rem 7vw;
-		}
-		.about-story .team-film,
-		.about-story .about-card {
-			position: relative;
-			inset: auto;
-			width: auto;
-		}
-		.product-story {
-			display: grid;
-			gap: 2rem;
-			min-height: auto;
-			padding: 7rem 7vw;
-		}
-		.phone-rig {
-			position: relative;
-			inset: auto;
-			order: -1;
-			width: min(90vw, 34rem);
-			margin: 0 auto;
-		}
-		.product-copy,
-		.product-course,
-		.product-bus,
-		.product-activity {
-			position: relative;
-			inset: auto;
-			width: auto;
-		}
-		.swipe-indicator,
-		.story-progress,
-		.story-percent,
-		.skip-story {
-			display: none;
-		}
-		.faq-story {
-			display: grid;
-			gap: 2rem;
-			min-height: auto;
-			padding: 7rem 7vw;
-		}
-		.faq-copy,
-		.notebook {
-			position: relative;
-			inset: auto;
-			width: min(100%, 48rem);
-			margin-inline: auto;
-		}
-		.join-story {
-			min-height: auto;
-			padding-block: 4rem;
-		}
-		.join-folder {
-			position: relative;
-			inset: auto;
-			margin-inline: auto;
-		}
-		.scroll-cue {
-			display: none;
-		}
+	.scroll-story[data-reduced-motion='true'] {
+		height: auto;
+		overflow: clip;
 	}
-	@media (prefers-reduced-motion: reduce) and (max-width: 900px) {
-		.about-story {
+	.scroll-story[data-reduced-motion='true'] .scroll-cue i {
+		animation: none;
+	}
+	.scroll-story[data-reduced-motion='true'] .story-stage {
+		position: relative;
+		top: 0;
+		height: auto;
+		overflow: visible;
+	}
+	.scroll-story[data-reduced-motion='true'] .story-scene {
+		position: relative;
+		min-height: 100vh;
+		opacity: 1 !important;
+		transform: none !important;
+	}
+	.scroll-story[data-reduced-motion='true']
+		:is(
+			.story-hero-copy,
+			.gacha-machine,
+			.capsule,
+			.team-film,
+			.about-card,
+			.phone-rig,
+			.product-copy,
+			.faq-copy,
+			.notebook,
+			.join-folder
+		) {
+		transform: none !important;
+		opacity: 1 !important;
+	}
+	.scroll-story[data-reduced-motion='true'] .gacha-scene {
+		min-height: 115vh;
+	}
+	.scroll-story[data-reduced-motion='true'] .capsule {
+		display: none;
+	}
+	.scroll-story[data-reduced-motion='true'] .about-story {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2rem;
+		padding: 7rem 7vw;
+	}
+	.scroll-story[data-reduced-motion='true'] .about-story :is(.team-film, .about-card) {
+		position: relative;
+		inset: auto;
+		width: auto;
+	}
+	.scroll-story[data-reduced-motion='true'] .product-story {
+		display: grid;
+		gap: 2rem;
+		min-height: auto;
+		padding: 7rem 7vw;
+	}
+	.scroll-story[data-reduced-motion='true'] .phone-rig {
+		position: relative;
+		inset: auto;
+		order: -1;
+		width: min(90vw, 34rem);
+		margin: 0 auto;
+	}
+	.scroll-story[data-reduced-motion='true']
+		:is(.product-copy, .product-course, .product-bus, .product-activity) {
+		position: relative;
+		inset: auto;
+		width: auto;
+	}
+	.scroll-story[data-reduced-motion='true']
+		:is(.swipe-indicator, .story-progress, .story-percent, .skip-story) {
+		display: none;
+	}
+	.scroll-story[data-reduced-motion='true'] .faq-story {
+		display: grid;
+		gap: 2rem;
+		min-height: auto;
+		padding: 7rem 7vw;
+	}
+	.scroll-story[data-reduced-motion='true'] :is(.faq-copy, .notebook) {
+		position: relative;
+		inset: auto;
+		width: min(100%, 48rem);
+		margin-inline: auto;
+	}
+	.scroll-story[data-reduced-motion='true'] .join-story {
+		min-height: auto;
+		padding-block: 4rem;
+	}
+	.scroll-story[data-reduced-motion='true'] .join-folder {
+		position: relative;
+		inset: auto;
+		margin-inline: auto;
+	}
+	.scroll-story[data-reduced-motion='true'] .scroll-cue {
+		display: none;
+	}
+	@media (max-width: 900px) {
+		.scroll-story[data-reduced-motion='true'] .about-story {
 			grid-template-columns: 1fr;
 			padding: 3rem 8vw;
 		}
-		.gacha-scene {
+		.scroll-story[data-reduced-motion='true'] .gacha-scene {
 			min-height: 100svh;
 		}
-		.faq-story {
+		.scroll-story[data-reduced-motion='true'] .faq-story {
 			padding: 3rem 4vw;
 		}
-		.join-folder {
+		.scroll-story[data-reduced-motion='true'] .join-folder {
 			height: 48rem;
 		}
 	}
