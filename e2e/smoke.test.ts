@@ -32,6 +32,7 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 	test.slow();
 
 	const viewports = [
+		{ width: 2560, height: 1440 },
 		{ width: 1920, height: 1080 },
 		{ width: 1440, height: 900 },
 		{ width: 1280, height: 720 },
@@ -134,6 +135,36 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 				.toBe(true);
 		}
 	}
+});
+
+test('scroll story fills a 2560x1440 canvas with readable focal elements', async ({ page }) => {
+	await page.setViewportSize({ width: 2560, height: 1440 });
+	await page.goto('/');
+
+	const sizes = await page.evaluate(() => {
+		const measure = (selector: string) => {
+			const element = document.querySelector<HTMLElement>(selector);
+			if (!element) throw new Error(`Missing 1440p story target: ${selector}`);
+			return {
+				width: element.offsetWidth,
+				fontSize: Number.parseFloat(getComputedStyle(element).fontSize)
+			};
+		};
+
+		return {
+			heroTitle: measure('.story-hero-copy h1'),
+			gacha: measure('.gacha-machine'),
+			faqTitle: measure('.faq-copy h2'),
+			notebook: measure('.notebook'),
+			joinFolder: measure('.join-folder')
+		};
+	});
+
+	expect(sizes.heroTitle.fontSize).toBeGreaterThanOrEqual(140);
+	expect(sizes.gacha.width).toBeGreaterThanOrEqual(1250);
+	expect(sizes.faqTitle.fontSize).toBeGreaterThanOrEqual(100);
+	expect(sizes.notebook.width).toBeGreaterThanOrEqual(1250);
+	expect(sizes.joinFolder.width).toBeGreaterThanOrEqual(950);
 });
 
 test('theme toggle persists and mobile navigation stays usable', async ({ page }) => {
