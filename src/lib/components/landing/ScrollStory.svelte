@@ -301,9 +301,9 @@
 	.story-hero-copy {
 		position: absolute;
 		z-index: 4;
-		left: 7vw;
-		top: 20vh;
-		width: 42vw;
+		left: clamp(4rem, 7vw, 9rem);
+		top: clamp(8rem, 15vh, 11rem);
+		width: min(46vw, 47rem);
 		transform: translateY(calc(clamp(0, calc((var(--story-progress) - 0.08) * 12.5), 1) * -64vh));
 		opacity: clamp(0, calc((0.17 - var(--story-progress)) * 20), 1);
 	}
@@ -320,7 +320,7 @@
 	}
 	.story-hero-copy h1 {
 		margin: 0;
-		font: 700 clamp(3rem, 5.4vw, 5.25rem)/1.04 var(--font-display);
+		font: 700 clamp(3.5rem, 5.9vw, 7rem)/1.01 var(--font-display);
 		letter-spacing: -0.055em;
 	}
 	.story-hero-copy h1 em {
@@ -336,13 +336,16 @@
 		color: var(--ink-soft);
 		line-height: 1.75;
 	}
+	.story-hero-copy p {
+		font-size: clamp(1rem, 1.05vw, 1.2rem);
+	}
 	.gacha-machine {
 		position: absolute;
 		z-index: 2;
-		width: min(48vw, 44rem);
-		height: 88vh;
-		right: 1vw;
-		top: 1vh;
+		width: min(55vw, 62rem);
+		height: 94%;
+		right: -1vw;
+		top: 1%;
 		transform: translateY(calc(clamp(0, calc((var(--story-progress) - 0.08) * 12.5), 1) * -64vh));
 		opacity: clamp(0, calc((0.195 - var(--story-progress)) * 40), 1);
 	}
@@ -716,39 +719,46 @@
 	}
 	.faq-copy {
 		position: absolute;
-		left: 7vw;
-		top: 27vh;
-		width: 34vw;
+		left: clamp(4rem, 7vw, 9rem);
+		top: 25%;
+		width: min(32vw, 36rem);
+	}
+	.faq-copy h2 {
+		font-size: clamp(3rem, 4vw, 5rem);
+	}
+	.faq-copy p {
+		font-size: clamp(1rem, 1vw, 1.15rem);
 	}
 	.notebook {
+		--notebook-y: -50%;
 		position: absolute;
-		right: 5vw;
-		top: 9vh;
-		width: min(48vw, 41rem);
-		height: 82vh;
+		right: clamp(2rem, 4vw, 6rem);
+		top: 50%;
+		width: min(57vw, 105svh, 62rem);
+		aspect-ratio: 1120 / 880;
 		transform: translateX(calc(clamp(0, calc((0.915 - var(--story-progress)) * 33.333), 1) * 110vw))
+			translateY(var(--notebook-y))
 			rotate(calc(clamp(0, calc((0.915 - var(--story-progress)) * 33.333), 1) * 12deg));
 		filter: drop-shadow(0 1.5rem 2rem rgba(24, 55, 98, 0.16));
-		overflow: hidden;
 	}
 	.notebook > img {
+		display: block;
 		width: 100%;
 		height: 100%;
 		object-fit: contain;
-		transform: scale(1.65);
-		transform-origin: 56% 50%;
 	}
 	.faq-list {
 		position: absolute;
 		left: 23%;
-		top: 18%;
-		width: 57%;
+		right: 14%;
+		top: 11%;
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
+		gap: 0.4rem;
 	}
 	.faq-list > strong {
-		font: 700 clamp(2.7rem, 5vw, 4.8rem) var(--font-display);
+		margin-bottom: 0.1rem;
+		font: 700 clamp(3rem, 4.2vw, 5rem)/0.92 var(--font-display);
 		letter-spacing: -0.06em;
 	}
 	.faq-item {
@@ -761,17 +771,18 @@
 		width: 100%;
 		border: 0;
 		background: transparent;
-		padding: 0.6rem 0;
+		padding: clamp(0.55rem, 0.8vh, 0.8rem) 0;
 		color: var(--ink);
 		text-align: left;
+		font-size: clamp(0.95rem, 1.05vw, 1.15rem);
 		font-weight: 700;
 		cursor: pointer;
 	}
 	.faq-item p {
-		margin: 0 0 0.6rem;
+		margin: 0 0 0.65rem;
 		color: var(--ink-soft);
-		font-size: 0.68rem;
-		line-height: 1.55;
+		font-size: clamp(0.78rem, 0.85vw, 0.95rem);
+		line-height: 1.6;
 	}
 	.join-story {
 		opacity: clamp(0, calc((var(--story-progress) - 0.955) * 35), 1);
@@ -781,15 +792,14 @@
 		position: absolute;
 		left: 50%;
 		top: 50%;
-		width: min(58vw, 47rem);
-		height: min(88%, 52rem);
+		width: min(48vw, 78svh, 43rem);
+		aspect-ratio: 1;
 		transform: translate(
 				-50%,
 				calc(-50% + (1 - clamp(0, calc((var(--story-progress) - 0.955) * 50), 1)) * 55vh)
 			)
 			scale(calc(0.94 + clamp(0, calc((var(--story-progress) - 0.955) * 50), 1) * 0.06));
 		filter: drop-shadow(0 2rem 3.5rem rgba(25, 54, 100, 0.16));
-		overflow: hidden;
 	}
 	.join-folder > img {
 		position: absolute;
@@ -797,22 +807,22 @@
 		width: 100%;
 		height: 100%;
 		object-fit: contain;
-		transform: translateX(25%) scale(3);
-		transform-origin: 29% 47%;
 	}
 	.join-folder article {
 		position: absolute;
 		z-index: 2;
-		left: 25%;
-		right: 25%;
-		top: 49%;
+		left: 31%;
+		right: 14%;
+		top: 18%;
 		text-align: center;
 	}
 	.join-folder h2 {
-		font-size: clamp(2rem, 2.7vw, 2.8rem);
+		font-size: clamp(2.3rem, 3vw, 3.25rem);
 	}
 	.join-folder p {
+		max-width: 22rem;
 		margin-inline: auto;
+		font-size: clamp(0.95rem, 1vw, 1.08rem);
 	}
 	.join-folder a {
 		margin-top: 0.8rem;
@@ -904,7 +914,7 @@
 			width: min(110vw, 50rem);
 			right: -5vw;
 			top: auto;
-			bottom: 2%;
+			bottom: 18%;
 			height: 52%;
 		}
 		.capsule {
@@ -977,38 +987,37 @@
 			text-align: center;
 		}
 		.notebook {
-			right: 2vw;
+			--notebook-y: 0%;
+			right: -2vw;
 			top: auto;
-			bottom: 1%;
-			width: 96vw;
-			height: 58%;
+			bottom: 14%;
+			width: min(104vw, 82svh);
 		}
 		.faq-list {
-			top: 18%;
-			gap: 0.1rem;
+			top: 10%;
+			gap: 0.15rem;
 		}
 		.faq-list > strong {
-			font-size: 2.5rem;
+			font-size: clamp(2.25rem, 8vw, 3.25rem);
 		}
 		.faq-item button {
 			padding: 0.35rem 0;
-			font-size: clamp(0.62rem, 1.8vw, 0.85rem);
+			font-size: clamp(0.78rem, 2.5vw, 0.95rem);
 		}
 		.faq-item p {
-			font-size: clamp(0.52rem, 1.55vw, 0.68rem);
+			font-size: clamp(0.66rem, 2vw, 0.82rem);
 			margin-bottom: 0.3rem;
 		}
 		.join-folder {
-			width: min(130vw, 58rem);
-			height: 88%;
+			width: min(102vw, 78svh, 36rem);
 		}
 		.join-folder article {
-			left: 25%;
-			right: 25%;
-			top: 49%;
+			left: 31%;
+			right: 14%;
+			top: 18%;
 		}
 		.join-folder h2 {
-			font-size: clamp(1.4rem, 5.8vw, 1.8rem);
+			font-size: clamp(1.45rem, 6vw, 2rem);
 		}
 		.story-percent {
 			right: 0.7rem;
@@ -1016,13 +1025,11 @@
 	}
 	@media (min-width: 601px) and (max-width: 900px) {
 		.notebook {
-			right: 5vw;
-			width: 90vw;
-			height: 53%;
+			right: 4vw;
+			width: min(92vw, 82svh);
 		}
 		.join-folder {
-			width: min(98vw, 52rem);
-			height: 80%;
+			width: min(78vw, 76svh, 40rem);
 		}
 	}
 	@media (max-width: 900px) and (max-height: 680px) {
@@ -1090,10 +1097,10 @@
 			top: 1rem;
 		}
 		.notebook {
-			height: 57%;
+			width: min(88vw, 76svh);
 		}
 		.join-folder {
-			height: 94%;
+			width: min(84vw, 80svh, 32rem);
 		}
 		.join-folder a {
 			margin-top: 0.35rem;
