@@ -10,6 +10,7 @@ test('home page renders the NYCU LIFE hero', async ({ page }) => {
 });
 
 test('scroll story reaches the product, FAQ, and join chapters', async ({ page }) => {
+	test.slow();
 	await page.goto('/');
 
 	const story = page.getByRole('region', { name: 'NYCU LIFE 捲動互動故事' });
@@ -17,15 +18,98 @@ test('scroll story reaches the product, FAQ, and join chapters', async ({ page }
 	await expect(story).toContainText('PRODUCT 03');
 	await expect(story).toContainText('下一個解法，也許由你開始。');
 
-	await story.evaluate((element) => {
-		const progress = 0.91;
-		window.scrollTo(0, element.offsetTop + (element.scrollHeight - window.innerHeight) * progress);
-	});
+	await page.mouse.move(720, 450);
+	for (let step = 1; step <= 8; step += 1) {
+		await page.mouse.wheel(0, 80);
+		await expect(story).toHaveAttribute('data-story-step', String(step), { timeout: 2500 });
+		await expect(story).toHaveAttribute('data-story-animating', 'false');
+	}
 
 	const collaborationQuestion = story.getByRole('button', { name: /可以和你們合作嗎？/ });
 	await expect(collaborationQuestion).toBeVisible();
 	await collaborationQuestion.click();
 	await expect(collaborationQuestion).toHaveAttribute('aria-expanded', 'true');
+});
+
+test('one gesture plays one fixed story step without skipping and supports reverse', async ({
+	page
+}) => {
+	await page.goto('/');
+
+	const story = page.locator('.scroll-story');
+	await page.mouse.move(720, 450);
+	await page.mouse.wheel(0, 900);
+	await page.mouse.wheel(0, 900);
+	await page.mouse.wheel(0, 900);
+
+	await expect(story).toHaveAttribute('data-story-animating', 'true');
+	await page.waitForTimeout(180);
+	await expect(story).toHaveAttribute('data-story-step', '0');
+	await expect(story).toHaveAttribute('data-story-step', '1', { timeout: 2500 });
+	await expect(story).toHaveAttribute('data-story-step-name', 'capsule-drop');
+	await expect(story).toHaveAttribute('data-story-animating', 'false');
+
+	await page.mouse.wheel(0, 80);
+	await expect(story).toHaveAttribute('data-story-step', '2', { timeout: 2500 });
+	await page.keyboard.press('ArrowUp');
+	await expect(story).toHaveAttribute('data-story-step', '1', { timeout: 2500 });
+
+	await story.getByRole('link', { name: '略過動畫' }).click();
+	await expect(story).toHaveAttribute('data-story-step', '9');
+	await expect(page).toHaveURL(/#products$/);
+	await page.evaluate(() => window.scrollTo(0, 0));
+	await page.mouse.wheel(0, 300);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+});
+
+test('a mobile swipe advances exactly one story step', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/');
+
+	const story = page.locator('.scroll-story');
+	await story.evaluate((element) => {
+		const touch = (clientY: number) =>
+			new Touch({
+				identifier: 1,
+				target: element,
+				clientX: 195,
+				clientY
+			});
+		const start = touch(650);
+		const end = touch(610);
+		element.dispatchEvent(
+			new TouchEvent('touchstart', {
+				bubbles: true,
+				cancelable: true,
+				touches: [start],
+				targetTouches: [start],
+				changedTouches: [start]
+			})
+		);
+		element.dispatchEvent(
+			new TouchEvent('touchmove', {
+				bubbles: true,
+				cancelable: true,
+				touches: [end],
+				targetTouches: [end],
+				changedTouches: [end]
+			})
+		);
+		element.dispatchEvent(
+			new TouchEvent('touchend', {
+				bubbles: true,
+				cancelable: true,
+				touches: [],
+				targetTouches: [],
+				changedTouches: [end]
+			})
+		);
+	});
+
+	await expect(story).toHaveAttribute('data-story-step', '1', { timeout: 2500 });
+	await expect(story).toHaveAttribute('data-story-step-name', 'capsule-drop');
+	await page.waitForTimeout(250);
+	await expect(story).toHaveAttribute('data-story-step', '1');
 });
 
 test('scroll story keeps every chapter readable across viewport sizes', async ({ page }) => {
@@ -63,9 +147,9 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 			const result = await page
 				.locator('.scroll-story')
 				.evaluate(async (story, { progress, selector, insetSelector }) => {
-					const storyTop = story.getBoundingClientRect().top + window.scrollY;
 					document.documentElement.style.scrollBehavior = 'auto';
-					window.scrollTo(0, storyTop + (story.offsetHeight - window.innerHeight) * progress);
+					window.scrollTo(0, 0);
+					story.style.setProperty('--story-progress', String(progress));
 					await new Promise<void>((resolve) =>
 						requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
 					);
