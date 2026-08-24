@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_手機" data-name="手機" xmlns="http://www.w3.org/2000/svg" viewBox="95 276 400 752">
+  <defs>
+    <style>
+      .cls-1 { fill: none; }
+      .cls-1, .cls-2 { stroke: #49608a; }
+      .cls-1, .cls-2, .cls-3 { stroke-miterlimit: 10; }
+      .cls-2 { fill: #fafafa; }
+      .cls-2, .cls-3, .cls-4 { opacity: .71; }
+      .cls-3 { fill: #afadbd; stroke: #4b6390; stroke-width: 2px; }
+      .cls-5 { fill: #49608a; }
+    </style>
+  </defs>
+  <rect id="_直充電線" data-name="直充電線" class="cls-2" x="293.55" y="1051.66" width="14.55" height="316.52"/>
+  <path id="_外殼" data-name="外殼" class="cls-3" d="M430.55,282.53H159.98c-32.08,0-58.08,26-58.08,58.08v624.39c0,32.08,26,58.08,58.08,58.08h270.57c32.08,0,58.08-26,58.08-58.08V340.61c0-32.08-26-58.08-58.08-58.08ZM478.19,955.22c0,31.13-25.24,56.37-56.37,56.37h-253.11c-31.13,0-56.37-25.24-56.37-56.37V350.39c0-31.13,25.24-56.37,56.37-56.37h253.11c31.13,0,56.37,25.24,56.37,56.37v604.82Z"/>
+  <path id="_內部框線" data-name="內部框線" class="cls-2" d="M421.82,294.02h-253.11c-31.13,0-56.37,25.24-56.37,56.37v604.82c0,31.13,25.24,56.37,56.37,56.37h253.11c31.13,0,56.37-25.24,56.37-56.37V350.39c0-31.13-25.24-56.37-56.37-56.37ZM469.03,952.93c0,27.97-22.67,50.64-50.64,50.64h-246.25c-27.97,0-50.64-22.67-50.64-50.64V352.68c0-27.97,22.67-50.64,50.64-50.64h246.25c27.97,0,50.64,22.67,50.64,50.64v600.26Z"/>
+  <rect id="_充電孔" data-name="充電孔" class="cls-3" x="282.56" y="1023.19" width="36.54" height="76.31" rx="12.14" ry="12.14"/>
+  <g id="_信號格" data-name="信號格" class="cls-4">
+    <rect class="cls-5" x="385.93" y="323.78" width="4.7" height="13.1" rx="1.28" ry="1.28"/>
+    <rect class="cls-5" x="380.04" y="326.76" width="4.7" height="10.11" rx="1.28" ry="1.28"/>
+    <rect class="cls-5" x="374.02" y="329.16" width="4.7" height="7.71" rx="1.28" ry="1.28"/>
+    <rect class="cls-5" x="368.13" y="330.57" width="4.7" height="6.3" rx="1.28" ry="1.28"/>
+    <rect class="cls-5" x="385.93" y="337.44" width="4.7" height="3.77" rx="1.28" ry="1.28"/>
+    <rect class="cls-5" x="380.04" y="337.44" width="4.7" height="3.77" rx="1.28" ry="1.28"/>
+    <rect class="cls-5" x="374.02" y="337.44" width="4.7" height="3.77" rx="1.28" ry="1.28"/>
+    <rect class="cls-5" x="368.13" y="337.44" width="4.7" height="3.77" rx="1.28" ry="1.28" transform="translate(12.24 -12.9) rotate(2.03)"/>
+  </g>
+  <rect id="_瀏海" data-name="瀏海" class="cls-3" x="239.22" y="321.73" width="102.9" height="21.56" rx="10.17" ry="10.17"/>
+  <g id="_電量" data-name="電量" class="cls-4">
+    <rect class="cls-1" x="402.37" y="323.6" width="33.77" height="17.82" rx="4.06" ry="4.06"/>
+    <rect class="cls-5" x="405.65" y="326.34" width="5.89" height="12.35" rx="2.17" ry="2.17"/>
+    <polygon class="cls-5" points="419.26 335 417.69 340.52 426.27 331.35 420.28 331.29 422.25 324.51 414.3 334.95 419.26 335"/>
+    <rect class="cls-5" x="436.95" y="330.43" width="2.09" height="4.16" rx=".6" ry=".6"/>
+  </g>
+</svg>

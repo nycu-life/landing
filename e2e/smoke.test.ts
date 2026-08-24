@@ -1,89 +1,126 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-// Smoke test: the built static site serves the home page and renders the real
-// hero headline ("debug your NYCU LIFE problems"). The brand name is identical
-// across locales, so this assertion is locale-independent.
-test('home page renders the NYCU LIFE hero', async ({ page }) => {
+const story = (page: Page) => page.locator('.prototype-story');
+
+test('home renders the published-prototype chapter structure', async ({ page }) => {
 	await page.goto('/');
-
 	await expect(page.getByRole('heading', { level: 1, name: /NYCU LIFE/i })).toBeVisible();
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+	await expect(page.locator('.gacha-machine img')).toHaveCount(16);
+	await expect
+		.poll(() =>
+			page
+				.locator('.gacha-machine img')
+				.evaluateAll((images) =>
+					images.every((image) => (image as HTMLImageElement).naturalWidth > 0)
+				)
+		)
+		.toBe(true);
+	const assetRatios = await page.locator('.gacha-machine').evaluate((machine) => {
+		const base = machine.querySelector<HTMLImageElement>('.machine-base');
+		const knob = machine.querySelector<HTMLImageElement>('.machine-knob');
+		return {
+			base: base ? base.naturalWidth / base.naturalHeight : 0,
+			knob: knob ? knob.naturalWidth / knob.naturalHeight : 0
+		};
+	});
+	expect(assetRatios.base).toBeGreaterThan(1.8);
+	expect(assetRatios.base).toBeLessThan(1.9);
+	expect(assetRatios.knob).toBeCloseTo(1, 2);
+	await expect(page.locator('.gacha-machine > .capsule .capsule-art')).toHaveAttribute(
+		'src',
+		/\/story\/designer\/error-ball\.svg$/
+	);
+	const releaseOrigin = await page.locator('.gacha-machine').evaluate((machine) => {
+		const machineRect = machine.getBoundingClientRect();
+		const capsuleRect = machine.querySelector('.capsule')?.getBoundingClientRect();
+		if (!capsuleRect) return null;
+		return {
+			actualX: capsuleRect.left + capsuleRect.width / 2,
+			actualY: capsuleRect.top + capsuleRect.height / 2,
+			expectedX: machineRect.left + machineRect.width * 0.173,
+			expectedY: machineRect.bottom - machineRect.width * 0.0867
+		};
+	});
+	expect(releaseOrigin).not.toBeNull();
+	expect(Math.abs(releaseOrigin!.actualX - releaseOrigin!.expectedX)).toBeLessThan(3);
+	expect(Math.abs(releaseOrigin!.actualY - releaseOrigin!.expectedY)).toBeLessThan(3);
+	const desktopMachine = await page.locator('.gacha-machine').evaluate((machine) => {
+		const rect = machine.getBoundingClientRect();
+		const knob = machine.querySelector<HTMLElement>('.machine-knob');
+		const knobRect = knob?.getBoundingClientRect();
+		const knobOrigin = knob
+			? getComputedStyle(knob)
+					.transformOrigin.split(' ')
+					.map((value) => Number.parseFloat(value))
+			: [];
+		return {
+			width: rect.width,
+			stageWidth: machine.closest('.story-stage')?.getBoundingClientRect().width ?? 0,
+			knobOrigin,
+			expectedKnobOrigin: knobRect ? [knobRect.width * 0.5, knobRect.height * 0.5] : []
+		};
+	});
+	expect(desktopMachine.width / desktopMachine.stageWidth).toBeGreaterThanOrEqual(0.44);
+	expect(
+		Math.abs(desktopMachine.knobOrigin[0] - desktopMachine.expectedKnobOrigin[0])
+	).toBeLessThan(1);
+	expect(
+		Math.abs(desktopMachine.knobOrigin[1] - desktopMachine.expectedKnobOrigin[1])
+	).toBeLessThan(1);
+	await expect(story(page)).toContainText('ABOUT US');
+	await expect(story(page)).toContainText('FAQ');
+	await expect(story(page)).toContainText('JOIN THE TEAM');
+	await expect(page.locator('#prototype-footer')).toBeAttached();
 });
 
-test('scroll story reaches the product, FAQ, and join chapters', async ({ page }) => {
+test('one wheel gesture plays one fixed chapter without skipping and supports reverse', async ({
+	page
+}) => {
 	test.slow();
-	await page.goto('/');
-
-	const story = page.getByRole('region', { name: 'NYCU LIFE 捲動互動故事' });
-	await expect(story.getByRole('link', { name: '略過動畫' })).toBeVisible();
-	await expect(story).toContainText('PRODUCT 03');
-	await expect(story).toContainText('下一個解法，也許由你開始。');
-
-	await page.mouse.move(720, 450);
-	for (let step = 1; step <= 5; step += 1) {
-		await page.mouse.wheel(0, 80);
-		await expect(story).toHaveAttribute('data-story-step', String(step), {
-			timeout: step === 1 ? 3500 : 2500
-		});
-		await expect(story).toHaveAttribute('data-story-animating', 'false');
-		await expect(story).toHaveAttribute('data-phone-animating', 'false', { timeout: 2000 });
-	}
-
-	const collaborationQuestion = story.getByRole('button', { name: /可以和你們合作嗎？/ });
-	await expect(collaborationQuestion).toBeVisible();
-	await collaborationQuestion.click();
-	await expect(collaborationQuestion).toHaveAttribute('aria-expanded', 'true');
-});
-
-test('one gesture plays one fixed story step without skipping and supports reverse', async ({
-	page
-}) => {
-	await page.goto('/');
-
-	const story = page.locator('.scroll-story');
-	await page.mouse.move(720, 450);
+	await page.goto('/?motion=on');
+	await page.mouse.move(640, 400);
 	await page.mouse.wheel(0, 900);
 	await page.mouse.wheel(0, 900);
 	await page.mouse.wheel(0, 900);
 
-	await expect(story).toHaveAttribute('data-story-animating', 'true');
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
 	await page.waitForTimeout(180);
-	await expect(story).toHaveAttribute('data-story-step', '0');
+	await expect(story(page)).toHaveAttribute('data-story-step', '0');
+	const knobAlignment = await page.locator('.machine-knob-group').evaluate((group) => {
+		const knob = group.querySelector<HTMLElement>('.machine-knob');
+		const indicators = group.querySelector<HTMLElement>('.machine-knob-indicators');
+		if (!knob || !indicators) return null;
+		const groupRect = group.getBoundingClientRect();
+		const knobRect = knob.getBoundingClientRect();
+		return {
+			centerDeltaX: knobRect.left + knobRect.width / 2 - (groupRect.left + groupRect.width / 2),
+			centerDeltaY: knobRect.top + knobRect.height / 2 - (groupRect.top + groupRect.height / 2),
+			indicatorTransform: getComputedStyle(indicators).transform
+		};
+	});
+	expect(knobAlignment).not.toBeNull();
+	expect(Math.abs(knobAlignment!.centerDeltaX)).toBeLessThan(1);
+	expect(Math.abs(knobAlignment!.centerDeltaY)).toBeLessThan(1);
+	expect(knobAlignment!.indicatorTransform).toBe('none');
 	await expect
-		.poll(() =>
-			page.locator('.capsule').evaluate((element) => Number(getComputedStyle(element).opacity))
-		)
-		.toBeGreaterThan(0.2);
-	await page.waitForTimeout(1400);
-	await expect(story).toHaveAttribute('data-story-animating', 'true');
+		.poll(() => page.locator('.capsule').evaluate((element) => getComputedStyle(element).opacity))
+		.not.toBe('0');
+	await expect(page.locator('.capsule')).toHaveCount(1);
+	await expect(page.locator('.capsule .capsule-art')).toHaveCount(1);
+	await expect(page.locator('.capsule img[src$="bottom-ball.svg"]')).toHaveCount(0);
+	await expect(story(page)).toHaveAttribute('data-story-step', '1', { timeout: 3500 });
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about');
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'false');
 	await expect
-		.poll(() =>
-			page.locator('.capsule').evaluate((element) => Number(getComputedStyle(element).opacity))
-		)
-		.toBeGreaterThan(0.2);
-	await expect(story).toHaveAttribute('data-story-step', '1', { timeout: 2000 });
-	await expect(story).toHaveAttribute('data-story-step-name', 'about');
-	await expect(story).toHaveAttribute('data-story-animating', 'false');
+		.poll(() => page.locator('.capsule').evaluate((element) => getComputedStyle(element).opacity))
+		.toBe('0');
 
-	await page.mouse.wheel(0, 80);
-	await expect(story).toHaveAttribute('data-story-step', '2', { timeout: 2500 });
-	await expect(story).toHaveAttribute('data-story-animating', 'false');
-	await expect(story).toHaveAttribute('data-phone-animating', 'true');
-	await expect(story).toHaveAttribute('data-phone-animating', 'false', { timeout: 2000 });
-	await expect(story).toHaveAttribute('data-phone-slide', '1.000');
 	await page.keyboard.press('ArrowUp');
-	await expect(story).toHaveAttribute('data-story-step', '1', { timeout: 2500 });
-
-	await story.getByRole('link', { name: '略過動畫' }).click();
-	await expect(story).toHaveAttribute('data-story-step', '6');
-	await expect(page).toHaveURL(/#products$/);
-	await page.evaluate(() => window.scrollTo(0, 0));
-	await page.mouse.wheel(0, 300);
-	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'hero', { timeout: 3500 });
 });
 
-test('the first gesture is buffered before hydration and waits for first-scene assets', async ({
-	page
-}) => {
+test('the first gesture is buffered until hero assets are ready', async ({ page }) => {
 	test.slow();
 	await page.route('**/_app/immutable/**/*.js', async (route) => {
 		await new Promise((resolve) => setTimeout(resolve, 800));
@@ -95,45 +132,33 @@ test('the first gesture is buffered before hydration and waits for first-scene a
 	});
 
 	await page.goto('/?motion=on', { waitUntil: 'commit' });
-	const story = page.locator('.scroll-story');
-	await story.waitFor({ state: 'attached' });
+	await story(page).waitFor({ state: 'attached' });
 	await page.mouse.move(195, 420);
 	await page.mouse.wheel(0, 80);
 
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-	await expect(story).toHaveAttribute('data-story-ready', 'true', { timeout: 6000 });
-	await expect(story).toHaveAttribute('data-story-animating', 'true');
-	await expect(story).toHaveAttribute('data-story-step-name', 'about', { timeout: 4000 });
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true', { timeout: 6000 });
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 4000 });
 });
 
-test('motion preview opt-in plays the story even when the system prefers reduced motion', async ({
-	page
-}) => {
+test('motion opt-in overrides system reduced-motion for review', async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: 'reduce' });
 	await page.goto('/?motion=on');
-
-	const story = page.locator('.scroll-story');
-	await expect(story).toHaveAttribute('data-reduced-motion', 'false');
-	await page.mouse.move(720, 450);
+	await expect(story(page)).toHaveAttribute('data-reduced-motion', 'false');
+	await page.mouse.move(640, 400);
 	await page.mouse.wheel(0, 80);
-
-	await expect(story).toHaveAttribute('data-story-animating', 'true');
-	await expect(story).toHaveAttribute('data-story-step-name', 'about', { timeout: 3500 });
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 3500 });
 });
 
-test('a mobile swipe advances exactly one story step', async ({ page }) => {
+test('a mobile swipe advances exactly one chapter', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto('/');
+	await page.goto('/?motion=on');
 
-	const story = page.locator('.scroll-story');
-	await story.evaluate((element) => {
+	await story(page).evaluate((element) => {
 		const touch = (clientY: number) =>
-			new Touch({
-				identifier: 1,
-				target: element,
-				clientX: 195,
-				clientY
-			});
+			new Touch({ identifier: 1, target: element, clientX: 195, clientY });
 		const start = touch(650);
 		const end = touch(610);
 		element.dispatchEvent(
@@ -165,20 +190,18 @@ test('a mobile swipe advances exactly one story step', async ({ page }) => {
 		);
 	});
 
-	await expect(story).toHaveAttribute('data-story-step', '1', { timeout: 3500 });
-	await expect(story).toHaveAttribute('data-story-step-name', 'about');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 3500 });
 	await page.waitForTimeout(250);
-	await expect(story).toHaveAttribute('data-story-step', '1');
+	await expect(story(page)).toHaveAttribute('data-story-step', '1');
 });
 
-test('scroll story keeps every chapter readable across viewport sizes', async ({ page }) => {
+test('every prototype chapter stays readable across desktop, tablet, and compact phones', async ({
+	page
+}) => {
 	test.slow();
-
 	const viewports = [
 		{ width: 2560, height: 1440 },
-		{ width: 1920, height: 1080 },
 		{ width: 1440, height: 900 },
-		{ width: 1280, height: 720 },
 		{ width: 1024, height: 768 },
 		{ width: 768, height: 1024 },
 		{ width: 430, height: 932 },
@@ -186,377 +209,255 @@ test('scroll story keeps every chapter readable across viewport sizes', async ({
 		{ width: 320, height: 568 }
 	];
 	const chapters = [
-		{ progress: 0, selector: '.story-hero-copy', insetSelector: null },
-		{ progress: 0.39, selector: '.about-card', insetSelector: null },
-		{ progress: 0.65, selector: '.product-course', insetSelector: null },
-		{ progress: 0.8, selector: '.product-bus', insetSelector: null },
-		{ progress: 0.87, selector: '.product-activity', insetSelector: null },
-		{ progress: 0.935, selector: '.notebook', insetSelector: '.faq-list' },
-		{ progress: 0.99, selector: '.join-folder', insetSelector: 'article' }
+		{ hash: 'hero', selector: '.gacha-machine', minimum: 0.72 },
+		{ hash: 'about', selector: '.about-shell', minimum: 0.8 },
+		{ hash: 'products', selector: '.product-shell', minimum: 0.8 },
+		{ hash: 'faq', selector: '.faq-shell', minimum: 0.68 },
+		{ hash: 'join', selector: '.join-shell', minimum: 0.72 }
 	];
-
-	await page.goto('/');
 
 	for (const viewport of viewports) {
 		await page.setViewportSize(viewport);
-
 		for (const chapter of chapters) {
-			const result = await page
-				.locator('.scroll-story')
-				.evaluate(async (story, { progress, selector, insetSelector }) => {
-					document.documentElement.style.scrollBehavior = 'auto';
-					window.scrollTo(0, 0);
-					story.style.setProperty('--story-progress', String(progress));
-					await new Promise<void>((resolve) =>
-						requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-					);
-
-					const stage = story.querySelector<HTMLElement>('.story-stage');
-					const target = story.querySelector<HTMLElement>(selector);
-					if (!stage || !target) throw new Error(`Missing responsive story target: ${selector}`);
-
-					const stageRect = stage.getBoundingClientRect();
-					const targetRect = target.getBoundingClientRect();
-					const inset = insetSelector ? target.querySelector<HTMLElement>(insetSelector) : null;
-					const insetRect = inset?.getBoundingClientRect();
-					const intersectionWidth = Math.max(
-						0,
-						Math.min(stageRect.right, targetRect.right) - Math.max(stageRect.left, targetRect.left)
-					);
-					const intersectionHeight = Math.max(
-						0,
-						Math.min(stageRect.bottom, targetRect.bottom) - Math.max(stageRect.top, targetRect.top)
-					);
-					const visibleRatio =
-						(intersectionWidth * intersectionHeight) /
-						Math.max(1, targetRect.width * targetRect.height);
-
-					let effectiveOpacity = 1;
-					for (
-						let element: HTMLElement | null = target;
-						element && element !== story;
-						element = element.parentElement
-					) {
-						effectiveOpacity *= Number.parseFloat(getComputedStyle(element).opacity);
-					}
-
-					return {
-						insetContained:
-							!insetRect ||
-							(insetRect.left >= targetRect.left - 1 &&
-								insetRect.right <= targetRect.right + 1 &&
-								insetRect.top >= targetRect.top - 1 &&
-								insetRect.bottom <= targetRect.bottom + 1),
-						effectiveOpacity,
-						visibleRatio,
-						overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
-					};
-				}, chapter);
-
+			await page.goto(`/?motion=on#${chapter.hash}`);
+			await expect(story(page)).toHaveAttribute('data-story-step-name', chapter.hash);
+			const result = await page.locator(chapter.selector).evaluate((target) => {
+				const stage = document.querySelector<HTMLElement>('.story-stage');
+				if (!stage) throw new Error('Missing story stage');
+				const stageRect = stage.getBoundingClientRect();
+				const rect = target.getBoundingClientRect();
+				const width = Math.max(
+					0,
+					Math.min(stageRect.right, rect.right) - Math.max(stageRect.left, rect.left)
+				);
+				const height = Math.max(
+					0,
+					Math.min(stageRect.bottom, rect.bottom) - Math.max(stageRect.top, rect.top)
+				);
+				return {
+					visibleRatio: (width * height) / Math.max(1, rect.width * rect.height),
+					sizeRatio: rect.width / stageRect.width,
+					overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+				};
+			});
 			expect
-				.soft(result.overflow, `${viewport.width}x${viewport.height} at ${chapter.progress}`)
+				.soft(result.overflow, `${chapter.hash} overflow at ${viewport.width}x${viewport.height}`)
 				.toBe(0);
-			const minimumVisibleRatio =
-				chapter.selector === '.notebook' && viewport.width <= 900 ? 0.6 : 0.75;
 			expect
 				.soft(
 					result.visibleRatio,
-					`${chapter.selector} clipped at ${viewport.width}x${viewport.height}`
+					`${chapter.hash} clipped at ${viewport.width}x${viewport.height}`
 				)
-				.toBeGreaterThanOrEqual(minimumVisibleRatio);
-			expect
-				.soft(
-					result.effectiveOpacity,
-					`${chapter.selector} hidden at ${viewport.width}x${viewport.height}`
-				)
-				.toBeGreaterThanOrEqual(0.08);
-			expect
-				.soft(
-					result.insetContained,
-					`${chapter.insetSelector} escaped ${chapter.selector} at ${viewport.width}x${viewport.height}`
-				)
-				.toBe(true);
-		}
-	}
-});
-
-test('scroll story fills a 2560x1440 canvas with readable focal elements', async ({ page }) => {
-	await page.setViewportSize({ width: 2560, height: 1440 });
-	await page.goto('/');
-
-	const sizes = await page.evaluate(() => {
-		const measure = (selector: string) => {
-			const element = document.querySelector<HTMLElement>(selector);
-			if (!element) throw new Error(`Missing 1440p story target: ${selector}`);
-			return {
-				width: element.offsetWidth,
-				fontSize: Number.parseFloat(getComputedStyle(element).fontSize)
-			};
-		};
-
-		return {
-			heroTitle: measure('.story-hero-copy h1'),
-			gacha: measure('.gacha-machine'),
-			faqTitle: measure('.faq-copy h2'),
-			notebook: measure('.notebook'),
-			joinFolder: measure('.join-folder')
-		};
-	});
-
-	expect(sizes.heroTitle.fontSize).toBeGreaterThanOrEqual(140);
-	expect(sizes.gacha.width).toBeGreaterThanOrEqual(1250);
-	expect(sizes.faqTitle.fontSize).toBeGreaterThanOrEqual(100);
-	expect(sizes.notebook.width).toBeGreaterThanOrEqual(1250);
-	expect(sizes.joinFolder.width).toBeGreaterThanOrEqual(950);
-});
-
-test('about cards separate and the large-screen phone stops at the bottom without rebounding', async ({
-	page
-}) => {
-	await page.setViewportSize({ width: 2048, height: 1235 });
-	await page.goto('/?motion=on');
-
-	const result = await page.locator('.scroll-story').evaluate(async (story) => {
-		story.style.setProperty('--story-progress', '0.39');
-		await new Promise<void>((resolve) =>
-			requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-		);
-
-		const film = story.querySelector<HTMLElement>('.team-film');
-		const card = story.querySelector<HTMLElement>('.about-card');
-		const phone = story.querySelector<HTMLImageElement>('.phone-rig > img');
-		if (!film || !card || !phone) throw new Error('Missing story assets');
-		const filmRect = film.getBoundingClientRect();
-		const cardRect = card.getBoundingClientRect();
-		const stage = story.querySelector<HTMLElement>('.story-stage');
-		if (!stage) throw new Error('Missing story stage');
-		const phonePositions = [];
-		for (const progress of [0.47, 0.5, 0.55, 0.6, 0.65]) {
-			story.style.setProperty('--story-progress', String(progress));
-			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-			const rect = phone.getBoundingClientRect();
-			phonePositions.push({
-				centerX: rect.left + rect.width / 2,
-				bottomGap: stage.getBoundingClientRect().bottom - rect.bottom,
-				width: rect.width
-			});
-		}
-		return {
-			gap: cardRect.left - filmRect.right,
-			phoneSource: phone.getAttribute('src'),
-			phonePositions
-		};
-	});
-
-	expect(result.gap).toBeGreaterThanOrEqual(160);
-	expect(result.phoneSource).toContain('/story/phone-transparent.png');
-	expect(result.phonePositions.at(-1)?.width).toBeGreaterThanOrEqual(700);
-	for (const position of result.phonePositions) {
-		expect(Math.abs(position.bottomGap)).toBeLessThanOrEqual(2);
-	}
-	for (let index = 1; index < result.phonePositions.length; index += 1) {
-		expect(result.phonePositions[index].centerX).toBeGreaterThanOrEqual(
-			result.phonePositions[index - 1].centerX - 1
-		);
-	}
-});
-
-test('product copy and phone stay visually centered on mobile and portrait tablets', async ({
-	page
-}) => {
-	await page.goto('/?motion=on');
-
-	for (const viewport of [
-		{ width: 390, height: 844 },
-		{ width: 768, height: 1024 },
-		{ width: 1024, height: 1366 }
-	]) {
-		await page.setViewportSize(viewport);
-
-		for (const chapter of [
-			{ progress: 0.65, selector: '.product-course' },
-			{ progress: 0.8, selector: '.product-bus' },
-			{ progress: 0.87, selector: '.product-activity' }
-		]) {
-			const result = await page
-				.locator('.scroll-story')
-				.evaluate(async (story, { progress, selector }) => {
-					story.style.setProperty('--story-progress', String(progress));
-					await new Promise<void>((resolve) =>
-						requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-					);
-
-					const copy = story.querySelector<HTMLElement>(selector);
-					const title = copy?.querySelector<HTMLElement>('h2');
-					const subtitle = copy?.querySelector<HTMLElement>('p');
-					const phoneScreen = story.querySelector<HTMLElement>('.phone-screen');
-					if (!copy || !title || !subtitle || !phoneScreen)
-						throw new Error('Missing product layout');
-
-					const centerOffset = (element: HTMLElement) => {
-						const rect = element.getBoundingClientRect();
-						return rect.left + rect.width / 2 - innerWidth / 2;
-					};
-					return {
-						copy: centerOffset(copy),
-						title: centerOffset(title),
-						subtitle: centerOffset(subtitle),
-						phoneScreen: centerOffset(phoneScreen)
-					};
-				}, chapter);
-
-			for (const [name, offset] of Object.entries(result)) {
+				.toBeGreaterThanOrEqual(chapter.minimum);
+			if (chapter.hash === 'hero' && viewport.width >= 641 && viewport.width <= 900) {
 				expect
-					.soft(Math.abs(offset), `${name} at ${viewport.width}x${viewport.height}`)
-					.toBeLessThan(4);
+					.soft(result.sizeRatio, `hero undersized at ${viewport.width}x${viewport.height}`)
+					.toBeGreaterThanOrEqual(0.6);
 			}
 		}
 	}
 });
 
-test('the phone hand clears all product titles on compact mobile viewports', async ({ page }) => {
-	await page.goto('/?motion=on');
-
+test('product copy and device remain separate and centered on narrow screens', async ({ page }) => {
 	for (const viewport of [
 		{ width: 430, height: 760 },
 		{ width: 390, height: 844 },
 		{ width: 320, height: 568 }
 	]) {
 		await page.setViewportSize(viewport);
+		await page.goto('/?motion=on#products');
+		const result = await page.evaluate(() => {
+			const copy = document.querySelector<HTMLElement>('.product-copy');
+			const demo = document.querySelector<HTMLElement>('.product-demo');
+			const title = copy?.querySelector<HTMLElement>('h2');
+			if (!copy || !demo || !title) throw new Error('Missing product prototype layout');
+			const copyRect = copy.getBoundingClientRect();
+			const demoRect = demo.getBoundingClientRect();
+			const titleRect = title.getBoundingClientRect();
+			return {
+				gap: demoRect.top - copyRect.bottom,
+				overlap: Math.max(
+					0,
+					Math.min(titleRect.bottom, demoRect.bottom) - Math.max(titleRect.top, demoRect.top)
+				),
+				copyCenter: copyRect.left + copyRect.width / 2 - innerWidth / 2,
+				demoCenter: demoRect.left + demoRect.width / 2 - innerWidth / 2,
+				overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+			};
+		});
+		expect.soft(result.gap).toBeGreaterThanOrEqual(0);
+		expect.soft(result.overlap).toBe(0);
+		expect.soft(Math.abs(result.copyCenter)).toBeLessThan(4);
+		expect.soft(Math.abs(result.demoCenter)).toBeLessThan(4);
+		expect.soft(result.overflow).toBe(0);
+	}
+});
 
-		for (const chapter of [
-			{ progress: 0.65, selector: '.product-course' },
-			{ progress: 0.8, selector: '.product-bus' },
-			{ progress: 0.87, selector: '.product-activity' }
-		]) {
-			const result = await page
-				.locator('.scroll-story')
-				.evaluate(async (story, { progress, selector }) => {
-					story.style.setProperty('--story-progress', String(progress));
-					await new Promise<void>((resolve) =>
-						requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-					);
+test('product carousel exposes all four products without changing story chapter', async ({
+	page
+}) => {
+	await page.goto('/?motion=on#products');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
+	const next = page.getByRole('button', { name: '下一個產品' });
+	for (const product of ['NYCozU', '活動系統', '校園地圖']) {
+		await next.click();
+		await expect(page.locator('.product-copy h2')).toContainText(product);
+		await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
+	}
+});
 
-					const phone = story.querySelector<HTMLElement>('.phone-rig');
-					const title = story.querySelector<HTMLElement>(`${selector} h2`);
-					if (!phone || !title) throw new Error('Missing product layout');
+test('FAQ and recruitment boards stay readable in dark mode', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/?motion=on#faq');
+	await page.getByRole('button', { name: '切換至深色模式' }).click();
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await expect(page.locator('.faq-list > strong')).toHaveCSS('color', 'rgb(23, 34, 53)');
+	await expect(page.locator('.faq-item button').first()).toHaveCSS('color', 'rgb(23, 34, 53)');
+	await expect(page.locator('.faq-item p').first()).toHaveCSS('color', 'rgb(102, 117, 138)');
 
-					const phoneRect = phone.getBoundingClientRect();
-					const titleRect = title.getBoundingClientRect();
-					return {
-						gap: titleRect.top - phoneRect.bottom,
-						overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
-					};
-				}, chapter);
+	await page.evaluate(() => {
+		location.hash = 'join';
+	});
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
+	await expect(page.locator('.join-board-content h2')).toHaveCSS('color', 'rgb(23, 34, 53)');
+	await expect(page.locator('.join-board-content p')).toHaveCSS('color', 'rgb(102, 117, 138)');
+});
 
-			expect
-				.soft(result.gap, `${chapter.selector} artwork gap at ${viewport.width}x${viewport.height}`)
-				.toBeGreaterThanOrEqual(20);
-			expect.soft(result.overflow, `overflow at ${viewport.width}x${viewport.height}`).toBe(0);
+test('visual acceptance matrix has no broken images, clipped copy, or horizontal overflow', async ({
+	page
+}) => {
+	test.slow();
+	const viewports = [
+		{ name: 'desktop-large', width: 2560, height: 1440 },
+		{ name: 'desktop', width: 1440, height: 900 },
+		{ name: 'tablet-landscape', width: 1024, height: 768 },
+		{ name: 'tablet-portrait', width: 768, height: 1024 },
+		{ name: 'mobile', width: 390, height: 844 },
+		{ name: 'compact', width: 320, height: 568 }
+	];
+	const locales = ['zh-tw', 'en'] as const;
+	const themes = ['light', 'dark'] as const;
+	const chapters = ['hero', 'about', 'products', 'faq', 'join'] as const;
+	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
+
+	for (const viewport of viewports) {
+		await page.setViewportSize(viewport);
+		for (const locale of locales) {
+			for (const theme of themes) {
+				await page.goto('/?motion=on#hero');
+				await page.evaluate(
+					({ locale, theme }) => {
+						document.cookie = `PARAGLIDE_LOCALE=${locale}; path=/`;
+						localStorage.setItem('nycu-life-theme', theme);
+					},
+					{ locale, theme }
+				);
+				await page.reload();
+				await expect(page.locator('html')).toHaveAttribute('lang', locale);
+				await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+
+				for (const chapter of chapters) {
+					await page.evaluate((nextChapter) => {
+						location.hash = nextChapter;
+					}, chapter);
+					await expect(story(page)).toHaveAttribute('data-story-step-name', chapter);
+
+					const result = await page.locator('.story-scene.scene-active').evaluate((scene) => {
+						const stage = document.querySelector<HTMLElement>('.story-stage');
+						if (!stage) throw new Error('Missing story stage');
+						const stageRect = stage.getBoundingClientRect();
+						const isVisible = (element: HTMLElement) => {
+							const style = getComputedStyle(element);
+							const rect = element.getBoundingClientRect();
+							return (
+								style.display !== 'none' &&
+								style.visibility !== 'hidden' &&
+								Number(style.opacity) > 0.01 &&
+								rect.width > 1 &&
+								rect.height > 1
+							);
+						};
+						const clippedCopy = Array.from(
+							scene.querySelectorAll<HTMLElement>('h1, h2, h3, p, a, button, .eyebrow')
+						)
+							.filter(isVisible)
+							.filter((element) => {
+								const rect = element.getBoundingClientRect();
+								return (
+									rect.left < stageRect.left - 2 ||
+									rect.right > stageRect.right + 2 ||
+									rect.top < stageRect.top - 2 ||
+									rect.bottom > stageRect.bottom + 2 ||
+									element.scrollWidth > element.clientWidth + 2 ||
+									element.scrollHeight > element.clientHeight + 2
+								);
+							})
+							.map((element) => `${element.tagName}.${element.className}`);
+						const brokenImages = Array.from(scene.querySelectorAll<HTMLImageElement>('img'))
+							.filter((image) => image.complete && image.naturalWidth === 0)
+							.map((image) => image.src);
+						const safeAreaOverflow = Array.from(
+							scene.querySelectorAll<HTMLElement>(
+								'.about-copy, .product-copy, .faq-list, .join-board-content'
+							)
+						).flatMap((container) => {
+							const containerRect = container.getBoundingClientRect();
+							return Array.from(
+								container.querySelectorAll<HTMLElement>('h1, h2, h3, p, a, button, .eyebrow')
+							)
+								.filter(isVisible)
+								.filter((element) => {
+									const rect = element.getBoundingClientRect();
+									return (
+										rect.left < containerRect.left - 2 ||
+										rect.right > containerRect.right + 2 ||
+										rect.top < containerRect.top - 2 ||
+										rect.bottom > containerRect.bottom + 2
+									);
+								})
+								.map((element) => `${element.tagName}.${element.className}`);
+						});
+						return {
+							brokenImages,
+							clippedCopy,
+							safeAreaOverflow,
+							overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+						};
+					});
+					const label = `${locale}/${theme}/${viewport.name}/${chapter}`;
+					expect.soft(result.brokenImages, `${label}: broken images`).toEqual([]);
+					expect.soft(result.clippedCopy, `${label}: clipped copy`).toEqual([]);
+					expect.soft(result.safeAreaOverflow, `${label}: safe-area overflow`).toEqual([]);
+					expect.soft(result.overflow, `${label}: horizontal overflow`).toBe(0);
+					if (screenshotDirectory) {
+						await page.screenshot({
+							path: `${screenshotDirectory}/${viewport.name}-${locale}-${theme}-${chapter}.png`,
+							animations: 'disabled'
+						});
+					}
+				}
+			}
 		}
 	}
 });
 
-test('mobile FAQ and join artwork keep their intended scale, spacing, and optical center', async ({
-	page
-}) => {
-	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto('/?motion=on');
-
-	const result = await page.locator('.scroll-story').evaluate(async (story) => {
-		const settle = async (progress: number) => {
-			story.style.setProperty('--story-progress', String(progress));
-			await new Promise<void>((resolve) =>
-				requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-			);
-		};
-
-		await settle(0.935);
-		const notebook = story.querySelector<HTMLElement>('.notebook');
-		const faqTitle = story.querySelector<HTMLElement>('.faq-copy h2');
-		const faqSubtitle = story.querySelector<HTMLElement>('.faq-copy p');
-		if (!notebook || !faqTitle || !faqSubtitle) throw new Error('Missing FAQ layout');
-		const notebookRect = notebook.getBoundingClientRect();
-		const faqTitleRect = faqTitle.getBoundingClientRect();
-		const faqSubtitleRect = faqSubtitle.getBoundingClientRect();
-
-		await settle(0.99);
-		const folder = story.querySelector<HTMLElement>('.join-folder');
-		const article = folder?.querySelector<HTMLElement>('article');
-		const joinTitle = article?.querySelector<HTMLElement>('h2');
-		const joinSubtitle = article?.querySelector<HTMLElement>('p');
-		if (!folder || !article || !joinTitle || !joinSubtitle) throw new Error('Missing join layout');
-		const folderRect = folder.getBoundingClientRect();
-		const articleRect = article.getBoundingClientRect();
-		const joinTitleRect = joinTitle.getBoundingClientRect();
-		const joinSubtitleRect = joinSubtitle.getBoundingClientRect();
-
-		const menu = document.querySelector<HTMLElement>('.mobile-menu-btn');
-		const menuIcon = menu?.querySelector<SVGElement>('svg');
-		if (!menu || !menuIcon) throw new Error('Missing menu button');
-		const menuRect = menu.getBoundingClientRect();
-		const menuIconRect = menuIcon.getBoundingClientRect();
-
-		return {
-			notebookWidth: notebookRect.width,
-			faqGap: faqSubtitleRect.top - faqTitleRect.bottom,
-			folderWidth: folderRect.width,
-			joinCenterOffset: articleRect.left + articleRect.width / 2 - innerWidth / 2,
-			joinGap: joinSubtitleRect.top - joinTitleRect.bottom,
-			menuIconCenterOffset: {
-				x: menuIconRect.left + menuIconRect.width / 2 - (menuRect.left + menuRect.width / 2),
-				y: menuIconRect.top + menuIconRect.height / 2 - (menuRect.top + menuRect.height / 2)
-			}
-		};
-	});
-
-	expect(result.notebookWidth).toBeGreaterThanOrEqual(390 * 1.2);
-	expect(result.faqGap).toBeGreaterThanOrEqual(20);
-	expect(result.folderWidth).toBeGreaterThanOrEqual(390 * 1.1);
-	expect(Math.abs(result.joinCenterOffset)).toBeLessThanOrEqual(4);
-	expect(result.joinGap).toBeGreaterThanOrEqual(16);
-	expect(Math.abs(result.menuIconCenterOffset.x)).toBeLessThanOrEqual(1);
-	expect(Math.abs(result.menuIconCenterOffset.y)).toBeLessThanOrEqual(1);
-});
-
-test('theme toggle persists and mobile navigation stays usable', async ({ page }) => {
+test('theme persists and mobile menu remains usable', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');
-
-	await expect(page.locator('.topbar-nav')).toBeHidden();
 	await page.getByRole('button', { name: '切換至深色模式' }).click();
-	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-	await expect(page.locator('.topbar-brand img').first()).toHaveAttribute(
-		'src',
-		/logo-horizontal-white\.svg$/
-	);
-	await page.locator('.scroll-story').evaluate((story) => {
-		story.style.setProperty('--story-progress', '0.935');
-	});
-	await expect(page.locator('.faq-list > strong')).toHaveCSS('color', 'rgb(23, 34, 53)');
-	await expect(page.locator('.faq-item button').first()).toHaveCSS('color', 'rgb(23, 34, 53)');
-	await expect(page.locator('.faq-item p').first()).toHaveCSS('color', 'rgb(102, 117, 138)');
-	await page.locator('.scroll-story').evaluate((story) => {
-		story.style.setProperty('--story-progress', '0.99');
-	});
-	await expect(page.locator('.join-folder h2')).toHaveCSS('color', 'rgb(23, 34, 53)');
-	await expect(page.locator('.join-folder p')).toHaveCSS('color', 'rgb(102, 117, 138)');
-
 	await page.reload();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 	await page.getByRole('button', { name: '開啟選單' }).click();
 	await expect(page.locator('.menu.open')).toBeVisible();
-	await expect(page).toHaveURL(/\/$/);
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
-test('language switcher stays in the navbar', async ({ page }) => {
+test('language switcher stays in the navbar and translates the prototype hero', async ({
+	page
+}) => {
 	await page.goto('/');
-
 	const navbar = page.getByRole('banner');
 	await expect(navbar.getByRole('group', { name: '語言' })).toBeVisible();
-	await expect(page.locator('footer').getByRole('group', { name: '語言' })).toHaveCount(0);
-
 	await navbar.getByRole('button', { name: 'EN' }).click();
 	await expect(
 		page.getByRole('heading', {

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_1首頁" data-name="1首頁" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+  <defs>
+    <style>
+      .cls-1 { fill: #34333a; font-family: Arial-Black, Arial; font-size: 33.98px; font-weight: 800; isolation: isolate; }
+      .cls-2 { fill: #d8d9e0; stroke: #34333a; stroke-width: 4px; }
+      .cls-2, .cls-3 { stroke-miterlimit: 4; }
+      .cls-4 { letter-spacing: -.02em; }
+      .cls-3 { fill: #fff; stroke: #fff; stroke-width: 22px; }
+      .cls-5 { letter-spacing: 0em; }
+    </style>
+  </defs>
+  <g id="your">
+    <path class="cls-3" d="M284.45,201.05c6.06-7.38,15.28-9.88,27.66-7.51,13.96-5.53,27.66-5.4,41.09.4,15.8-2.9,26.47.4,32,9.88,6.59,9.22,6.59,17.78,0,25.68-6.32,8.17-16.33,10.67-30.03,7.51-14.49,5-28.58,5-42.28,0-14.75,2.9-24.89-.13-30.42-9.09-5.53-9.48-4.87-18.44,1.98-26.87Z"/>
+    <path class="cls-2" d="M280.54,200.01c6.46-7.86,16.29-10.53,29.49-8,14.88-5.9,29.49-5.76,43.81.42,16.85-3.09,28.23.42,34.12,10.53,7.02,9.83,7.02,18.96,0,27.38-6.74,8.71-17.41,11.37-32.02,8-15.45,5.34-30.47,5.34-45.08,0-15.73,3.09-26.54-.14-32.44-9.69-5.9-10.11-5.2-19.66,2.11-28.65Z"/>
+    <text class="cls-1" transform="translate(292.75 227.53)"><tspan class="cls-4" x="0" y="0">y</tspan><tspan class="cls-5" x="20.18" y="0">our</tspan></text>
+  </g>
+</svg>

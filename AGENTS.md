@@ -66,3 +66,20 @@ editing here, match this repo's tokens; don't import the other system.
   at request time — everything is prerendered at build.
 - The default locale is **`zh-tw`**; the unprefixed `/` renders Chinese copy.
 - Brand string "NYCU LIFE" is identical in both locales — safe to assert in tests.
+
+## Visual acceptance gate
+
+Every landing-page UI change must be inspected in a real browser before handoff.
+Check the complete matrix, not only the viewport or theme mentioned in the latest
+feedback:
+
+- locales: Traditional Chinese and English;
+- appearances: light and dark;
+- viewport classes: desktop, tablet, and phone;
+- every home-story chapter: hero, about, products, FAQ, and join.
+
+For each state, check broken images, horizontal overflow, text clipping or
+overlap, artwork scaling, centering, and excessively small or large content.
+Run the Playwright visual-acceptance matrix in `e2e/smoke.test.ts`, then visually
+inspect browser screenshots for all 12 locale/appearance/viewport combinations.
+Do not describe the UI as finished from type checks or DOM geometry alone.

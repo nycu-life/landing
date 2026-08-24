@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getLocale, setLocale } from '$lib/paraglide/runtime';
+	import { getLocale, getTextDirection, setLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 
 	let { tone = 'glass', compact = false }: { tone?: 'glass' | 'menu'; compact?: boolean } =
@@ -10,6 +10,12 @@
 		{ code: 'zh-tw' as const, short: m.nav_locale_zh() },
 		{ code: 'en' as const, short: m.nav_locale_en() }
 	];
+
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		document.documentElement.lang = current;
+		document.documentElement.dir = getTextDirection(current);
+	});
 </script>
 
 <div class="locale" class:menu={tone === 'menu'} role="group" aria-label={m.nav_locale()}>

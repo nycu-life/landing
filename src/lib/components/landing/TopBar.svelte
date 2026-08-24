@@ -32,10 +32,9 @@
 			<img src={logoSrc} alt="NYCU LIFE" />
 		</a>
 		<nav class="topbar-nav" aria-label={m.nav_aria()}>
-			<a href="#products">{m.nav_products()}</a>
 			<a href="#about">{m.menu_about()}</a>
-			<a href="#courses">{m.nav_courses()}</a>
-			<a href="#devlog">{m.nav_devlog()}</a>
+			<a href="#products">{m.nav_products()}</a>
+			<a href="#faq">{m.story_faq_label()}</a>
 			<a href="#join">{m.nav_join()}</a>
 		</nav>
 		<div class="topbar-actions">
@@ -211,16 +210,15 @@
 	}
 	@media (max-width: 900px) {
 		.topbar-nav {
-			gap: 0.8rem;
-			font-size: 0.78rem;
-		}
-	}
-	@media (max-width: 680px) {
-		.topbar-nav {
 			display: none;
 		}
 		:global(.mobile-menu-btn) {
 			display: inline-flex;
+		}
+	}
+	@media (max-width: 680px) {
+		.topbar-actions {
+			gap: 0.45rem;
 		}
 	}
 	@media (max-width: 420px) {

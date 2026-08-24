@@ -1,25 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg id="_圖層_1" data-name="圖層 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+<svg id="_1首頁" data-name="1首頁" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
   <defs>
     <style>
-      .cls-1 {
-        letter-spacing: -.01em;
-      }
-
-      .cls-2 {
-        fill: #4d4d4d;
-        font-family: NotoSansCJKHK-Bold, 'Noto Sans CJK HK';
-        font-size: 40px;
-        font-variation-settings: 'wght' 700;
-        font-weight: 700;
-      }
-
-      .cls-3 {
-        letter-spacing: 0em;
-      }
+      .cls-1 { fill: #fff; stroke: #fff; stroke-width: 22px; }
+      .cls-1, .cls-2 { stroke-miterlimit: 4; }
+      .cls-3 { fill: #34333a; font-family: Arial-Black, Arial; font-size: 38.77px; font-weight: 800; isolation: isolate; }
+      .cls-2 { fill: #f5f5f8; stroke: #34333a; stroke-width: 3px; }
+      .cls-4 { fill: #36f; }
+      .cls-5 { letter-spacing: .02em; }
     </style>
   </defs>
-  <g id="_1-2文字" data-name="1-2文字">
-    <text class="cls-2" transform="translate(1480.3514 176.6011)"><tspan x="0" y="0">p</tspan><tspan class="cls-1" x="25.76" y="0">r</tspan><tspan class="cls-3" x="42.76" y="0">oblems</tspan></text>
+  <g id="problems">
+    <path class="cls-1" d="M1498.93,199.22c10.17-11.31,25.1-14.42,44.79-9.32,19.79-6.88,39.01-6.21,57.64,2.01,21.03-6.2,40.7-5.04,59.01,3.48,24.1-3.89,40.16,1.56,48.15,16.35,6.8,12.85,5.31,24-4.48,33.43-12,9.36-27.34,10.71-46.03,4.07-20.4,6.23-40.25,5.53-59.53-2.08-21.04,6.52-40.57,5.84-58.59-2.05-20.64,4.01-35.47-.29-44.49-12.91-6.53-11.58-5.36-22.58,3.52-32.99Z"/>
+    <path class="cls-2" d="M1498.93,199.22c10.17-11.31,25.1-14.42,44.79-9.32,19.79-6.88,39.01-6.21,57.64,2.01,21.03-6.2,40.7-5.04,59.01,3.48,24.1-3.89,40.16,1.56,48.15,16.35,6.8,12.85,5.31,24-4.48,33.43-12,9.36-27.34,10.71-46.03,4.07-20.4,6.23-40.25,5.53-59.53-2.08-21.04,6.52-40.57,5.84-58.59-2.05-20.64,4.01-35.47-.29-44.49-12.91-6.53-11.58-5.36-22.58,3.52-32.99Z"/>
+    <text class="cls-3" transform="translate(1504.0019 230.1427) rotate(2)"><tspan x="0" y="0">p</tspan><tspan class="cls-5" x="25.86" y="0">r</tspan><tspan x="43.69" y="0">oblems</tspan></text>
+    <path id="_星星" data-name="星星" class="cls-4" d="M1697.55,187.6l2.89,10.74,10.37,4.32-9.53,5.46-.87,11.2-8.67-7.57-10.74,2.89,4.32-10.37-6-9.2,11.2.87,7.03-8.35Z"/>
   </g>
 </svg>
