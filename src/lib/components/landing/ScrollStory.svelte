@@ -18,42 +18,217 @@
 			answer: m.story_faq_a3
 		}
 	];
+	const storySteps = [
+		{ id: 'hero', progress: 0, duration: 0 },
+		{ id: 'capsule-drop', progress: 0.18, duration: 1100 },
+		{ id: 'capsule-open', progress: 0.31, duration: 1000 },
+		{ id: 'about', progress: 0.39, duration: 900 },
+		{ id: 'phone', progress: 0.52, duration: 1000 },
+		{ id: 'course', progress: 0.63, duration: 1000 },
+		{ id: 'bus', progress: 0.77, duration: 1000 },
+		{ id: 'activity', progress: 0.84, duration: 900 },
+		{ id: 'faq', progress: 0.925, duration: 1000 },
+		{ id: 'join', progress: 0.99, duration: 1100 }
+	] as const;
+	const lastStepIndex = storySteps.length - 1;
+	const wheelThreshold = 32;
+	const touchThreshold = 28;
 
 	let storyEl: HTMLElement;
 	let progress = $state(0);
+	let stepIndex = $state(0);
+	let isAnimating = $state(false);
 	let activeFaq = $state(0);
 	let reducedMotion = $state(false);
+	let animationFrame = 0;
 
 	const clamp = (value: number) => Math.min(1, Math.max(0, value));
+	const easeInOutCubic = (value: number) =>
+		value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2;
+	const setProgress = (value: number) => {
+		progress = clamp(value);
+		storyEl?.style.setProperty('--story-progress', String(progress));
+	};
+	const goToStep = (nextIndex: number, immediate = false) => {
+		if (isAnimating || nextIndex < 0 || nextIndex > lastStepIndex || nextIndex === stepIndex) {
+			return false;
+		}
+
+		const fromIndex = stepIndex;
+		const from = progress;
+		const target = storySteps[nextIndex].progress;
+		if (immediate || reducedMotion) {
+			stepIndex = nextIndex;
+			setProgress(target);
+			return true;
+		}
+
+		const duration =
+			nextIndex > fromIndex ? storySteps[nextIndex].duration : storySteps[fromIndex].duration;
+		const startedAt = performance.now();
+		isAnimating = true;
+
+		const tick = (now: number) => {
+			const elapsed = clamp((now - startedAt) / duration);
+			setProgress(from + (target - from) * easeInOutCubic(elapsed));
+			if (elapsed < 1) {
+				animationFrame = requestAnimationFrame(tick);
+				return;
+			}
+			animationFrame = 0;
+			stepIndex = nextIndex;
+			isAnimating = false;
+		};
+
+		animationFrame = requestAnimationFrame(tick);
+		return true;
+	};
+	const jumpToStoryEnd = () => goToStep(lastStepIndex, true);
 
 	onMount(() => {
-		let frame = 0;
 		const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-		const updateMotionPreference = () => (reducedMotion = motionQuery.matches);
-		const update = () => {
+		let wheelIntent = 0;
+		let wheelConsumed = false;
+		let wheelResetTimer: ReturnType<typeof setTimeout> | undefined;
+		let touchStartY = 0;
+		let touchStartedInStory = false;
+		let touchConsumed = false;
+
+		const updateMotionPreference = () => {
+			reducedMotion = motionQuery.matches;
+			if (reducedMotion && animationFrame) {
+				cancelAnimationFrame(animationFrame);
+				animationFrame = 0;
+				isAnimating = false;
+				stepIndex = Math.max(
+					0,
+					storySteps.findIndex((step) => step.progress >= progress)
+				);
+				setProgress(storySteps[stepIndex].progress);
+			}
+		};
+		const storyIsEngaged = () => {
 			const rect = storyEl.getBoundingClientRect();
-			progress = clamp(-rect.top / Math.max(storyEl.offsetHeight - window.innerHeight, 1));
-			storyEl.style.setProperty('--story-progress', String(progress));
-			frame = 0;
+			const topBarBottom =
+				document.querySelector<HTMLElement>('.topbar')?.getBoundingClientRect().bottom ?? 0;
+			return rect.top <= topBarBottom + 3 && rect.bottom >= window.innerHeight - 3;
 		};
-		const requestUpdate = () => {
-			if (!frame) frame = requestAnimationFrame(update);
+		const isOutwardBoundary = (direction: number) =>
+			(direction < 0 && stepIndex === 0) || (direction > 0 && stepIndex === lastStepIndex);
+		const normalizeWheelDelta = (event: WheelEvent) => {
+			if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return event.deltaY * 16;
+			if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return event.deltaY * window.innerHeight;
+			return event.deltaY;
 		};
+		const resetWheelGestureSoon = () => {
+			if (wheelResetTimer) clearTimeout(wheelResetTimer);
+			wheelResetTimer = setTimeout(() => {
+				wheelIntent = 0;
+				wheelConsumed = false;
+			}, 180);
+		};
+		const onWheel = (event: WheelEvent) => {
+			const delta = normalizeWheelDelta(event);
+			if (!delta || reducedMotion || !storyIsEngaged()) return;
+
+			const direction = Math.sign(delta);
+			if (!isAnimating && isOutwardBoundary(direction)) return;
+
+			event.preventDefault();
+			resetWheelGestureSoon();
+			if (isAnimating || wheelConsumed) {
+				wheelConsumed = true;
+				return;
+			}
+
+			if (wheelIntent && Math.sign(wheelIntent) !== direction) wheelIntent = 0;
+			wheelIntent += delta;
+			if (Math.abs(wheelIntent) < wheelThreshold) return;
+
+			wheelConsumed = true;
+			wheelIntent = 0;
+			goToStep(stepIndex + direction);
+		};
+		const onTouchStart = (event: TouchEvent) => {
+			const target = event.target;
+			touchStartedInStory = target instanceof Node && storyEl.contains(target);
+			touchStartY = event.touches[0]?.clientY ?? 0;
+			touchConsumed = false;
+		};
+		const onTouchMove = (event: TouchEvent) => {
+			if (!touchStartedInStory || reducedMotion || !storyIsEngaged()) return;
+			const currentY = event.touches[0]?.clientY;
+			if (currentY === undefined) return;
+			const distance = touchStartY - currentY;
+			const direction = Math.sign(distance);
+			if (!direction || (!isAnimating && isOutwardBoundary(direction))) return;
+
+			event.preventDefault();
+			if (isAnimating || touchConsumed || Math.abs(distance) < touchThreshold) return;
+
+			touchConsumed = true;
+			goToStep(stepIndex + direction);
+		};
+		const onTouchEnd = () => {
+			touchStartedInStory = false;
+			touchConsumed = false;
+		};
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (reducedMotion || !storyIsEngaged()) return;
+			const target = event.target;
+			if (
+				target instanceof HTMLElement &&
+				target.closest('a, button, input, textarea, select, [contenteditable="true"]')
+			) {
+				return;
+			}
+
+			let direction = 0;
+			if (['ArrowDown', 'PageDown'].includes(event.key) || (event.key === ' ' && !event.shiftKey)) {
+				direction = 1;
+			} else if (
+				['ArrowUp', 'PageUp'].includes(event.key) ||
+				(event.key === ' ' && event.shiftKey)
+			) {
+				direction = -1;
+			}
+			if (!direction || (!isAnimating && isOutwardBoundary(direction))) return;
+
+			event.preventDefault();
+			if (!event.repeat && !isAnimating) goToStep(stepIndex + direction);
+		};
+
 		updateMotionPreference();
-		update();
-		window.addEventListener('scroll', requestUpdate, { passive: true });
-		window.addEventListener('resize', requestUpdate);
+		setProgress(storySteps[stepIndex].progress);
+		window.addEventListener('wheel', onWheel, { passive: false });
+		window.addEventListener('touchstart', onTouchStart, { passive: true });
+		window.addEventListener('touchmove', onTouchMove, { passive: false });
+		window.addEventListener('touchend', onTouchEnd, { passive: true });
+		window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+		window.addEventListener('keydown', onKeyDown);
 		motionQuery.addEventListener('change', updateMotionPreference);
 		return () => {
-			window.removeEventListener('scroll', requestUpdate);
-			window.removeEventListener('resize', requestUpdate);
+			window.removeEventListener('wheel', onWheel);
+			window.removeEventListener('touchstart', onTouchStart);
+			window.removeEventListener('touchmove', onTouchMove);
+			window.removeEventListener('touchend', onTouchEnd);
+			window.removeEventListener('touchcancel', onTouchEnd);
+			window.removeEventListener('keydown', onKeyDown);
 			motionQuery.removeEventListener('change', updateMotionPreference);
-			if (frame) cancelAnimationFrame(frame);
+			if (wheelResetTimer) clearTimeout(wheelResetTimer);
+			if (animationFrame) cancelAnimationFrame(animationFrame);
 		};
 	});
 </script>
 
-<section bind:this={storyEl} class="scroll-story" aria-label={m.story_region_label()}>
+<section
+	bind:this={storyEl}
+	class="scroll-story"
+	aria-label={m.story_region_label()}
+	data-story-step={stepIndex}
+	data-story-step-name={storySteps[stepIndex].id}
+	data-story-animating={isAnimating}
+>
 	<div class="story-stage">
 		<div class="story-progress" style:transform={`scaleX(${progress})`}></div>
 		<div class="story-aurora story-aurora-left"></div>
@@ -224,8 +399,8 @@
 		</section>
 
 		<div class="scroll-cue" aria-hidden="true">{m.story_scroll_cue()} <i></i></div>
-		<a class="skip-story" href="#products">{m.story_skip()}</a>
-		<span class="story-percent" aria-hidden="true">{Math.round(progress * 100)}%</span>
+		<a class="skip-story" href="#products" onclick={jumpToStoryEnd}>{m.story_skip()}</a>
+		<span class="story-percent" aria-hidden="true">{stepIndex + 1} / {storySteps.length}</span>
 	</div>
 </section>
 
@@ -233,14 +408,13 @@
 	.scroll-story {
 		--story-progress: 0;
 		position: relative;
-		height: 1050vh;
+		height: calc(100svh - 4.75rem);
 		background: var(--base);
 		color: var(--ink);
 	}
 	.story-stage {
-		position: sticky;
-		top: 4.75rem;
-		height: calc(100svh - 4.75rem);
+		position: relative;
+		height: 100%;
 		min-height: min(38rem, calc(100svh - 4.75rem));
 		overflow: hidden;
 		background: radial-gradient(
@@ -960,9 +1134,6 @@
 		}
 	}
 	@media (max-width: 900px) {
-		.scroll-story {
-			height: 980vh;
-		}
 		.story-stage {
 			min-height: 0;
 		}
