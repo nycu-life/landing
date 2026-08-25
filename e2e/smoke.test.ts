@@ -6,7 +6,7 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await page.goto('/');
 	await expect(page.getByRole('heading', { level: 1, name: /NYCU LIFE/i })).toBeVisible();
 	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
-	await expect(page.locator('.gacha-machine img')).toHaveCount(16);
+	await expect(page.locator('.gacha-machine img')).toHaveCount(17);
 	await expect
 		.poll(() =>
 			page
@@ -72,6 +72,31 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(story(page)).toContainText('FAQ');
 	await expect(story(page)).toContainText('JOIN THE TEAM');
 	await expect(page.locator('#prototype-footer')).toBeAttached();
+});
+
+test('hero uses the designer art direction for phone and tablet', async ({ page }) => {
+	for (const viewport of [
+		{ width: 390, height: 844, asset: /gacha-mobile\.svg$/ },
+		{ width: 768, height: 1024, asset: /gacha-tablet\.svg$/ }
+	]) {
+		await page.setViewportSize(viewport);
+		await page.goto('/?motion=on#hero');
+		const artwork = page.locator('.gacha-device-art img');
+		await expect(artwork).toBeVisible();
+		await expect.poll(() => artwork.evaluate((image) => image.currentSrc)).toMatch(viewport.asset);
+		const result = await page.locator('.gacha-machine').evaluate((machine) => {
+			const stage = machine.closest('.story-stage');
+			if (!stage) throw new Error('Missing story stage');
+			const machineRect = machine.getBoundingClientRect();
+			const stageRect = stage.getBoundingClientRect();
+			return {
+				widthRatio: machineRect.width / stageRect.width,
+				overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+			};
+		});
+		expect(result.widthRatio).toBeGreaterThanOrEqual(0.9);
+		expect(result.overflow).toBe(0);
+	}
 });
 
 test('one wheel gesture plays one fixed chapter without skipping and supports reverse', async ({
