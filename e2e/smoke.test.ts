@@ -293,6 +293,60 @@ test('product copy and device remain separate and centered on narrow screens', a
 	}
 });
 
+test('product screens stay registered to the phone frame at every viewport size', async ({
+	page
+}) => {
+	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
+	for (const viewport of [
+		{ width: 2560, height: 1440 },
+		{ width: 1024, height: 768 },
+		{ width: 768, height: 1024 },
+		{ width: 390, height: 844 },
+		{ width: 320, height: 568 }
+	]) {
+		await page.setViewportSize(viewport);
+		await page.goto('/?motion=on#products');
+		const next = page.getByRole('button', { name: '下一個產品' });
+
+		for (let productIndex = 0; productIndex < 4; productIndex += 1) {
+			if (productIndex > 0) await next.click();
+			const result = await page.evaluate(() => {
+				const phone = document.querySelector<HTMLElement>('.device-phone');
+				const screen = document.querySelector<HTMLElement>('.device-screen');
+				const frame = document.querySelector<HTMLImageElement>('.device-frame');
+				if (!phone || !screen || !frame) throw new Error('Missing product phone layers');
+				const phoneRect = phone.getBoundingClientRect();
+				const screenRect = screen.getBoundingClientRect();
+				const frameRect = frame.getBoundingClientRect();
+				return {
+					left: (screenRect.left - phoneRect.left) / phoneRect.width,
+					top: (screenRect.top - phoneRect.top) / phoneRect.height,
+					right: (phoneRect.right - screenRect.right) / phoneRect.width,
+					bottom: (phoneRect.bottom - screenRect.bottom) / phoneRect.height,
+					frameWidthDelta: Math.abs(frameRect.width - phoneRect.width),
+					frameHeightDelta: Math.abs(frameRect.height - phoneRect.height),
+					overflow: getComputedStyle(screen).overflow
+				};
+			});
+
+			const label = `${viewport.width}x${viewport.height} product ${productIndex + 1}`;
+			expect.soft(result.left, `${label}: left inset`).toBeCloseTo(0.0663, 2);
+			expect.soft(result.top, `${label}: top inset`).toBeCloseTo(0.0346, 2);
+			expect.soft(result.right, `${label}: right inset`).toBeCloseTo(0.0649, 2);
+			expect.soft(result.bottom, `${label}: bottom inset`).toBeCloseTo(0.0325, 2);
+			expect.soft(result.frameWidthDelta, `${label}: frame width`).toBeLessThanOrEqual(1);
+			expect.soft(result.frameHeightDelta, `${label}: frame height`).toBeLessThanOrEqual(1);
+			expect.soft(result.overflow, `${label}: screen clipping`).toBe('hidden');
+			if (screenshotDirectory) {
+				await page.screenshot({
+					path: `${screenshotDirectory}/phone-${viewport.width}x${viewport.height}-product-${productIndex + 1}.png`,
+					animations: 'disabled'
+				});
+			}
+		}
+	}
+});
+
 test('product carousel exposes all four products without changing story chapter', async ({
 	page
 }) => {

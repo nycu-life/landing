@@ -376,17 +376,19 @@
 					>
 					<div class="device-card" data-product={activeProductData.id}>
 						<img class="device-hand" src="{base}/story/phone-transparent.png" alt="" />
-						<div class="device-screen">
-							{#if activeProductData.screenshot}
-								<img
-									src={`${base}${activeProductData.screenshot.src}`}
-									alt={activeProductData.name()}
-								/>
-							{:else}
-								<div class="map-placeholder"><span>NYCU</span><strong>MAP</strong><i></i></div>
-							{/if}
+						<div class="device-phone">
+							<div class="device-screen">
+								{#if activeProductData.screenshot}
+									<img
+										src={`${base}${activeProductData.screenshot.src}`}
+										alt={activeProductData.name()}
+									/>
+								{:else}
+									<div class="map-placeholder"><span>NYCU</span><strong>MAP</strong><i></i></div>
+								{/if}
+							</div>
+							<img class="device-frame" src="{base}/story/designer/phone-frame.svg" alt="" />
 						</div>
-						<img class="device-frame" src="{base}/story/designer/phone-frame.svg" alt="" />
 					</div>
 					<button
 						type="button"
@@ -967,13 +969,18 @@
 		object-fit: contain;
 		pointer-events: none;
 	}
-	.device-screen {
+	.device-phone {
 		position: absolute;
 		z-index: 2;
-		left: 39%;
-		top: 12.6%;
-		width: 45.7%;
-		height: 71.4%;
+		left: 38.2%;
+		top: 11.8%;
+		width: 51.2%;
+		height: 76.4%;
+	}
+	.device-screen {
+		position: absolute;
+		z-index: 1;
+		inset: 3.46% 6.49% 3.25% 6.63%;
 		border-radius: 11% / 5%;
 		overflow: hidden;
 		background: #fff;
@@ -984,14 +991,13 @@
 		object-fit: cover;
 		object-position: top;
 	}
-	.device-card > .device-frame {
+	.device-frame {
 		position: absolute;
-		z-index: 3;
-		left: 38.2%;
-		top: 11.8%;
+		z-index: 2;
+		inset: 0;
 		display: block;
-		width: 51.2%;
-		height: 76.4%;
+		width: 100%;
+		height: 100%;
 		pointer-events: none;
 	}
 	.map-placeholder {
