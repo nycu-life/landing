@@ -283,6 +283,11 @@
 		>
 			<div class="hero-orbit" aria-hidden="true"></div>
 			<div class="gacha-machine" role="img" aria-label={m.story_gacha_alt()}>
+				<picture class="gacha-device-art" aria-hidden="true">
+					<source media="(max-width: 430px)" srcset="{base}/story/designer/gacha-mobile.svg" />
+					<source media="(max-width: 900px)" srcset="{base}/story/designer/gacha-tablet.svg" />
+					<img src="{base}/story/designer/gacha-tablet.svg" alt="" />
+				</picture>
 				<img class="machine-base" src="{base}/story/designer/gacha-machine.svg" alt="" />
 				<img class="machine-glass" src="{base}/story/designer/gacha-glass.svg" alt="" />
 				<div class="gacha-contents" aria-hidden="true">
@@ -715,6 +720,9 @@
 		object-fit: contain;
 		object-position: 50% 100%;
 		transform: translateY(var(--hero-art-shift));
+	}
+	.gacha-device-art {
+		display: none;
 	}
 	.gacha-machine > .machine-glass {
 		z-index: 2;
@@ -1289,9 +1297,41 @@
 			font-size: 0.86rem;
 		}
 		.gacha-machine {
-			--gacha-width: min(90vw, 36rem);
-			--hero-art-shift: -4svh;
-			transform: translateY(calc(-13svh + var(--story-progress) * -70vh));
+			--gacha-width: min(94vw, 44rem);
+			--capsule-size: clamp(4.5rem, 14vw, 6.5rem);
+			--hero-art-shift: 0px;
+			height: auto;
+			aspect-ratio: 1179 / 1050;
+			transform: translateY(calc(14svh + var(--story-progress) * -70vh));
+		}
+		.gacha-device-art {
+			position: absolute;
+			inset: 0;
+			display: block;
+		}
+		.gacha-device-art img {
+			display: block;
+			width: 100%;
+			height: 100%;
+			object-fit: contain;
+		}
+		.gacha-machine > .machine-base,
+		.gacha-machine > .machine-glass,
+		.gacha-machine > .machine-hole,
+		.gacha-machine > .gacha-contents {
+			display: none;
+		}
+		.machine-knob-group {
+			right: 6.6%;
+			bottom: 5.8%;
+			width: 14.5%;
+		}
+		.machine-knob-indicators {
+			display: none;
+		}
+		.capsule {
+			left: 18.5%;
+			top: 80%;
 		}
 		.about-shell {
 			grid-template-columns: 1fr;
@@ -1453,9 +1493,19 @@
 			font-size: clamp(1.55rem, 7vw, 2rem);
 		}
 		.gacha-machine {
-			--gacha-width: min(82vw, 20rem);
-			--hero-art-shift: -8svh;
-			transform: translateY(calc(-18svh + var(--story-progress) * -70vh));
+			--gacha-width: min(96vw, 26rem);
+			--capsule-size: clamp(4.25rem, 18vw, 5.5rem);
+			aspect-ratio: 1179 / 1320;
+			transform: translateY(calc(14svh + var(--story-progress) * -70vh));
+		}
+		.machine-knob-group {
+			right: 6.1%;
+			bottom: 4.8%;
+			width: 19%;
+		}
+		.capsule {
+			left: 22.6%;
+			top: 80%;
 		}
 		.hero-caption {
 			top: clamp(7rem, 18svh, 9rem);
@@ -1558,9 +1608,8 @@
 			width: min(82vw, 21rem, 43svh, calc(100vw - 2.25rem));
 		}
 		.gacha-machine {
-			--gacha-width: min(78vw, 17rem);
-			--hero-art-shift: -6svh;
-			transform: translateY(calc(-19svh + var(--story-progress) * -70vh));
+			--gacha-width: min(90vw, 22rem);
+			transform: translateY(calc(10svh + var(--story-progress) * -70vh));
 		}
 		.hero-caption {
 			top: 4rem;
