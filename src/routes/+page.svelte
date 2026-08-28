@@ -25,10 +25,15 @@
 				<a href="#products">{m.nav_products()}</a>
 				<a href="#faq">FAQ</a>
 				<a href="#join">{m.nav_join()}</a>
+				<a href="{base}/courses/">{m.nav_courses()}</a>
+				<a href="{base}/devlog/">{m.nav_devlog()}</a>
 			</nav>
 			<div class="footer-contact">
 				<strong>{m.menu_contact_label()}</strong>
 				<a href="mailto:hello@nycu.life">hello@nycu.life</a>
+				<a href="mailto:hello@nycu.life?subject={encodeURIComponent(m.footer_wishlist())}"
+					>{m.footer_wishlist()} ✦</a
+				>
 				<a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">Instagram</a>
 				<a href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</a>
 			</div>
@@ -60,9 +65,14 @@
 	.footer-brand img {
 		width: min(13rem, 80%);
 	}
+	.footer-brand img {
+		display: block;
+	}
 	.footer-brand p {
+		margin: 1.1rem 0 0;
 		max-width: 28rem;
 		color: #d1d5db;
+		line-height: 1.7;
 	}
 	.footer-grid nav,
 	.footer-contact {

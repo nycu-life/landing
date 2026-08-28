@@ -6,12 +6,11 @@
 	import { page } from '$app/state';
 	import { base } from '$app/paths';
 	import TopBar from '$lib/components/landing/TopBar.svelte';
-	import MenuOverlay from '$lib/components/landing/MenuOverlay.svelte';
 	import { initAnalytics, trackCampaignVisit } from '$lib/analytics';
+	import { dismissBootSplash } from '$lib/boot-splash';
 
 	let { children } = $props();
 
-	let menuOpen = $state(false);
 	let darkMode = $state(false);
 
 	onMount(() => {
@@ -20,6 +19,11 @@
 		} catch {
 			// Private browsing can disable localStorage; the in-memory toggle still works.
 		}
+		// The home story dismisses the boot splash once its art is ready; everything else
+		// (subpages, or a stalled asset) falls through to these.
+		if (!document.querySelector('.scroll-story')) dismissBootSplash();
+		const splashTimeout = setTimeout(dismissBootSplash, 4000);
+		return () => clearTimeout(splashTimeout);
 	});
 
 	$effect(() => {
@@ -39,9 +43,7 @@
 		page.url.pathname === `${base}/` || page.url.pathname === base || page.url.pathname === '/'
 	);
 
-	// Close the menu after any navigation (links inside it trigger nav).
 	afterNavigate(() => {
-		menuOpen = false;
 		initAnalytics();
 		trackCampaignVisit();
 	});
@@ -58,13 +60,6 @@
 			});
 		});
 	});
-
-	// Lock background scroll while the full-screen menu is open.
-	$effect(() => {
-		if (typeof document === 'undefined') return;
-		document.body.classList.toggle('menu-locked', menuOpen);
-		return () => document.body.classList.remove('menu-locked');
-	});
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -78,15 +73,8 @@ FORM: direct reproduction of the rendered supplied HTML prototype; no alternate 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
 -->
 <div class="app-shell">
-	<TopBar
-		{menuOpen}
-		{darkMode}
-		home={isHome}
-		ontoggle={() => (menuOpen = !menuOpen)}
-		ontoggletheme={() => (darkMode = !darkMode)}
-	/>
+	<TopBar {darkMode} home={isHome} ontoggletheme={() => (darkMode = !darkMode)} />
 	<main class="app-main">
 		{@render children()}
 	</main>
-	<MenuOverlay open={menuOpen} onnavigate={() => (menuOpen = false)} />
 </div>

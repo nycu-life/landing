@@ -133,7 +133,6 @@
 		animationFrame = requestAnimationFrame(tick);
 		return true;
 	};
-	const jumpToStoryEnd = () => goToStep(lastStepIndex, true);
 	const requestStep = (direction: number) => {
 		if (!storyReady) {
 			queuedDirection = direction;
@@ -508,7 +507,6 @@
 		</section>
 
 		<div class="scroll-cue" aria-hidden="true">{m.story_scroll_cue()} <i></i></div>
-		<a class="skip-story" href="#products" onclick={jumpToStoryEnd}>{m.story_skip()}</a>
 		<span class="story-percent" aria-hidden="true">{stepIndex + 1} / {storySteps.length}</span>
 	</div>
 </section>
@@ -1142,22 +1140,6 @@
 		background: currentColor;
 		animation: story-scroll 1.5s infinite;
 	}
-	.skip-story {
-		position: absolute;
-		z-index: 25;
-		right: 1.25rem;
-		top: 1rem;
-		padding: 0.55rem 0.85rem;
-		border: 1px solid var(--line-strong);
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--surface) 84%, transparent);
-		color: var(--ink-soft);
-		font-size: 0.72rem;
-		font-weight: 700;
-		backdrop-filter: blur(12px);
-		opacity: clamp(0, calc((0.16 - var(--story-progress)) * 18), 1);
-		pointer-events: auto;
-	}
 	.story-percent {
 		position: absolute;
 		z-index: 25;
@@ -1610,8 +1592,7 @@
 		inset: auto;
 		width: auto;
 	}
-	.scroll-story[data-reduced-motion='true']
-		:is(.swipe-indicator, .story-progress, .story-percent, .skip-story) {
+	.scroll-story[data-reduced-motion='true'] :is(.swipe-indicator, .story-progress, .story-percent) {
 		display: none;
 	}
 	.scroll-story[data-reduced-motion='true'] .faq-story {

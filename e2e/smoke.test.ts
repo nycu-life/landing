@@ -6,7 +6,7 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await page.goto('/');
 	await expect(page.getByRole('heading', { level: 1, name: /NYCU LIFE/i })).toBeVisible();
 	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
-	await expect(page.locator('.gacha-machine img')).toHaveCount(18);
+	await expect(page.locator('.gacha-machine img')).toHaveCount(14);
 	await expect
 		.poll(() =>
 			page
@@ -18,20 +18,17 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 		.toBe(true);
 	const assetRatios = await page.locator('.gacha-machine').evaluate((machine) => {
 		const base = machine.querySelector<HTMLImageElement>('.machine-base');
-		const knob = machine.querySelector<HTMLImageElement>('.machine-knob');
 		return {
-			base: base ? base.naturalWidth / base.naturalHeight : 0,
-			knob: knob ? knob.naturalWidth / knob.naturalHeight : 0
+			base: base ? base.naturalWidth / base.naturalHeight : 0
 		};
 	});
 	expect(assetRatios.base).toBeGreaterThan(1.8);
 	expect(assetRatios.base).toBeLessThan(1.9);
-	expect(assetRatios.knob).toBeCloseTo(1, 2);
-	await expect(page.locator('.gacha-machine > .capsule .capsule-art')).toHaveCount(2);
-	await expect(page.locator('.gacha-machine > .capsule .capsule-art').first()).toHaveAttribute(
-		'src',
-		/\/story\/designer\/error-ball\.svg$/
-	);
+	await expect(page.locator('.machine-knob-group')).toHaveCount(0);
+	await expect(page.locator('img[src$="/knob.svg"]')).toHaveCount(0);
+	await expect(page.locator('.skip-story')).toHaveCount(0);
+	await expect(page.locator('.gacha-machine > .capsule .capsule-shell')).toHaveCount(2);
+	await expect(page.locator('.gacha-machine > .capsule .capsule-letter')).toHaveCount(1);
 	const releaseOrigin = await page.locator('.gacha-machine').evaluate((machine) => {
 		const machineRect = machine.getBoundingClientRect();
 		const capsuleRect = machine.querySelector('.capsule')?.getBoundingClientRect();
@@ -48,27 +45,12 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	expect(Math.abs(releaseOrigin!.actualY - releaseOrigin!.expectedY)).toBeLessThan(3);
 	const desktopMachine = await page.locator('.gacha-machine').evaluate((machine) => {
 		const rect = machine.getBoundingClientRect();
-		const knob = machine.querySelector<HTMLElement>('.machine-knob');
-		const knobRect = knob?.getBoundingClientRect();
-		const knobOrigin = knob
-			? getComputedStyle(knob)
-					.transformOrigin.split(' ')
-					.map((value) => Number.parseFloat(value))
-			: [];
 		return {
 			width: rect.width,
-			stageWidth: machine.closest('.story-stage')?.getBoundingClientRect().width ?? 0,
-			knobOrigin,
-			expectedKnobOrigin: knobRect ? [knobRect.width * 0.5, knobRect.height * 0.5] : []
+			stageWidth: machine.closest('.story-stage')?.getBoundingClientRect().width ?? 0
 		};
 	});
 	expect(desktopMachine.width / desktopMachine.stageWidth).toBeGreaterThanOrEqual(0.44);
-	expect(
-		Math.abs(desktopMachine.knobOrigin[0] - desktopMachine.expectedKnobOrigin[0])
-	).toBeLessThan(1);
-	expect(
-		Math.abs(desktopMachine.knobOrigin[1] - desktopMachine.expectedKnobOrigin[1])
-	).toBeLessThan(1);
 	await expect(story(page)).toContainText('ABOUT US');
 	await expect(story(page)).toContainText('FAQ');
 	await expect(story(page)).toContainText('JOIN THE TEAM');
@@ -186,27 +168,12 @@ test('one wheel gesture plays one fixed chapter without skipping and supports re
 	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
 	await page.waitForTimeout(180);
 	await expect(story(page)).toHaveAttribute('data-story-step', '0');
-	const knobAlignment = await page.locator('.machine-knob-group').evaluate((group) => {
-		const knob = group.querySelector<HTMLElement>('.machine-knob');
-		const indicators = group.querySelector<HTMLElement>('.machine-knob-indicators');
-		if (!knob || !indicators) return null;
-		const groupRect = group.getBoundingClientRect();
-		const knobRect = knob.getBoundingClientRect();
-		return {
-			centerDeltaX: knobRect.left + knobRect.width / 2 - (groupRect.left + groupRect.width / 2),
-			centerDeltaY: knobRect.top + knobRect.height / 2 - (groupRect.top + groupRect.height / 2),
-			indicatorTransform: getComputedStyle(indicators).transform
-		};
-	});
-	expect(knobAlignment).not.toBeNull();
-	expect(Math.abs(knobAlignment!.centerDeltaX)).toBeLessThan(1);
-	expect(Math.abs(knobAlignment!.centerDeltaY)).toBeLessThan(1);
-	expect(knobAlignment!.indicatorTransform).toBe('none');
+	await expect(page.locator('.machine-knob-group')).toHaveCount(0);
 	await expect
 		.poll(() => page.locator('.capsule').evaluate((element) => getComputedStyle(element).opacity))
 		.not.toBe('0');
 	await expect(page.locator('.capsule')).toHaveCount(1);
-	await expect(page.locator('.capsule .capsule-art')).toHaveCount(2);
+	await expect(page.locator('.capsule .capsule-shell')).toHaveCount(2);
 	await expect(page.locator('.capsule img[src$="bottom-ball.svg"]')).toHaveCount(0);
 	await expect
 		.poll(() =>
@@ -234,17 +201,19 @@ test('one wheel gesture plays one fixed chapter without skipping and supports re
 	const openedShell = await page.locator('.capsule').evaluate((capsule) => {
 		const top = capsule.querySelector<HTMLElement>('.capsule-shell-top');
 		const bottom = capsule.querySelector<HTMLElement>('.capsule-shell-bottom');
-		const core = capsule.querySelector<HTMLElement>('.capsule-core');
-		if (!top || !bottom || !core) return null;
+		const glow = capsule.querySelector<HTMLElement>('.capsule-glow');
+		if (!top || !bottom || !glow) return null;
 		return {
 			top: getComputedStyle(top).transform,
 			bottom: getComputedStyle(bottom).transform,
-			coreOpacity: Number.parseFloat(getComputedStyle(core).opacity)
+			shellOpacity: Number.parseFloat(getComputedStyle(top).opacity),
+			glowOpacity: Number.parseFloat(getComputedStyle(glow).opacity)
 		};
 	});
 	expect(openedShell).not.toBeNull();
 	expect(openedShell!.top).not.toBe(openedShell!.bottom);
-	expect(openedShell!.coreOpacity).toBeGreaterThan(0.2);
+	expect(openedShell!.shellOpacity).toBeLessThan(0.05);
+	expect(openedShell!.glowOpacity).toBeGreaterThan(0.3);
 	if (screenshotDirectory) {
 		await page.screenshot({ path: `${screenshotDirectory}/hero-capsule-open.png` });
 	}
@@ -643,14 +612,13 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 	}
 });
 
-test('theme persists and mobile menu remains usable', async ({ page }) => {
+test('theme persists and the burger menu is gone on phones', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');
 	await page.getByRole('button', { name: '切換至深色模式' }).click();
 	await page.reload();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-	await page.getByRole('button', { name: '開啟選單' }).click();
-	await expect(page.locator('.menu.open')).toBeVisible();
+	await expect(page.getByRole('button', { name: '開啟選單' })).toHaveCount(0);
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 

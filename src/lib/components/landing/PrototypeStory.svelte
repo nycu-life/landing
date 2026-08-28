@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
-	import { INSTAGRAM_URL, products } from '$lib/content/landing';
+	import { slide } from 'svelte/transition';
+	import { INSTAGRAM_URL, products, productStatusLabel } from '$lib/content/landing';
 	import { m } from '$lib/paraglide/messages';
+	import { dismissBootSplash } from '$lib/boot-splash';
 
 	const faqs = [
 		{ question: m.story_faq_q1, answer: m.story_faq_a1 },
@@ -11,12 +13,16 @@
 	];
 	const storySteps = [
 		{ id: 'hero', progress: 0, duration: 0 },
-		{ id: 'about', progress: 0.25, duration: 4200 },
+		{ id: 'about', progress: 0.25, duration: 3600 },
 		{ id: 'products', progress: 0.5, duration: 1050 },
 		{ id: 'faq', progress: 0.75, duration: 950 },
 		{ id: 'join', progress: 1, duration: 950 }
 	] as const;
 	const wheelThreshold = 32;
+	/* A wheel delta at least this large that also out-accelerates the previous one is a new
+	   flick, not trackpad inertia — inertia only ever decays. */
+	const freshWheelDelta = 40;
+	const wheelGapMs = 120;
 	const touchThreshold = 28;
 	const lastStepIndex = storySteps.length - 1;
 
@@ -86,8 +92,6 @@
 	const selectProduct = (index: number) => {
 		activeProduct = (index + products.length) % products.length;
 	};
-	const jumpToStoryEnd = () => goToStep(lastStepIndex, true);
-
 	onMount(() => {
 		const bootstrap = (window as Window & { __nycuStoryBootstrap?: StoryBootstrap })
 			.__nycuStoryBootstrap;
@@ -97,6 +101,8 @@
 		const forceMotion = new URLSearchParams(window.location.search).get('motion') === 'on';
 		let wheelIntent = 0;
 		let wheelConsumed = false;
+		let lastWheelDelta = 0;
+		let lastWheelAt = 0;
 		let wheelResetTimer: ReturnType<typeof setTimeout> | undefined;
 		let touchStartY = 0;
 		let touchStartedInStory = false;
@@ -142,12 +148,25 @@
 			const direction = Math.sign(delta);
 			if (!isAnimating && isOutwardBoundary(direction)) return;
 
+			const now = performance.now();
+			const magnitude = Math.abs(delta);
+			const freshGesture =
+				now - lastWheelAt > wheelGapMs ||
+				Math.sign(lastWheelDelta) !== direction ||
+				(magnitude >= freshWheelDelta && magnitude > Math.abs(lastWheelDelta) * 1.5);
+			lastWheelAt = now;
+			lastWheelDelta = delta;
+
 			event.preventDefault();
 			resetWheelGestureSoon();
-			if (isAnimating || wheelConsumed) {
+			if (isAnimating) {
 				wheelConsumed = true;
 				return;
 			}
+			// Inertia from the flick that started the last step keeps arriving after it ends;
+			// ignore it, but let a genuinely new flick through right away.
+			if (wheelConsumed && !freshGesture) return;
+			wheelConsumed = false;
 			if (wheelIntent && Math.sign(wheelIntent) !== direction) wheelIntent = 0;
 			wheelIntent += delta;
 			if (Math.abs(wheelIntent) < wheelThreshold) return;
@@ -216,6 +235,7 @@
 			);
 			if (disposed) return;
 			storyReady = true;
+			dismissBootSplash();
 			const direction = queuedDirection || initialIntent;
 			queuedDirection = 0;
 			if (direction && !reducedMotion && !isOutwardBoundary(direction))
@@ -303,23 +323,210 @@
 					<img src="{base}/story/designer/nycu-life.svg" alt="" />
 				</div>
 				<img class="machine-hole" src="{base}/story/designer/gacha-hole.svg" alt="" />
-				<div class="machine-knob-group" aria-hidden="true">
-					<img
-						class="machine-knob-indicators"
-						src="{base}/story/designer/knob-indicators.svg"
-						alt=""
-					/>
-					<img class="machine-knob" src="{base}/story/designer/knob.svg" alt="" />
-				</div>
 				<div class="capsule" aria-hidden="true">
 					<div class="capsule-rotor">
-						<div class="capsule-core"></div>
-						<div class="capsule-shell capsule-shell-top">
-							<img class="capsule-art" src="{base}/story/designer/error-ball.svg" alt="" />
-						</div>
-						<div class="capsule-shell capsule-shell-bottom">
-							<img class="capsule-art" src="{base}/story/designer/error-ball.svg" alt="" />
-						</div>
+						<svg
+							class="capsule-svg"
+							viewBox="730.38 27.38 240 240"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<defs>
+								<clipPath id="capsule-clip-top"
+									><path
+										d="M640,-200 H1060 V161.65 H959.88 C938.71,142.58 909.93,134.58 881.38,133.84 C834.99,133.83 779.24,130.99 740.68,160.03 H640 Z"
+									/></clipPath
+								>
+								<clipPath id="capsule-clip-bottom"
+									><path
+										d="M640,160.03 H740.68 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65 H1060 V520 H640 Z"
+									/></clipPath
+								>
+								<radialGradient
+									id="capsule-glow-fill"
+									cx="850.38"
+									cy="147.38"
+									r="165"
+									gradientUnits="userSpaceOnUse"
+								>
+									<stop offset="0" stop-color="#fffaf0" stop-opacity="0.95" />
+									<stop offset="0.46" stop-color="#efe9d1" stop-opacity="0.45" />
+									<stop offset="1" stop-color="#efe9d1" stop-opacity="0" />
+								</radialGradient>
+								<linearGradient
+									id="capsule-seam-fill"
+									x1="740"
+									y1="0"
+									x2="960"
+									y2="0"
+									gradientUnits="userSpaceOnUse"
+								>
+									<stop offset="0" stop-color="#fff" stop-opacity="0" />
+									<stop offset="0.18" stop-color="#fff" stop-opacity="1" />
+									<stop offset="0.82" stop-color="#fff" stop-opacity="1" />
+									<stop offset="1" stop-color="#fff" stop-opacity="0" />
+								</linearGradient>
+								<path id="capsule-ray" class="capsule-ray" d="M-3.4,-116 L3.4,-116 L0,-158 Z" />
+								<path
+									id="capsule-spark"
+									d="M0,-8 C1.1,-2.6 2.6,-1.1 8,0 C2.6,1.1 1.1,2.6 0,8 C-1.1,2.6 -2.6,1.1 -8,0 C-2.6,-1.1 -1.1,-2.6 0,-8 Z"
+								/>
+							</defs>
+							<circle
+								class="capsule-glow"
+								cx="850.38"
+								cy="147.38"
+								r="165"
+								fill="url(#capsule-glow-fill)"
+							/>
+							<g class="capsule-rays">
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(0)" />
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(30)" />
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(60)" />
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(90)" />
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(120)" />
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(150)" />
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(180)" />
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(210)" />
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(240)" />
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(270)" />
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(300)" />
+								<use href="#capsule-ray" transform="translate(850.38 147.38) rotate(330)" />
+							</g>
+							<circle class="capsule-ring" cx="850.38" cy="147.38" r="110.43" />
+							<g class="capsule-body">
+								<g class="capsule-shell capsule-shell-bottom">
+									<g clip-path="url(#capsule-clip-bottom)"
+										><circle class="capsule-ball" cx="850.38" cy="147.38" r="110.43" /></g
+									>
+									<path
+										class="capsule-lip"
+										d="M881.38,133.84c-46.39-.01-102.14-2.85-140.7,26.19.08.69.15,1.38.25,2.07,57.19,36.39,127.99,36.92,188.99,15.9,10.38-3.64,20.5-8.5,29.74-14.62.09-.58.14-1.16.22-1.73-21.17-19.07-49.95-27.07-78.5-27.8Z"
+									/>
+									<path
+										class="capsule-base"
+										d="M929.92,178c-61.01,21.02-131.81,20.49-189-15.9,5.14,38,29.96,72.24,68.05,87.65,56.54,22.87,120.91-4.42,143.78-60.96,3.38-8.35,5.65-16.88,6.91-25.41-9.24,6.12-19.36,10.98-29.74,14.62Z"
+									/>
+									<path
+										class="capsule-cut"
+										d="M740.68,160.03 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65"
+									/>
+								</g>
+								<g class="capsule-shell capsule-shell-top">
+									<g clip-path="url(#capsule-clip-top)"
+										><circle class="capsule-ball" cx="850.38" cy="147.38" r="110.43" /></g
+									>
+									<path
+										class="capsule-cut"
+										d="M740.68,160.03 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65"
+									/>
+								</g>
+								<g class="capsule-seam">
+									<path
+										d="M740.68,160.03 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65"
+										fill="none"
+										stroke="url(#capsule-seam-fill)"
+										stroke-width="10"
+										opacity="0.35"
+									/>
+									<path
+										d="M740.68,160.03 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65"
+										fill="none"
+										stroke="url(#capsule-seam-fill)"
+										stroke-width="5"
+										opacity="0.6"
+									/>
+									<path
+										d="M740.68,160.03 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65"
+										fill="none"
+										stroke="url(#capsule-seam-fill)"
+										stroke-width="2"
+									/>
+								</g>
+								<g class="capsule-letter">
+									<rect
+										class="capsule-paper"
+										x="784.58"
+										y="115.78"
+										width="126.97"
+										height="91.6"
+										rx="28.35"
+										ry="28.35"
+										transform="translate(-11.04 76.35) rotate(-5.12)"
+									/>
+									<path
+										class="capsule-paper"
+										d="M893.6,111.51l-99.26,8.9c-7.48.67-13.05,7.34-12.38,14.82l1.43,15.93c1.38.54,2.74,1.12,4.06,1.71,21.14,9.23,43.03,15.97,65.62,19.75,18.74-9.83,37.77-19.68,57.14-28.91l-1.78-19.82c-.67-7.48-7.34-13.05-14.82-12.38Z"
+									/>
+									<circle class="capsule-paper" cx="849.57" cy="172.22" r="10.73" />
+									<ellipse
+										class="capsule-paper"
+										cx="898.46"
+										cy="124.11"
+										rx="31.74"
+										ry="25.34"
+										transform="translate(-7.49 80.7) rotate(-5.12)"
+									/>
+									<g class="capsule-badge">
+										<path
+											d="M880.72,132.65c.23.77.39,1.11.63,1.49.53.81,1.22,1.22,2.04,1.14,1.15-.1,1.99-1.08,2.4-2.73.29-1.17.36-2.47.26-4.9-.94,1.91-2.04,2.77-3.85,2.93-3.69.33-6.43-3.34-6.97-9.32-.56-6.3,1.83-10.86,5.89-11.22,2.6-.23,4.83,1.43,6.37,4.74,1.05,2.24,1.8,5.58,2.15,9.5s.24,7.3-.27,10.07c-.49,2.63-1.62,4.77-3,5.72-.78.54-1.76.91-2.68.99-1.95.17-3.61-.61-4.98-2.35-.8-1.04-1.23-1.97-1.96-4.1l3.95-1.97ZM884.96,120.03c-.24-2.67-1.59-4.42-3.29-4.26s-2.7,2.11-2.46,4.81,1.51,4.46,3.19,4.31c1.76-.16,2.8-2.12,2.56-4.86Z"
+										/>
+										<path
+											d="M896.49,131.23c.23.77.39,1.11.63,1.49.53.81,1.22,1.22,2.04,1.14,1.15-.1,1.99-1.08,2.4-2.73.29-1.17.36-2.47.26-4.9-.94,1.91-2.04,2.77-3.85,2.93-3.69.33-6.43-3.34-6.97-9.32-.56-6.3,1.83-10.86,5.89-11.22,2.6-.23,4.84,1.43,6.37,4.74,1.05,2.24,1.8,5.58,2.15,9.5s.24,7.3-.27,10.07c-.49,2.63-1.62,4.77-3,5.72-.78.54-1.76.91-2.68.99-1.95.17-3.61-.61-4.98-2.35-.8-1.04-1.23-1.97-1.96-4.1l3.95-1.97ZM900.73,118.62c-.24-2.67-1.59-4.42-3.29-4.26s-2.7,2.11-2.46,4.81,1.51,4.46,3.19,4.31c1.76-.16,2.8-2.12,2.56-4.86Z"
+										/>
+										<path
+											d="M912.26,129.82c.23.77.39,1.11.63,1.49.53.81,1.22,1.22,2.04,1.14,1.15-.1,1.99-1.08,2.4-2.73.29-1.17.36-2.47.26-4.9-.94,1.91-2.04,2.77-3.85,2.93-3.69.33-6.43-3.34-6.97-9.32-.56-6.3,1.83-10.86,5.89-11.22,2.6-.23,4.84,1.43,6.37,4.74,1.05,2.24,1.8,5.58,2.15,9.5.34,3.77.24,7.3-.27,10.07-.49,2.63-1.62,4.77-3,5.72-.78.54-1.76.91-2.68.99-1.95.17-3.61-.61-4.98-2.35-.8-1.04-1.23-1.97-1.96-4.1l3.95-1.97ZM916.5,117.2c-.24-2.67-1.59-4.42-3.29-4.26s-2.7,2.11-2.46,4.81,1.51,4.46,3.19,4.31c1.76-.16,2.8-2.12,2.56-4.86Z"
+										/>
+									</g>
+								</g>
+							</g>
+							<g class="capsule-sparks">
+								<g transform="rotate(18 850.38 147.38)"
+									><g class="capsule-spark capsule-spark-a"
+										><use href="#capsule-spark" x="850.38" y="147.38" fill="#fffdf5" /></g
+									></g
+								>
+								<g transform="rotate(58 850.38 147.38)"
+									><g class="capsule-spark capsule-spark-b"
+										><use href="#capsule-spark" x="850.38" y="147.38" fill="#efe9d1" /></g
+									></g
+								>
+								<g transform="rotate(96 850.38 147.38)"
+									><g class="capsule-spark capsule-spark-c"
+										><use href="#capsule-spark" x="850.38" y="147.38" fill="#fffdf5" /></g
+									></g
+								>
+								<g transform="rotate(140 850.38 147.38)"
+									><g class="capsule-spark capsule-spark-a"
+										><use href="#capsule-spark" x="850.38" y="147.38" fill="#efe9d1" /></g
+									></g
+								>
+								<g transform="rotate(176 850.38 147.38)"
+									><g class="capsule-spark capsule-spark-b"
+										><use href="#capsule-spark" x="850.38" y="147.38" fill="#fffdf5" /></g
+									></g
+								>
+								<g transform="rotate(218 850.38 147.38)"
+									><g class="capsule-spark capsule-spark-c"
+										><use href="#capsule-spark" x="850.38" y="147.38" fill="#bb2e31" /></g
+									></g
+								>
+								<g transform="rotate(262 850.38 147.38)"
+									><g class="capsule-spark capsule-spark-a"
+										><use href="#capsule-spark" x="850.38" y="147.38" fill="#efe9d1" /></g
+									></g
+								>
+								<g transform="rotate(300 850.38 147.38)"
+									><g class="capsule-spark capsule-spark-b"
+										><use href="#capsule-spark" x="850.38" y="147.38" fill="#fffdf5" /></g
+									></g
+								>
+								<g transform="rotate(334 850.38 147.38)"
+									><g class="capsule-spark capsule-spark-c"
+										><use href="#capsule-spark" x="850.38" y="147.38" fill="#bb2e31" /></g
+									></g
+								>
+							</g>
+						</svg>
 					</div>
 				</div>
 			</div>
@@ -379,6 +586,15 @@
 							</div>
 						{/each}
 					</div>
+					{#if activeProductData.href}
+						<a class="product-cta" href={activeProductData.href} target="_blank" rel="noreferrer"
+							>{m.products_visit()} →</a
+						>
+					{:else}
+						<span class="product-cta product-cta-soon"
+							>{productStatusLabel[activeProductData.status]()}</span
+						>
+					{/if}
 				</article>
 				<div class="product-demo">
 					<button
@@ -456,9 +672,11 @@
 									type="button"
 									aria-expanded={activeFaq === index}
 									onclick={() => (activeFaq = index)}
-									>{item.question()}<span>{activeFaq === index ? '−' : '＋'}</span></button
+									>{item.question()}<span class="faq-icon" aria-hidden="true"></span></button
 								>
-								{#if activeFaq === index}<p>{item.answer()}</p>{/if}
+								{#if activeFaq === index}
+									<p transition:slide={{ duration: 260 }}>{item.answer()}</p>
+								{/if}
 							</div>
 						{/each}
 					</div>
@@ -486,7 +704,6 @@
 			</div>
 		</section>
 
-		<a class="skip-story" href="#prototype-footer" onclick={jumpToStoryEnd}>{m.story_skip()}</a>
 		<span class="story-count" class:hero-count={stepIndex === 0} aria-hidden="true"
 			>{stepIndex + 1} / {storySteps.length}</span
 		>
@@ -502,7 +719,6 @@
 		background: #f3f4f6;
 		color: #333;
 		overflow: hidden;
-		overscroll-behavior: contain;
 	}
 	.story-stage {
 		position: relative;
@@ -552,6 +768,10 @@
 	:global(:root[data-theme='dark']) .feature-list span {
 		color: #c1ccdc;
 	}
+	:global(:root[data-theme='dark']) .product-cta-soon {
+		background: #24354f;
+		color: #b5c3d6;
+	}
 	:global(:root[data-theme='dark']) .arrow {
 		border-color: #36517c;
 		background: #18263d;
@@ -562,11 +782,6 @@
 	}
 	:global(:root[data-theme='dark']) .product-dots button.active {
 		background: #79a4ff;
-	}
-	:global(:root[data-theme='dark']) .skip-story {
-		border-color: rgba(185, 207, 238, 0.22);
-		background: rgba(19, 31, 51, 0.86);
-		color: #b5c3d6;
 	}
 	:global(:root[data-theme='dark']) .scroll-hint,
 	:global(:root[data-theme='dark']) .story-count {
@@ -633,8 +848,15 @@
 		opacity: clamp(0, calc((var(--story-progress) - 0.84) * 14), 1);
 	}
 	.section-shell {
+		--shell-shift: 0px;
+		--scene-at: 0;
 		position: relative;
 		z-index: 2;
+		will-change: transform;
+		/* Chapters drift 30vh per step: outgoing scene rises, incoming one comes up from below. */
+		transform: translateY(
+			calc(var(--shell-shift) + (var(--story-progress) - var(--scene-at)) * -120vh)
+		);
 		width: min(72rem, calc(100% - 8rem));
 		height: 100%;
 		margin: 0 auto;
@@ -722,6 +944,12 @@
 		--capsule-travel-y: -9vh;
 		--capsule-zoom: 1.7;
 		--hero-art-shift: 0px;
+		/* The capsule drops out immediately; the machine starts rising right behind it (0.02 → 0.12)
+		   while the capsule rolls and opens. The capsule counter-translates so it stays put. */
+		--machine-exit: clamp(0, calc((var(--story-progress) - 0.02) * 10), 1);
+		--machine-exit-distance: -90vh;
+		/* The capsule keeps the gentle upward drift the whole machine used to have. */
+		--capsule-drift: calc(var(--story-progress) * -65vh);
 		position: relative;
 		z-index: 3;
 		width: var(--gacha-width);
@@ -730,9 +958,7 @@
 		contain: layout style;
 		isolation: isolate;
 		will-change: transform;
-		filter: drop-shadow(0 1.5rem 2.25rem rgba(26, 55, 103, 0.16));
-		transform: translate(18vw, calc(-1vh + var(--story-progress) * -65vh))
-			scale(calc(1 - var(--story-progress) * 0.2));
+		transform: translate(18vw, calc(-1vh + var(--machine-exit) * var(--machine-exit-distance)));
 	}
 	.gacha-machine > img {
 		position: absolute;
@@ -747,6 +973,9 @@
 		position: absolute;
 		inset: 0;
 		display: block;
+		/* Shadow lives on the static artwork, not the machine wrapper: the capsule inside the
+		   wrapper repaints every frame and would force the whole filtered layer to re-blur. */
+		filter: drop-shadow(0 1.5rem 2.25rem rgba(26, 55, 103, 0.16));
 	}
 	.gacha-device-art img {
 		display: block;
@@ -782,53 +1011,26 @@
 	.gacha-machine > .machine-hole {
 		z-index: 4;
 	}
-	.machine-knob-group {
-		position: absolute;
-		z-index: 5;
-		right: 10.1%;
-		bottom: 3.7%;
-		width: 9%;
-		aspect-ratio: 1;
-		filter: drop-shadow(0 1rem 1.5rem rgba(26, 55, 103, 0.14));
-		transform: translateY(var(--hero-art-shift));
-	}
-	.machine-knob-group img {
-		position: absolute;
-		display: block;
-		max-width: none;
-	}
-	.machine-knob-indicators {
-		display: none;
-		z-index: 1;
-		left: 20%;
-		top: -27%;
-		width: 60%;
-	}
-	.machine-knob {
-		z-index: 2;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		transform-origin: 50% 50%;
-		transform: rotate(calc(clamp(0, calc(var(--story-progress) * 15.4), 1) * 360deg));
-	}
 	.capsule {
-		--capsule-emerge: clamp(0, calc((var(--story-progress) - 0.05) * 20), 1);
-		--capsule-roll: clamp(0, calc((var(--story-progress) - 0.092) * 10.2), 1);
-		--capsule-open: clamp(0, calc((var(--story-progress) - 0.19) * 22.2), 1);
+		--capsule-emerge: clamp(0, calc(var(--story-progress) * 33.4), 1);
+		--capsule-roll: clamp(0, calc((var(--story-progress) - 0.03) * 12.5), 1);
+		--capsule-shake: clamp(0, calc((var(--story-progress) - 0.11) * 50), 1);
+		--capsule-open: clamp(0, calc((var(--story-progress) - 0.13) * 28.6), 1);
+		--capsule-float: clamp(0, calc((var(--story-progress) - 0.165) * 11.8), 1);
 		position: absolute;
 		z-index: 8;
 		left: 17.3%;
 		top: calc(100% - var(--gacha-width) * 0.0867);
 		width: var(--capsule-size);
 		aspect-ratio: 1;
-		opacity: clamp(0, calc((var(--story-progress) - 0.045) * 40), 1);
+		opacity: clamp(0, calc(var(--story-progress) * 60), 1);
 		will-change: transform, opacity;
 		transform: translate3d(
 				calc(-50% + var(--capsule-roll) * var(--capsule-travel-x)),
 				calc(
 					-50% + var(--hero-art-shift) + var(--capsule-emerge) * 2.5rem + var(--capsule-roll) *
-						var(--capsule-travel-y)
+						var(--capsule-travel-y) + var(--capsule-drift) - var(--machine-exit) *
+						var(--machine-exit-distance)
 				),
 				0
 			)
@@ -840,45 +1042,123 @@
 		will-change: transform;
 		transform: rotate(calc(var(--capsule-roll) * 720deg));
 	}
+	.capsule-svg {
+		display: block;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+	}
+	.capsule-svg
+		:is(
+			.capsule-body,
+			.capsule-shell,
+			.capsule-letter,
+			.capsule-glow,
+			.capsule-rays,
+			.capsule-ring,
+			.capsule-spark
+		) {
+		transform-box: fill-box;
+		transform-origin: 50% 50%;
+	}
+	.capsule-ball {
+		fill: #fff;
+		stroke: #231815;
+		stroke-miterlimit: 10;
+		opacity: 0.91;
+	}
+	.capsule-lip {
+		fill: #596586;
+		opacity: 0.32;
+	}
+	.capsule-base {
+		fill: #596586;
+	}
+	.capsule-paper {
+		fill: #fff;
+		stroke: #2a4365;
+		stroke-width: 1.4px;
+		stroke-miterlimit: 10;
+	}
+	.capsule-badge {
+		fill: #bb2e31;
+		opacity: 0.81;
+	}
+	.capsule-ray {
+		fill: #fffdf5;
+	}
+	.capsule-ring {
+		fill: none;
+		stroke: #fffdf5;
+	}
+	.capsule-cut {
+		fill: none;
+		stroke: #231815;
+		stroke-width: 1;
+		stroke-linecap: round;
+		opacity: var(--capsule-open);
+	}
+	/* 蓄力震動：開殼前一小段左右抖動並微微脹大 */
+	.capsule-body {
+		transform: rotate(
+				calc(sin(var(--capsule-shake) * 25.13) * sin(var(--capsule-shake) * 3.1416) * 4.4deg)
+			)
+			scale(calc(1 + sin(var(--capsule-shake) * 3.1416) * 0.05));
+	}
 	.capsule-shell {
-		position: absolute;
-		z-index: 2;
-		inset: 0;
-		border-radius: 50%;
-		will-change: transform;
+		will-change: transform, opacity;
 	}
 	.capsule-shell-top {
-		clip-path: inset(0 0 49.5% 0);
-		transform: translate3d(calc(var(--capsule-open) * -6%), calc(var(--capsule-open) * -32%), 0)
-			rotate(calc(var(--capsule-open) * -12deg));
+		transform: translate(calc(var(--capsule-open) * -26px), calc(var(--capsule-open) * -118px))
+			rotate(calc(var(--capsule-open) * -30deg));
+		opacity: clamp(0, calc(1 - (var(--capsule-open) - 0.3) * 1.6), 1);
 	}
 	.capsule-shell-bottom {
-		clip-path: inset(49.5% 0 0 0);
-		transform: translate3d(calc(var(--capsule-open) * 6%), calc(var(--capsule-open) * 32%), 0)
-			rotate(calc(var(--capsule-open) * 10deg));
+		transform: translate(calc(var(--capsule-open) * 18px), calc(var(--capsule-open) * 92px))
+			rotate(calc(var(--capsule-open) * 17deg));
+		opacity: clamp(0, calc(1 - (var(--capsule-open) - 0.3) * 1.6), 1);
 	}
-	.capsule-core {
-		position: absolute;
-		z-index: 1;
-		inset: 14%;
-		border: 1px solid rgba(255, 255, 255, 0.92);
-		border-radius: 50%;
-		opacity: var(--capsule-open);
-		background:
-			radial-gradient(circle at 36% 31%, #fff 0 7%, transparent 8%),
-			radial-gradient(circle, #fff 0 12%, #acc2ff 13% 42%, #315fff 68%, transparent 70%);
-		box-shadow:
-			0 0 1.2rem rgba(89, 126, 255, 0.72),
-			0 0 3rem rgba(89, 126, 255, 0.5);
-		transform: scale(calc(0.25 + var(--capsule-open) * 0.75));
+	.capsule-seam {
+		opacity: clamp(0, calc(sin(var(--capsule-open) * 6.2832) * 1.2), 1);
 	}
-	.capsule .capsule-art {
-		position: absolute;
-		width: 713.75%;
-		height: 401.5%;
-		max-width: none;
-		left: -141.25%;
-		top: -161.25%;
+	/* 內容物：壓縮 → 彈出 → 回彈，然後在漂浮段緩緩上下浮動 */
+	.capsule-letter {
+		transform: translate(
+				0,
+				calc(
+					var(--capsule-open) * -9px + sin(var(--capsule-open) * 3.1416) * -6px +
+						sin(var(--capsule-float) * 6.2832) * -5px
+				)
+			)
+			rotate(calc(sin(var(--capsule-float) * 6.2832) * 1.4deg))
+			scale(calc(1 + var(--capsule-open) * 0.06 + sin(var(--capsule-open) * 3.1416) * 0.12));
+	}
+	.capsule-glow {
+		opacity: clamp(0, calc(var(--capsule-open) * 0.95 - var(--capsule-float) * 0.6), 1);
+		transform: scale(calc(0.45 + var(--capsule-open) * 0.6));
+	}
+	.capsule-rays {
+		opacity: clamp(0, calc(sin(var(--capsule-open) * 3.1416) * 0.95), 1);
+		transform: scale(calc(0.6 + var(--capsule-open) * 0.48))
+			rotate(calc(var(--capsule-open) * 13deg));
+	}
+	.capsule-ring {
+		opacity: clamp(0, calc(sin(var(--capsule-open) * 3.1416) * 0.85), 1);
+		stroke-width: calc(7px - var(--capsule-open) * 6px);
+		transform: scale(calc(0.28 + var(--capsule-open) * 1.06));
+	}
+	.capsule-spark {
+		opacity: clamp(0, calc(sin(var(--capsule-open) * 3.1416)), 1);
+		transform: translateX(calc(14px + var(--capsule-open) * 122px))
+			scale(calc(0.15 + sin(var(--capsule-open) * 3.1416) * 0.95));
+	}
+	.capsule-spark-b {
+		transform: translateX(calc(14px + var(--capsule-open) * 138px))
+			scale(calc(0.15 + sin(var(--capsule-open) * 3.1416) * 1.1));
+	}
+	.capsule-spark-c {
+		transform: translateX(calc(14px + var(--capsule-open) * 106px))
+			scale(calc(0.1 + sin(var(--capsule-open) * 3.1416) * 0.85));
 	}
 	.hero-caption {
 		position: absolute;
@@ -890,7 +1170,7 @@
 		margin-inline: 0;
 		opacity: clamp(0, calc((0.1 - var(--story-progress)) * 18), 1);
 		text-align: left;
-		transform: translateY(-50%);
+		transform: translateY(calc(-50% + clamp(0, calc(var(--story-progress) * 10), 1) * -40vh));
 	}
 	.hero-caption span {
 		color: #2462ff;
@@ -921,6 +1201,7 @@
 		animation: bob 1.8s ease-in-out infinite;
 	}
 	.about-shell {
+		--scene-at: 0.25;
 		grid-template-columns: minmax(0, 0.9fr) minmax(25rem, 1.1fr);
 		gap: clamp(2rem, 6vw, 6rem);
 	}
@@ -997,6 +1278,7 @@
 		font-size: 1rem;
 	}
 	.product-shell {
+		--scene-at: 0.5;
 		grid-template-columns: minmax(22rem, 0.9fr) minmax(27rem, 1.1fr);
 		gap: clamp(2rem, 6vw, 6rem);
 	}
@@ -1027,6 +1309,26 @@
 	.feature-list span {
 		color: #4b5563;
 		font-size: 0.86rem;
+	}
+	.product-cta {
+		display: inline-flex;
+		align-items: center;
+		margin-top: 1.35rem;
+		padding: 0.8rem 1.35rem;
+		border-radius: 999px;
+		background: #2462ff;
+		color: #fff;
+		font-size: 0.88rem;
+		font-weight: 700;
+		transition: transform 0.2s ease;
+	}
+	.product-cta:hover {
+		transform: translateY(-2px);
+	}
+	.product-cta-soon {
+		background: #e5e7eb;
+		color: #6b7280;
+		cursor: default;
 	}
 	.product-demo {
 		position: relative;
@@ -1194,6 +1496,7 @@
 		background: #2462ff;
 	}
 	.faq-shell {
+		--scene-at: 0.75;
 		grid-template-columns: 0.7fr 1.3fr;
 		gap: clamp(2rem, 4vw, 4rem);
 	}
@@ -1244,7 +1547,45 @@
 		font-size: 0.82rem;
 		line-height: 1.6;
 	}
+	/* ＋ / − built from two bars so the toggle morphs instead of swapping glyphs. */
+	.faq-icon {
+		position: relative;
+		flex: 0 0 auto;
+		width: 0.9rem;
+		height: 0.9rem;
+		transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+	.faq-icon::before,
+	.faq-icon::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 100%;
+		height: 2px;
+		border-radius: 2px;
+		background: currentColor;
+		transform: translate(-50%, -50%);
+		transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+	.faq-icon::after {
+		transform: translate(-50%, -50%) rotate(90deg);
+	}
+	.faq-item button[aria-expanded='true'] .faq-icon {
+		transform: rotate(180deg);
+	}
+	.faq-item button[aria-expanded='true'] .faq-icon::after {
+		transform: translate(-50%, -50%) rotate(0deg);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.faq-icon,
+		.faq-icon::before,
+		.faq-icon::after {
+			transition: none;
+		}
+	}
 	.join-shell {
+		--scene-at: 1;
 		width: 100%;
 		place-items: center;
 	}
@@ -1265,7 +1606,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: flex-start;
+		justify-content: center;
 		text-align: center;
 		color: #172235;
 	}
@@ -1295,18 +1636,6 @@
 		font-size: clamp(0.8rem, 1.55vh, 1rem);
 		font-weight: 700;
 	}
-	.skip-story {
-		position: absolute;
-		z-index: 40;
-		top: 1rem;
-		right: 1.25rem;
-		padding: 0.55rem 0.8rem;
-		border: 1px solid #d1d5db;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.8);
-		color: #6b7280;
-		font-size: 0.7rem;
-	}
 	.story-count {
 		position: absolute;
 		z-index: 40;
@@ -1314,12 +1643,10 @@
 		bottom: 1.1rem;
 		padding: 0.25rem 0.45rem;
 		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.76);
+		background: rgba(255, 255, 255, 0.9);
 		color: #9ca3af;
 		font-size: 0.75rem;
 		line-height: 1;
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
 	}
 	.story-count.hero-count {
 		bottom: clamp(2.75rem, 5vh, 4rem);
@@ -1409,7 +1736,9 @@
 			bottom: auto;
 			text-align: center;
 			max-width: none;
-			transform: none;
+			/* The machine rises through the caption on phones, so fade it out before they meet. */
+			opacity: clamp(0, calc((0.05 - var(--story-progress)) * 30), 1);
+			transform: translateY(calc(clamp(0, calc(var(--story-progress) * 20), 1) * -30vh));
 		}
 		.hero-caption h1 {
 			font-size: clamp(1.65rem, 7vw, 2.7rem);
@@ -1426,7 +1755,9 @@
 			--hero-art-shift: 0px;
 			height: auto;
 			aspect-ratio: 1179 / 1050;
-			transform: translateY(calc(14svh + var(--story-progress) * -70vh));
+			--machine-exit-distance: -110vh;
+			--capsule-drift: calc(var(--story-progress) * -70vh);
+			transform: translateY(calc(14svh + var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.gacha-device-art {
 			position: absolute;
@@ -1445,14 +1776,6 @@
 		.gacha-machine > .gacha-contents {
 			display: none;
 		}
-		.machine-knob-group {
-			right: 6.6%;
-			bottom: 5.8%;
-			width: 14.5%;
-		}
-		.machine-knob-indicators {
-			display: none;
-		}
 		.capsule {
 			left: 18.5%;
 			top: 80%;
@@ -1462,11 +1785,11 @@
 			grid-template-rows: auto auto;
 			align-content: center;
 			gap: clamp(1.25rem, 2.5svh, 2rem);
-			transform: translateY(2svh);
+			--shell-shift: 2svh;
 		}
 		.about-copy {
 			text-align: center;
-			transform: translateY(calc((0.25 - var(--story-progress)) * -100vh));
+			transform: none;
 		}
 		.about-copy h2 {
 			font-size: clamp(1.9rem, 7vw, 2.7rem);
@@ -1485,7 +1808,7 @@
 			min-height: clamp(12rem, 28svh, 18rem);
 			justify-self: center;
 			border-radius: 1.3rem;
-			transform: translateY(calc((0.25 - var(--story-progress)) * 100vh));
+			transform: none;
 		}
 		.product-shell {
 			grid-template-columns: 1fr;
@@ -1516,6 +1839,11 @@
 		}
 		.feature-list {
 			display: none;
+		}
+		.product-cta {
+			margin-top: 0.75rem;
+			padding: 0.6rem 1.1rem;
+			font-size: 0.8rem;
 		}
 		.product-demo {
 			min-height: 0;
@@ -1600,10 +1928,6 @@
 		.join-board-content a {
 			padding: 0.75rem 1.15rem;
 		}
-		.skip-story {
-			top: 0.7rem;
-			right: 0.75rem;
-		}
 	}
 
 	@media (max-width: 430px) {
@@ -1623,12 +1947,7 @@
 			--capsule-travel-y: -2svh;
 			--capsule-zoom: 1.8;
 			aspect-ratio: 1179 / 1320;
-			transform: translateY(calc(14svh + var(--story-progress) * -70vh));
-		}
-		.machine-knob-group {
-			right: 6.1%;
-			bottom: 4.8%;
-			width: 19%;
+			transform: translateY(calc(14svh + var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.capsule {
 			left: 22.6%;
@@ -1644,7 +1963,7 @@
 		}
 		.about-shell {
 			gap: 0.75rem;
-			transform: translateY(6svh);
+			--shell-shift: 6svh;
 		}
 		.about-copy h2 {
 			font-size: 1.85rem;
@@ -1687,7 +2006,7 @@
 		}
 		.faq-shell {
 			gap: 0.9rem;
-			transform: translateY(2svh);
+			--shell-shift: 2svh;
 		}
 		.faq-copy {
 			transform: none;
@@ -1736,7 +2055,7 @@
 		}
 		.gacha-machine {
 			--gacha-width: min(90vw, 22rem);
-			transform: translateY(calc(10svh + var(--story-progress) * -70vh));
+			transform: translateY(calc(10svh + var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.hero-caption {
 			top: 4rem;
@@ -1756,14 +2075,14 @@
 			display: none;
 		}
 		.about-shell {
-			transform: translateY(2svh);
+			--shell-shift: 2svh;
 		}
 		.team-film {
 			min-height: 8.5rem;
 		}
 		.faq-shell {
 			gap: 0.35rem;
-			transform: translateY(1svh);
+			--shell-shift: 1svh;
 		}
 		.faq-copy h2 {
 			font-size: 1.55rem;

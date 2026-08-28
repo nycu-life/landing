@@ -3,20 +3,15 @@
 	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import GlassIconBtn from '$lib/components/glass/GlassIconBtn.svelte';
-	import BurgerIcon from '$lib/components/glass/BurgerIcon.svelte';
 	import LocaleSwitch from './LocaleSwitch.svelte';
 
 	let {
-		menuOpen = false,
 		home = true,
 		darkMode = false,
-		ontoggle,
 		ontoggletheme
 	}: {
-		menuOpen?: boolean;
 		home?: boolean;
 		darkMode?: boolean;
-		ontoggle?: () => void;
 		ontoggletheme?: () => void;
 	} = $props();
 
@@ -26,7 +21,7 @@
 	);
 </script>
 
-<header class="topbar" class:subpage={!home} class:menu-open={menuOpen}>
+<header class="topbar" class:subpage={!home}>
 	{#if home}
 		<a class="topbar-brand" href="{base}/" aria-label={m.menu_home()}>
 			<img src={logoSrc} alt="NYCU LIFE" />
@@ -58,17 +53,9 @@
 					>
 				{/if}
 			</button>
-			<GlassIconBtn
-				class="mobile-menu-btn"
-				light={!menuOpen}
-				label={menuOpen ? m.menu_close() : m.menu_open()}
-				onclick={ontoggle}
-			>
-				<BurgerIcon open={menuOpen} />
-			</GlassIconBtn>
 		</div>
 	{:else}
-		<GlassIconBtn light={!menuOpen} label={m.team_back()} onclick={() => goto(`${base}/`)}>
+		<GlassIconBtn light label={m.team_back()} onclick={() => goto(`${base}/`)}>
 			<svg
 				width="22"
 				height="22"
@@ -108,13 +95,6 @@
 					>
 				{/if}
 			</button>
-			<GlassIconBtn
-				light={!menuOpen}
-				label={menuOpen ? m.menu_close() : m.menu_open()}
-				onclick={ontoggle}
-			>
-				<BurgerIcon open={menuOpen} />
-			</GlassIconBtn>
 		</div>
 	{/if}
 </header>
@@ -129,13 +109,13 @@
 		justify-content: space-between;
 		gap: 1rem;
 		width: 100%;
-		max-width: var(--shell);
-		margin-inline: auto;
-		padding: max(0.8rem, env(safe-area-inset-top)) var(--gutter) 0.8rem;
+		/* Full-bleed bar (no seam against the page background); content stays centred in --shell. */
+		padding: max(0.8rem, env(safe-area-inset-top))
+			max(var(--gutter), calc((100% - var(--shell)) / 2)) 0.8rem;
 		min-height: 4.75rem;
-		background: color-mix(in srgb, var(--surface) 78%, transparent);
-		backdrop-filter: blur(18px) saturate(160%);
-		-webkit-backdrop-filter: blur(18px) saturate(160%);
+		/* Opaque on purpose: a translucent bar picks up whatever scrolls beneath it and the
+		   colour visibly shifts across its width. */
+		background: var(--surface);
 		border-bottom: 1px solid var(--line);
 	}
 	/* Subpages: back (start) · wordmark (centre) · burger (end). */
@@ -200,9 +180,6 @@
 		color: var(--brand);
 		border-color: var(--brand);
 	}
-	:global(.mobile-menu-btn) {
-		display: none;
-	}
 	.subpage-actions {
 		display: flex;
 		align-items: center;
@@ -211,9 +188,6 @@
 	@media (max-width: 900px) {
 		.topbar-nav {
 			display: none;
-		}
-		:global(.mobile-menu-btn) {
-			display: inline-flex;
 		}
 	}
 	@media (max-width: 680px) {
