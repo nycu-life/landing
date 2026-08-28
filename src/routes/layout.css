@@ -270,10 +270,6 @@ img {
 	display: block;
 }
 
-body.menu-locked {
-	overflow: hidden;
-}
-
 /* Every route wraps its content in `.page` so it sits above the fixed Aurora. */
 .page {
 	position: relative;
