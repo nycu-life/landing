@@ -11,7 +11,7 @@
 	];
 	const storySteps = [
 		{ id: 'hero', progress: 0, duration: 0 },
-		{ id: 'about', progress: 0.25, duration: 2600 },
+		{ id: 'about', progress: 0.25, duration: 4200 },
 		{ id: 'products', progress: 0.5, duration: 1050 },
 		{ id: 'faq', progress: 0.75, duration: 950 },
 		{ id: 'join', progress: 1, duration: 950 }
@@ -286,7 +286,7 @@
 				<picture class="gacha-device-art" aria-hidden="true">
 					<source media="(max-width: 430px)" srcset="{base}/story/designer/gacha-mobile.svg" />
 					<source media="(max-width: 900px)" srcset="{base}/story/designer/gacha-tablet.svg" />
-					<img src="{base}/story/designer/gacha-tablet.svg" alt="" />
+					<img src="{base}/story/designer/gacha-desktop.svg" alt="" />
 				</picture>
 				<img class="machine-base" src="{base}/story/designer/gacha-machine.svg" alt="" />
 				<img class="machine-glass" src="{base}/story/designer/gacha-glass.svg" alt="" />
@@ -312,7 +312,15 @@
 					<img class="machine-knob" src="{base}/story/designer/knob.svg" alt="" />
 				</div>
 				<div class="capsule" aria-hidden="true">
-					<img class="capsule-art" src="{base}/story/designer/error-ball.svg" alt="" />
+					<div class="capsule-rotor">
+						<div class="capsule-core"></div>
+						<div class="capsule-shell capsule-shell-top">
+							<img class="capsule-art" src="{base}/story/designer/error-ball.svg" alt="" />
+						</div>
+						<div class="capsule-shell capsule-shell-bottom">
+							<img class="capsule-art" src="{base}/story/designer/error-ball.svg" alt="" />
+						</div>
+					</div>
 				</div>
 			</div>
 			<div class="hero-caption">
@@ -394,6 +402,16 @@
 							</div>
 							<img class="device-frame" src="{base}/story/designer/phone-frame.svg" alt="" />
 						</div>
+						<img
+							class="device-hand-front device-hand-thumb"
+							src="{base}/story/phone-transparent.png"
+							alt=""
+						/>
+						<img
+							class="device-hand-front device-hand-finger"
+							src="{base}/story/phone-transparent.png"
+							alt=""
+						/>
 					</div>
 					<button
 						type="button"
@@ -587,13 +605,13 @@
 	.hero-scene {
 		display: grid;
 		place-items: center;
-		opacity: clamp(0, calc((0.18 - var(--story-progress)) * 18), 1);
+		opacity: clamp(0, calc((0.25 - var(--story-progress)) * 40), 1);
 		background: #fff;
 	}
 	.about-scene {
 		opacity: clamp(
 			0,
-			min(calc((var(--story-progress) - 0.1) * 18), calc((0.42 - var(--story-progress)) * 18)),
+			min(calc((var(--story-progress) - 0.225) * 40), calc((0.42 - var(--story-progress)) * 18)),
 			1
 		);
 	}
@@ -698,18 +716,22 @@
 		inset: 29%;
 	}
 	.gacha-machine {
-		--gacha-width: min(48vw, 43rem);
-		--capsule-size: clamp(4.5rem, 9vw, 7rem);
+		--gacha-width: min(64vw, 145svh, 112rem);
+		--capsule-size: clamp(4.5rem, 8vw, 8rem);
+		--capsule-travel-x: 0vw;
+		--capsule-travel-y: -9vh;
+		--capsule-zoom: 1.7;
 		--hero-art-shift: 0px;
 		position: relative;
 		z-index: 3;
 		width: var(--gacha-width);
-		height: min(78vh, 43rem);
+		height: auto;
+		aspect-ratio: 16 / 9;
 		contain: layout style;
 		isolation: isolate;
 		will-change: transform;
 		filter: drop-shadow(0 1.5rem 2.25rem rgba(26, 55, 103, 0.16));
-		transform: translate(18vw, calc(-2vh + var(--story-progress) * -65vh))
+		transform: translate(18vw, calc(-1vh + var(--story-progress) * -65vh))
 			scale(calc(1 - var(--story-progress) * 0.2));
 	}
 	.gacha-machine > img {
@@ -722,6 +744,20 @@
 		transform: translateY(var(--hero-art-shift));
 	}
 	.gacha-device-art {
+		position: absolute;
+		inset: 0;
+		display: block;
+	}
+	.gacha-device-art img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+	.gacha-machine > .machine-base,
+	.gacha-machine > .machine-glass,
+	.gacha-machine > .machine-hole,
+	.gacha-machine > .gacha-contents {
 		display: none;
 	}
 	.gacha-machine > .machine-glass {
@@ -762,6 +798,7 @@
 		max-width: none;
 	}
 	.machine-knob-indicators {
+		display: none;
 		z-index: 1;
 		left: 20%;
 		top: -27%;
@@ -773,30 +810,67 @@
 		width: 100%;
 		height: 100%;
 		transform-origin: 50% 50%;
-		transform: rotate(calc(var(--story-progress) * 720deg));
+		transform: rotate(calc(clamp(0, calc(var(--story-progress) * 15.4), 1) * 360deg));
 	}
 	.capsule {
+		--capsule-emerge: clamp(0, calc((var(--story-progress) - 0.05) * 20), 1);
+		--capsule-roll: clamp(0, calc((var(--story-progress) - 0.092) * 10.2), 1);
+		--capsule-open: clamp(0, calc((var(--story-progress) - 0.19) * 22.2), 1);
 		position: absolute;
 		z-index: 8;
 		left: 17.3%;
 		top: calc(100% - var(--gacha-width) * 0.0867);
 		width: var(--capsule-size);
 		aspect-ratio: 1;
-		overflow: hidden;
-		border-radius: 50%;
-		opacity: clamp(
-			0,
-			min(calc((var(--story-progress) - 0.035) * 32), calc((0.2 - var(--story-progress)) * 20)),
-			1
-		);
-		transform: translate(
-				-50%,
+		opacity: clamp(0, calc((var(--story-progress) - 0.045) * 40), 1);
+		will-change: transform, opacity;
+		transform: translate3d(
+				calc(-50% + var(--capsule-roll) * var(--capsule-travel-x)),
 				calc(
-					-50% + var(--hero-art-shift) + clamp(0, calc((var(--story-progress) - 0.035) * 6.25), 1) *
-						68vh
-				)
+					-50% + var(--hero-art-shift) + var(--capsule-emerge) * 2.5rem + var(--capsule-roll) *
+						var(--capsule-travel-y)
+				),
+				0
 			)
-			rotate(calc(clamp(0, calc((var(--story-progress) - 0.035) * 6.25), 1) * 300deg));
+			scale(calc(0.42 + var(--capsule-emerge) * 0.58 + var(--capsule-roll) * var(--capsule-zoom)));
+	}
+	.capsule-rotor {
+		position: absolute;
+		inset: 0;
+		will-change: transform;
+		transform: rotate(calc(var(--capsule-roll) * 720deg));
+	}
+	.capsule-shell {
+		position: absolute;
+		z-index: 2;
+		inset: 0;
+		border-radius: 50%;
+		will-change: transform;
+	}
+	.capsule-shell-top {
+		clip-path: inset(0 0 49.5% 0);
+		transform: translate3d(calc(var(--capsule-open) * -6%), calc(var(--capsule-open) * -32%), 0)
+			rotate(calc(var(--capsule-open) * -12deg));
+	}
+	.capsule-shell-bottom {
+		clip-path: inset(49.5% 0 0 0);
+		transform: translate3d(calc(var(--capsule-open) * 6%), calc(var(--capsule-open) * 32%), 0)
+			rotate(calc(var(--capsule-open) * 10deg));
+	}
+	.capsule-core {
+		position: absolute;
+		z-index: 1;
+		inset: 14%;
+		border: 1px solid rgba(255, 255, 255, 0.92);
+		border-radius: 50%;
+		opacity: var(--capsule-open);
+		background:
+			radial-gradient(circle at 36% 31%, #fff 0 7%, transparent 8%),
+			radial-gradient(circle, #fff 0 12%, #acc2ff 13% 42%, #315fff 68%, transparent 70%);
+		box-shadow:
+			0 0 1.2rem rgba(89, 126, 255, 0.72),
+			0 0 3rem rgba(89, 126, 255, 0.5);
+		transform: scale(calc(0.25 + var(--capsule-open) * 0.75));
 	}
 	.capsule .capsule-art {
 		position: absolute;
@@ -812,7 +886,7 @@
 		left: 10vw;
 		right: auto;
 		top: 50%;
-		max-width: 30rem;
+		max-width: min(30rem, 26vw);
 		margin-inline: 0;
 		opacity: clamp(0, calc((0.1 - var(--story-progress)) * 18), 1);
 		text-align: left;
@@ -976,6 +1050,53 @@
 		height: 100%;
 		object-fit: contain;
 		pointer-events: none;
+	}
+	.device-card > .device-hand-front {
+		position: absolute;
+		z-index: 3;
+		inset: 0;
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		pointer-events: none;
+	}
+	.device-hand-thumb {
+		clip-path: polygon(
+			67.2% 52.2%,
+			69.5% 52.7%,
+			74% 55%,
+			79% 56.3%,
+			84.5% 55.8%,
+			87% 54.8%,
+			89% 55.5%,
+			100% 65.5%,
+			100% 72%,
+			94% 68%,
+			88% 64%,
+			84% 63%,
+			81.5% 63.8%,
+			78% 63.2%,
+			74.5% 62%,
+			71.5% 60%,
+			69% 57%,
+			67.5% 54.5%
+		);
+	}
+	.device-hand-finger {
+		clip-path: polygon(
+			43% 83.8%,
+			50% 82.8%,
+			55.5% 81.6%,
+			58.5% 82%,
+			60% 83.8%,
+			59.3% 86%,
+			55% 88.8%,
+			48% 91.8%,
+			44% 91.5%,
+			42.5% 89.5%,
+			42.5% 86%
+		);
 	}
 	.device-phone {
 		position: absolute;
@@ -1226,18 +1347,18 @@
 			width: min(86vh, 68rem);
 		}
 		.gacha-machine {
-			--gacha-width: min(52vw, 58rem);
-			height: min(82vh, 52rem);
+			--gacha-width: min(64vw, 145svh, 112rem);
 		}
 		.hero-caption {
-			max-width: 42rem;
+			max-width: min(42rem, 26vw);
 		}
 		.hero-caption span {
 			font-size: 0.9rem;
 		}
 		.hero-caption h1 {
-			font-size: clamp(3.6rem, 4vw, 5.4rem);
-			line-height: 1.12;
+			font-size: clamp(2.8rem, 2.75vw, 4.2rem);
+			line-height: 1.08;
+			padding-bottom: 0.05em;
 		}
 		.hero-caption p {
 			font-size: 1.12rem;
@@ -1299,6 +1420,9 @@
 		.gacha-machine {
 			--gacha-width: min(94vw, 44rem);
 			--capsule-size: clamp(4.5rem, 14vw, 6.5rem);
+			--capsule-travel-x: 30vw;
+			--capsule-travel-y: -4svh;
+			--capsule-zoom: 1.65;
 			--hero-art-shift: 0px;
 			height: auto;
 			aspect-ratio: 1179 / 1050;
@@ -1495,6 +1619,9 @@
 		.gacha-machine {
 			--gacha-width: min(96vw, 26rem);
 			--capsule-size: clamp(4.25rem, 18vw, 5.5rem);
+			--capsule-travel-x: 26vw;
+			--capsule-travel-y: -2svh;
+			--capsule-zoom: 1.8;
 			aspect-ratio: 1179 / 1320;
 			transform: translateY(calc(14svh + var(--story-progress) * -70vh));
 		}

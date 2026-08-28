@@ -6,7 +6,7 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await page.goto('/');
 	await expect(page.getByRole('heading', { level: 1, name: /NYCU LIFE/i })).toBeVisible();
 	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
-	await expect(page.locator('.gacha-machine img')).toHaveCount(17);
+	await expect(page.locator('.gacha-machine img')).toHaveCount(18);
 	await expect
 		.poll(() =>
 			page
@@ -27,7 +27,8 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	expect(assetRatios.base).toBeGreaterThan(1.8);
 	expect(assetRatios.base).toBeLessThan(1.9);
 	expect(assetRatios.knob).toBeCloseTo(1, 2);
-	await expect(page.locator('.gacha-machine > .capsule .capsule-art')).toHaveAttribute(
+	await expect(page.locator('.gacha-machine > .capsule .capsule-art')).toHaveCount(2);
+	await expect(page.locator('.gacha-machine > .capsule .capsule-art').first()).toHaveAttribute(
 		'src',
 		/\/story\/designer\/error-ball\.svg$/
 	);
@@ -74,10 +75,11 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(page.locator('#prototype-footer')).toBeAttached();
 });
 
-test('hero uses the designer art direction for phone and tablet', async ({ page }) => {
+test('hero uses the designer art direction for desktop, phone, and tablet', async ({ page }) => {
 	for (const viewport of [
-		{ width: 390, height: 844, asset: /gacha-mobile\.svg$/ },
-		{ width: 768, height: 1024, asset: /gacha-tablet\.svg$/ }
+		{ width: 390, height: 844, asset: /gacha-mobile\.svg$/, minWidthRatio: 0.9 },
+		{ width: 768, height: 1024, asset: /gacha-tablet\.svg$/, minWidthRatio: 0.9 },
+		{ width: 1440, height: 900, asset: /gacha-desktop\.svg$/, minWidthRatio: 0.6 }
 	]) {
 		await page.setViewportSize(viewport);
 		await page.goto('/?motion=on#hero');
@@ -94,8 +96,79 @@ test('hero uses the designer art direction for phone and tablet', async ({ page 
 				overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
 			};
 		});
-		expect(result.widthRatio).toBeGreaterThanOrEqual(0.9);
+		expect(result.widthRatio).toBeGreaterThanOrEqual(viewport.minWidthRatio);
 		expect(result.overflow).toBe(0);
+	}
+});
+
+test('hero capsule rolls toward the viewport and opens without leaving the stage', async ({
+	page
+}) => {
+	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
+	for (const viewport of [
+		{ name: 'desktop', width: 1440, height: 900 },
+		{ name: 'tablet', width: 768, height: 1024 },
+		{ name: 'mobile', width: 390, height: 844 }
+	]) {
+		await page.setViewportSize(viewport);
+		await page.goto('/?motion=on#hero');
+		await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+
+		for (const phase of [
+			{ name: 'rolling', progress: 0.14 },
+			{ name: 'open', progress: 0.215 }
+		]) {
+			await story(page).evaluate((element, progress) => {
+				element.style.setProperty('--story-progress', String(progress));
+			}, phase.progress);
+			const result = await page.evaluate(() => {
+				const stage = document.querySelector<HTMLElement>('.story-stage');
+				const capsule = document.querySelector<HTMLElement>('.capsule');
+				if (!stage || !capsule) throw new Error('Missing hero capsule');
+				const stageRect = stage.getBoundingClientRect();
+				const capsuleRect = capsule.getBoundingClientRect();
+				return {
+					centerX: (capsuleRect.left + capsuleRect.width / 2 - stageRect.left) / stageRect.width,
+					centerY: (capsuleRect.top + capsuleRect.height / 2 - stageRect.top) / stageRect.height,
+					left: capsuleRect.left - stageRect.left,
+					right: stageRect.right - capsuleRect.right,
+					top: capsuleRect.top - stageRect.top,
+					bottom: stageRect.bottom - capsuleRect.bottom,
+					overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+				};
+			});
+			expect
+				.soft(result.centerX, `${viewport.name}/${phase.name} horizontal position`)
+				.toBeGreaterThan(0.2);
+			expect
+				.soft(result.centerX, `${viewport.name}/${phase.name} horizontal position`)
+				.toBeLessThan(0.8);
+			expect
+				.soft(result.centerY, `${viewport.name}/${phase.name} vertical position`)
+				.toBeGreaterThan(0.2);
+			expect
+				.soft(result.centerY, `${viewport.name}/${phase.name} vertical position`)
+				.toBeLessThan(0.82);
+			expect
+				.soft(result.left, `${viewport.name}/${phase.name} left clipping`)
+				.toBeGreaterThanOrEqual(-2);
+			expect
+				.soft(result.right, `${viewport.name}/${phase.name} right clipping`)
+				.toBeGreaterThanOrEqual(-2);
+			expect
+				.soft(result.top, `${viewport.name}/${phase.name} top clipping`)
+				.toBeGreaterThanOrEqual(-2);
+			expect
+				.soft(result.bottom, `${viewport.name}/${phase.name} bottom clipping`)
+				.toBeGreaterThanOrEqual(-2);
+			expect.soft(result.overflow, `${viewport.name}/${phase.name} overflow`).toBe(0);
+
+			if (screenshotDirectory) {
+				await page.screenshot({
+					path: `${screenshotDirectory}/hero-capsule-${viewport.name}-${phase.name}.png`
+				});
+			}
+		}
 	}
 });
 
@@ -103,6 +176,7 @@ test('one wheel gesture plays one fixed chapter without skipping and supports re
 	page
 }) => {
 	test.slow();
+	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
 	await page.goto('/?motion=on');
 	await page.mouse.move(640, 400);
 	await page.mouse.wheel(0, 900);
@@ -132,17 +206,55 @@ test('one wheel gesture plays one fixed chapter without skipping and supports re
 		.poll(() => page.locator('.capsule').evaluate((element) => getComputedStyle(element).opacity))
 		.not.toBe('0');
 	await expect(page.locator('.capsule')).toHaveCount(1);
-	await expect(page.locator('.capsule .capsule-art')).toHaveCount(1);
+	await expect(page.locator('.capsule .capsule-art')).toHaveCount(2);
 	await expect(page.locator('.capsule img[src$="bottom-ball.svg"]')).toHaveCount(0);
-	await expect(story(page)).toHaveAttribute('data-story-step', '1', { timeout: 3500 });
+	await expect
+		.poll(() =>
+			page
+				.locator('.prototype-story')
+				.evaluate((element) =>
+					Number.parseFloat(getComputedStyle(element).getPropertyValue('--story-progress'))
+				)
+		)
+		.toBeGreaterThan(0.14);
+	if (screenshotDirectory) {
+		await page.screenshot({ path: `${screenshotDirectory}/hero-capsule-rolling.png` });
+	}
+	await expect
+		.poll(
+			() =>
+				page
+					.locator('.prototype-story')
+					.evaluate((element) =>
+						Number.parseFloat(getComputedStyle(element).getPropertyValue('--story-progress'))
+					),
+			{ timeout: 4200 }
+		)
+		.toBeGreaterThan(0.205);
+	const openedShell = await page.locator('.capsule').evaluate((capsule) => {
+		const top = capsule.querySelector<HTMLElement>('.capsule-shell-top');
+		const bottom = capsule.querySelector<HTMLElement>('.capsule-shell-bottom');
+		const core = capsule.querySelector<HTMLElement>('.capsule-core');
+		if (!top || !bottom || !core) return null;
+		return {
+			top: getComputedStyle(top).transform,
+			bottom: getComputedStyle(bottom).transform,
+			coreOpacity: Number.parseFloat(getComputedStyle(core).opacity)
+		};
+	});
+	expect(openedShell).not.toBeNull();
+	expect(openedShell!.top).not.toBe(openedShell!.bottom);
+	expect(openedShell!.coreOpacity).toBeGreaterThan(0.2);
+	if (screenshotDirectory) {
+		await page.screenshot({ path: `${screenshotDirectory}/hero-capsule-open.png` });
+	}
+	await expect(story(page)).toHaveAttribute('data-story-step', '1', { timeout: 5200 });
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about');
 	await expect(story(page)).toHaveAttribute('data-story-animating', 'false');
-	await expect
-		.poll(() => page.locator('.capsule').evaluate((element) => getComputedStyle(element).opacity))
-		.toBe('0');
+	await expect(page.locator('.hero-scene')).toHaveCSS('opacity', '0');
 
 	await page.keyboard.press('ArrowUp');
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'hero', { timeout: 3500 });
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'hero', { timeout: 5200 });
 });
 
 test('the first gesture is buffered until hero assets are ready', async ({ page }) => {
@@ -164,7 +276,7 @@ test('the first gesture is buffered until hero assets are ready', async ({ page 
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 	await expect(story(page)).toHaveAttribute('data-story-ready', 'true', { timeout: 6000 });
 	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 4000 });
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 5200 });
 });
 
 test('motion opt-in overrides system reduced-motion for review', async ({ page }) => {
@@ -174,7 +286,7 @@ test('motion opt-in overrides system reduced-motion for review', async ({ page }
 	await page.mouse.move(640, 400);
 	await page.mouse.wheel(0, 80);
 	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 3500 });
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 5200 });
 });
 
 test('a mobile swipe advances exactly one chapter', async ({ page }) => {
@@ -215,7 +327,7 @@ test('a mobile swipe advances exactly one chapter', async ({ page }) => {
 		);
 	});
 
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 3500 });
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 5200 });
 	await page.waitForTimeout(250);
 	await expect(story(page)).toHaveAttribute('data-story-step', '1');
 });
@@ -336,14 +448,21 @@ test('product screens stay registered to the phone frame at every viewport size'
 		for (let productIndex = 0; productIndex < 4; productIndex += 1) {
 			if (productIndex > 0) await next.click();
 			const result = await page.evaluate(() => {
+				const backHand = document.querySelector<HTMLElement>('.device-hand');
+				const frontHands = Array.from(document.querySelectorAll<HTMLElement>('.device-hand-front'));
 				const phone = document.querySelector<HTMLElement>('.device-phone');
 				const screen = document.querySelector<HTMLElement>('.device-screen');
 				const frame = document.querySelector<HTMLImageElement>('.device-frame');
-				if (!phone || !screen || !frame) throw new Error('Missing product phone layers');
+				if (!backHand || frontHands.length !== 2 || !phone || !screen || !frame) {
+					throw new Error('Missing product phone or hand layers');
+				}
 				const phoneRect = phone.getBoundingClientRect();
 				const screenRect = screen.getBoundingClientRect();
 				const frameRect = frame.getBoundingClientRect();
 				return {
+					backHandZ: Number(getComputedStyle(backHand).zIndex),
+					phoneZ: Number(getComputedStyle(phone).zIndex),
+					frontHandZ: frontHands.map((hand) => Number(getComputedStyle(hand).zIndex)),
 					left: (screenRect.left - phoneRect.left) / phoneRect.width,
 					top: (screenRect.top - phoneRect.top) / phoneRect.height,
 					right: (phoneRect.right - screenRect.right) / phoneRect.width,
@@ -355,6 +474,10 @@ test('product screens stay registered to the phone frame at every viewport size'
 			});
 
 			const label = `${viewport.width}x${viewport.height} product ${productIndex + 1}`;
+			expect.soft(result.backHandZ, `${label}: rear hand layer`).toBeLessThan(result.phoneZ);
+			expect
+				.soft(result.frontHandZ, `${label}: foreground fingers`)
+				.toEqual([result.phoneZ + 1, result.phoneZ + 1]);
 			expect.soft(result.left, `${label}: left inset`).toBeCloseTo(0.0663, 2);
 			expect.soft(result.top, `${label}: top inset`).toBeCloseTo(0.0346, 2);
 			expect.soft(result.right, `${label}: right inset`).toBeCloseTo(0.0649, 2);
