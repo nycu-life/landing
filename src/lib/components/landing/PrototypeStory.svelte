@@ -86,8 +86,6 @@
 	const selectProduct = (index: number) => {
 		activeProduct = (index + products.length) % products.length;
 	};
-	const jumpToStoryEnd = () => goToStep(lastStepIndex, true);
-
 	onMount(() => {
 		const bootstrap = (window as Window & { __nycuStoryBootstrap?: StoryBootstrap })
 			.__nycuStoryBootstrap;
@@ -303,14 +301,6 @@
 					<img src="{base}/story/designer/nycu-life.svg" alt="" />
 				</div>
 				<img class="machine-hole" src="{base}/story/designer/gacha-hole.svg" alt="" />
-				<div class="machine-knob-group" aria-hidden="true">
-					<img
-						class="machine-knob-indicators"
-						src="{base}/story/designer/knob-indicators.svg"
-						alt=""
-					/>
-					<img class="machine-knob" src="{base}/story/designer/knob.svg" alt="" />
-				</div>
 				<div class="capsule" aria-hidden="true">
 					<div class="capsule-rotor">
 						<div class="capsule-core"></div>
@@ -486,7 +476,6 @@
 			</div>
 		</section>
 
-		<a class="skip-story" href="#prototype-footer" onclick={jumpToStoryEnd}>{m.story_skip()}</a>
 		<span class="story-count" class:hero-count={stepIndex === 0} aria-hidden="true"
 			>{stepIndex + 1} / {storySteps.length}</span
 		>
@@ -562,11 +551,6 @@
 	}
 	:global(:root[data-theme='dark']) .product-dots button.active {
 		background: #79a4ff;
-	}
-	:global(:root[data-theme='dark']) .skip-story {
-		border-color: rgba(185, 207, 238, 0.22);
-		background: rgba(19, 31, 51, 0.86);
-		color: #b5c3d6;
 	}
 	:global(:root[data-theme='dark']) .scroll-hint,
 	:global(:root[data-theme='dark']) .story-count {
@@ -782,40 +766,10 @@
 	.gacha-machine > .machine-hole {
 		z-index: 4;
 	}
-	.machine-knob-group {
-		position: absolute;
-		z-index: 5;
-		right: 10.1%;
-		bottom: 3.7%;
-		width: 9%;
-		aspect-ratio: 1;
-		filter: drop-shadow(0 1rem 1.5rem rgba(26, 55, 103, 0.14));
-		transform: translateY(var(--hero-art-shift));
-	}
-	.machine-knob-group img {
-		position: absolute;
-		display: block;
-		max-width: none;
-	}
-	.machine-knob-indicators {
-		display: none;
-		z-index: 1;
-		left: 20%;
-		top: -27%;
-		width: 60%;
-	}
-	.machine-knob {
-		z-index: 2;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		transform-origin: 50% 50%;
-		transform: rotate(calc(clamp(0, calc(var(--story-progress) * 15.4), 1) * 360deg));
-	}
 	.capsule {
-		--capsule-emerge: clamp(0, calc((var(--story-progress) - 0.05) * 20), 1);
-		--capsule-roll: clamp(0, calc((var(--story-progress) - 0.092) * 10.2), 1);
-		--capsule-open: clamp(0, calc((var(--story-progress) - 0.19) * 22.2), 1);
+		--capsule-emerge: clamp(0, calc((var(--story-progress) - 0.04) * 25), 1);
+		--capsule-roll: clamp(0, calc((var(--story-progress) - 0.075) * 12.5), 1);
+		--capsule-open: clamp(0, calc((var(--story-progress) - 0.17) * 33.34), 1);
 		position: absolute;
 		z-index: 8;
 		left: 17.3%;
@@ -1295,18 +1249,6 @@
 		font-size: clamp(0.8rem, 1.55vh, 1rem);
 		font-weight: 700;
 	}
-	.skip-story {
-		position: absolute;
-		z-index: 40;
-		top: 1rem;
-		right: 1.25rem;
-		padding: 0.55rem 0.8rem;
-		border: 1px solid #d1d5db;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.8);
-		color: #6b7280;
-		font-size: 0.7rem;
-	}
 	.story-count {
 		position: absolute;
 		z-index: 40;
@@ -1443,14 +1385,6 @@
 		.gacha-machine > .machine-glass,
 		.gacha-machine > .machine-hole,
 		.gacha-machine > .gacha-contents {
-			display: none;
-		}
-		.machine-knob-group {
-			right: 6.6%;
-			bottom: 5.8%;
-			width: 14.5%;
-		}
-		.machine-knob-indicators {
 			display: none;
 		}
 		.capsule {
@@ -1600,10 +1534,6 @@
 		.join-board-content a {
 			padding: 0.75rem 1.15rem;
 		}
-		.skip-story {
-			top: 0.7rem;
-			right: 0.75rem;
-		}
 	}
 
 	@media (max-width: 430px) {
@@ -1624,11 +1554,6 @@
 			--capsule-zoom: 1.8;
 			aspect-ratio: 1179 / 1320;
 			transform: translateY(calc(14svh + var(--story-progress) * -70vh));
-		}
-		.machine-knob-group {
-			right: 6.1%;
-			bottom: 4.8%;
-			width: 19%;
 		}
 		.capsule {
 			left: 22.6%;
