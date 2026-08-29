@@ -53,7 +53,12 @@ export function initAnalytics() {
 	document.head.appendChild(script);
 
 	window.dataLayer = window.dataLayer ?? [];
-	window.gtag = (...args: unknown[]) => window.dataLayer.push(args);
+	window.gtag = function () {
+		// Google Tag consumes the native Arguments object used by its canonical snippet.
+		// Converting commands to Arrays leaves them visible in dataLayer but sends no beacons.
+		// eslint-disable-next-line prefer-rest-params
+		window.dataLayer.push(arguments);
+	};
 	window.gtag('js', new Date());
 	window.gtag('config', measurementId, { send_page_view: false });
 	document.addEventListener('click', trackMarkedLinkClick, { capture: true });
