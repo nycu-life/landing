@@ -2,6 +2,7 @@
 	import { base } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
 	import PrototypeStory from '$lib/components/landing/PrototypeStory.svelte';
+	import WishPool from '$lib/components/landing/WishPool.svelte';
 	import { CONTACT_EMAIL, GITHUB_URL, INSTAGRAM_URL } from '$lib/content/landing';
 </script>
 
@@ -12,6 +13,7 @@
 
 <div class="prototype-home">
 	<PrototypeStory />
+	<WishPool />
 
 	<footer id="prototype-footer" class="prototype-footer">
 		<div class="footer-grid">
@@ -31,9 +33,7 @@
 			<div class="footer-contact">
 				<strong>{m.menu_contact_label()}</strong>
 				<a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-				<a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(m.footer_wishlist())}`}
-					>{m.footer_wishlist()} ✦</a
-				>
+				<a href="#wishes">{m.footer_wishlist()} ✦</a>
 				<a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">Instagram</a>
 				<a href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</a>
 			</div>

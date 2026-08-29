@@ -315,7 +315,15 @@ test('normal page scrolling reaches the footer only after the final chapter', as
 	await page.mouse.move(206, 400);
 	await page.mouse.wheel(0, 500);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+	await expect(page.locator('#wishes')).toBeVisible();
+	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
 	await expect(page.locator('#prototype-footer')).toBeVisible();
+	await page.evaluate(() => {
+		document.documentElement.style.scrollBehavior = 'auto';
+		document.body.style.scrollBehavior = 'auto';
+		window.scrollTo(0, 400);
+	});
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(400);
 
 	// The first upward gesture only restores the complete landing stage. Inertia from that same
 	// gesture must not also send JOIN back to FAQ while the user is trying to leave the footer.
