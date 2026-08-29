@@ -70,6 +70,26 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(story(page)).toContainText('FAQ');
 	await expect(story(page)).toContainText('JOIN THE TEAM');
 	await expect(page.locator('#prototype-footer')).toBeAttached();
+	await expect(page.locator('a[href="mailto:life@nycu.edu.tw"]')).toHaveText('life@nycu.edu.tw');
+});
+
+test('FAQ introduces NYCU LIFE without framing it as an official university system', async ({
+	page
+}) => {
+	await page.goto('/?motion=on#faq');
+	const firstQuestion = page.locator('.faq-item button').first();
+	await expect(firstQuestion).toContainText('NYCU LIFE 是什麼？');
+	await expect(page.getByText('NYCU LIFE 是學校官方開發的系統嗎？')).toHaveCount(0);
+	await firstQuestion.click();
+	await expect(page.locator('.faq-item p').first()).toContainText(
+		'我們是一群由陽明交大學生自發發起、自主開發的獨立專案團隊。'
+	);
+
+	await page.evaluate(() => {
+		document.cookie = 'PARAGLIDE_LOCALE=en; path=/';
+	});
+	await page.reload();
+	await expect(page.locator('.faq-item button').first()).toContainText('What is NYCU LIFE?');
 });
 
 test('hero uses the designer art direction for desktop, phone, and tablet', async ({ page }) => {
@@ -309,6 +329,49 @@ test('normal page scrolling reaches the footer only after the final chapter', as
 
 	await page.waitForTimeout(220);
 	await page.mouse.wheel(0, -80);
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq', { timeout: 5200 });
+});
+
+test('a fresh upward flick can leave JOIN without waiting for the restoration timer', async ({
+	page
+}) => {
+	await page.goto('/?motion=on#join');
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
+
+	const result = await story(page).evaluate(() => {
+		document.documentElement.style.scrollBehavior = 'auto';
+		document.body.style.scrollBehavior = 'auto';
+		window.scrollTo(0, 400);
+		const startScrollY = window.scrollY;
+		const dispatchWheel = (deltaY: number) => {
+			const event = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY });
+			window.dispatchEvent(event);
+			return event.defaultPrevented;
+		};
+
+		const restorationPrevented = dispatchWheel(-500);
+		window.scrollTo(0, 0);
+		const inertiaPrevented = dispatchWheel(-80);
+		const freshFlickPrevented = dispatchWheel(-160);
+
+		return {
+			startScrollY,
+			restorationPrevented,
+			inertiaPrevented,
+			freshFlickPrevented,
+			scrollY: window.scrollY
+		};
+	});
+
+	expect(result).toEqual({
+		startScrollY: 400,
+		restorationPrevented: false,
+		inertiaPrevented: false,
+		freshFlickPrevented: true,
+		scrollY: 0
+	});
 	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq', { timeout: 5200 });
 });
@@ -655,6 +718,12 @@ test('product carousel exposes all four products without changing story chapter'
 	for (const product of ['NYCozU', 'NYCU EVENTS', 'NYCU MAPS']) {
 		await next.click();
 		await expect(page.locator('.product-copy h2')).toContainText(product);
+		if (product === 'NYCU EVENTS') {
+			await expect(page.locator('.product-cta')).toHaveAttribute(
+				'href',
+				'https://events.life.nycu.edu.tw/'
+			);
+		}
 		await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
 	}
 });
@@ -943,17 +1012,34 @@ test('theme persists and the burger menu is gone on phones', async ({ page }) =>
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
-test('language switcher stays in the navbar and translates the prototype hero', async ({
+test('language switcher translates in place without reloading or losing the chapter', async ({
 	page
 }) => {
-	await page.goto('/');
+	await page.goto('/?motion=on#faq');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq');
+	const pageMarker = await page.evaluate(() => {
+		const marker = crypto.randomUUID();
+		(window as Window & { __localeSwitchMarker?: string }).__localeSwitchMarker = marker;
+		return marker;
+	});
 	const navbar = page.getByRole('banner');
 	await expect(navbar.getByRole('group', { name: '語言' })).toBeVisible();
-	await navbar.getByRole('button', { name: 'EN' }).click();
+	const englishButton = navbar.getByRole('button', { name: 'EN' });
+	await englishButton.click();
 	await expect(
-		page.getByRole('heading', {
-			level: 1,
-			name: /Campus problems, solved one capsule at a time/i
-		})
+		page.getByRole('heading', { level: 2, name: /Wait, I still have questions/i })
 	).toBeVisible();
+	await expect(page.locator('.faq-item button').first()).toContainText('What is NYCU LIFE?');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq');
+	expect(page.url()).toContain('#faq');
+	expect(
+		await page.evaluate(
+			() => (window as Window & { __localeSwitchMarker?: string }).__localeSwitchMarker
+		)
+	).toBe(pageMarker);
+	await expect(englishButton).toBeFocused();
+
+	await page.reload();
+	await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+	await expect(page.locator('.faq-item button').first()).toContainText('What is NYCU LIFE?');
 });

@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
 	import PrototypeStory from '$lib/components/landing/PrototypeStory.svelte';
-	import { GITHUB_URL, INSTAGRAM_URL } from '$lib/content/landing';
+	import { CONTACT_EMAIL, GITHUB_URL, INSTAGRAM_URL } from '$lib/content/landing';
 </script>
 
 <svelte:head>
@@ -30,8 +30,8 @@
 			</nav>
 			<div class="footer-contact">
 				<strong>{m.menu_contact_label()}</strong>
-				<a href="mailto:hello@nycu.life">hello@nycu.life</a>
-				<a href="mailto:hello@nycu.life?subject={encodeURIComponent(m.footer_wishlist())}"
+				<a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+				<a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(m.footer_wishlist())}`}
 					>{m.footer_wishlist()} ✦</a
 				>
 				<a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">Instagram</a>

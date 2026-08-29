@@ -6,7 +6,7 @@
 	import { page } from '$app/state';
 	import { base } from '$app/paths';
 	import TopBar from '$lib/components/landing/TopBar.svelte';
-	import { initAnalytics, trackCampaignVisit } from '$lib/analytics';
+	import { initAnalytics, trackCampaignVisit, trackPageView } from '$lib/analytics';
 	import { dismissBootSplash } from '$lib/boot-splash';
 
 	let { children } = $props();
@@ -45,6 +45,7 @@
 
 	afterNavigate(() => {
 		initAnalytics();
+		trackPageView();
 		trackCampaignVisit();
 	});
 

@@ -22,7 +22,7 @@
 		[member.name, member.program, roleSummary].filter(Boolean).join(' · ') + ' — NYCU LIFE'
 	);
 
-	const socialMeta: Record<SocialKind, { icon: IconName; label: string }> = {
+	const socialMeta = $derived<Record<SocialKind, { icon: IconName; label: string }>>({
 		github: { icon: 'github', label: 'GitHub' },
 		linkedin: { icon: 'linkedin', label: 'LinkedIn' },
 		website: { icon: 'globe', label: m.member_website() },
@@ -32,7 +32,7 @@
 		facebook: { icon: 'link', label: 'Facebook' },
 		youtube: { icon: 'link', label: 'YouTube' },
 		email: { icon: 'mail', label: 'Email' }
-	};
+	});
 </script>
 
 <svelte:head>
