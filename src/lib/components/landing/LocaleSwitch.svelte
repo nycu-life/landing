@@ -81,7 +81,7 @@
 	}
 	.locale-btn.active {
 		background: var(--accent-grad);
-		color: #0c1230;
+		color: #fff;
 	}
 	.locale-compact {
 		width: 2.5rem;

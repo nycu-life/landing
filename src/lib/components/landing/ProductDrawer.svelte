@@ -58,9 +58,9 @@
 
 			<p class="drawer-summary">{p.summary()}</p>
 
-			{#if p.screenshot}
+			{#if p.screens?.[0]}
 				<div class="drawer-shot">
-					<Frame src={p.screenshot.src} alt={p.name()} frame={p.screenshot.frame} />
+					<Frame src={p.screens[0].src} alt={p.name()} frame="phone" />
 				</div>
 			{/if}
 
