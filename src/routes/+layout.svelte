@@ -3,8 +3,6 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { afterNavigate, onNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { page } from '$app/state';
-	import { base } from '$app/paths';
 	import TopBar from '$lib/components/landing/TopBar.svelte';
 	import { initAnalytics, trackCampaignVisit, trackPageView } from '$lib/analytics';
 	import { dismissBootSplash } from '$lib/boot-splash';
@@ -37,12 +35,6 @@
 		}
 	});
 
-	// Home shows the brand on the left; subpages show a back arrow + centred
-	// wordmark (matching the prototype).
-	const isHome = $derived(
-		page.url.pathname === `${base}/` || page.url.pathname === base || page.url.pathname === '/'
-	);
-
 	afterNavigate(() => {
 		initAnalytics();
 		trackPageView();
@@ -74,7 +66,7 @@ FORM: direct reproduction of the rendered supplied HTML prototype; no alternate 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
 -->
 <div class="app-shell">
-	<TopBar {darkMode} home={isHome} ontoggletheme={() => (darkMode = !darkMode)} />
+	<TopBar {darkMode} ontoggletheme={() => (darkMode = !darkMode)} />
 	<main class="app-main">
 		{@render children()}
 	</main>

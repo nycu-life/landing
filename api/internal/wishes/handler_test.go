@@ -1,6 +1,7 @@
 package wishes
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -18,7 +19,6 @@ type fakeStore struct {
 	created       CreateInput
 	createErr     error
 	supportResult SupportResult
-	reportReason  string
 	updated       UpdateInput
 }
 
@@ -36,7 +36,6 @@ func (f *fakeStore) Create(_ context.Context, input CreateInput) (Wish, error) {
 		Title:         input.Title,
 		Detail:        input.Detail,
 		Category:      input.Category,
-		Status:        StatusNew,
 		Visibility:    input.Visibility,
 		SupportCount:  1,
 		SupportedByMe: true,
@@ -46,16 +45,12 @@ func (f *fakeStore) Create(_ context.Context, input CreateInput) (Wish, error) {
 func (f *fakeStore) ToggleSupport(context.Context, string, []byte) (SupportResult, error) {
 	return f.supportResult, nil
 }
-func (f *fakeStore) Report(_ context.Context, _ string, _ []byte, reason string) error {
-	f.reportReason = reason
-	return nil
-}
 func (f *fakeStore) AdminList(context.Context, Visibility, int) ([]Wish, error) {
 	return f.items, nil
 }
 func (f *fakeStore) AdminUpdate(_ context.Context, _ string, input UpdateInput) (Wish, error) {
 	f.updated = input
-	return Wish{ID: "00000000-0000-4000-8000-000000000001", Status: *input.Status}, nil
+	return Wish{ID: "00000000-0000-4000-8000-000000000001", Visibility: *input.Visibility}, nil
 }
 
 func testHandler(t *testing.T, store *fakeStore) http.Handler {
@@ -166,7 +161,17 @@ func TestCreateRejectsCrossOriginAndRateLimit(t *testing.T) {
 	}
 }
 
-func TestSupportReportAndAdminUpdate(t *testing.T) {
+func TestSameOriginAcceptsTheProxyForwardedHost(t *testing.T) {
+	request := httptest.NewRequest(http.MethodPost, "/api/wishes", nil)
+	request.Host = "127.0.0.1:3001"
+	request.Header.Set("Origin", "http://100.71.224.62:5174")
+	request.Header.Set("X-Forwarded-Host", "100.71.224.62:5174")
+	if !sameOrigin(request) {
+		t.Fatal("the browser-facing host should remain same-origin behind a trusted proxy")
+	}
+}
+
+func TestSupportAndAdminUpdate(t *testing.T) {
 	store := &fakeStore{supportResult: SupportResult{Supported: true, SupportCount: 8}}
 	handler := testHandler(t, store)
 	id := "00000000-0000-4000-8000-000000000001"
@@ -175,21 +180,72 @@ func TestSupportReportAndAdminUpdate(t *testing.T) {
 	if recorder.Code != http.StatusOK || !bytes.Contains(recorder.Body.Bytes(), []byte(`"supportCount":8`)) {
 		t.Fatalf("support returned %d: %s", recorder.Code, recorder.Body.String())
 	}
-	recorder = requestJSON(t, handler, http.MethodPost, "/api/wishes/"+id+"/report", `{"reason":"spam"}`)
-	if recorder.Code != http.StatusOK || store.reportReason != "spam" {
-		t.Fatalf("report returned %d: %s", recorder.Code, recorder.Body.String())
-	}
-
-	recorder = requestJSON(t, handler, http.MethodPatch, "/api/wishes/admin/"+id, `{"status":"building"}`)
+	recorder = requestJSON(t, handler, http.MethodPatch, "/api/wishes/admin/"+id, `{"visibility":"published"}`)
 	if recorder.Code != http.StatusUnauthorized {
 		t.Fatalf("unauthorized admin update returned %d", recorder.Code)
 	}
-	request := httptest.NewRequest(http.MethodPatch, "/api/wishes/admin/"+id, bytes.NewBufferString(`{"status":"building"}`))
+	request := httptest.NewRequest(http.MethodPatch, "/api/wishes/admin/"+id, bytes.NewBufferString(`{"visibility":"published"}`))
 	request.Header.Set("Authorization", "Bearer admin-token-for-tests")
 	recorder = httptest.NewRecorder()
 	handler.ServeHTTP(recorder, request)
-	if recorder.Code != http.StatusOK || store.updated.Status == nil || *store.updated.Status != StatusBuilding {
+	if recorder.Code != http.StatusOK || store.updated.Visibility == nil || *store.updated.Visibility != VisibilityPublished {
 		t.Fatalf("admin update returned %d: %s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestEventsPushPublishedWishChanges(t *testing.T) {
+	store := &fakeStore{}
+	server := httptest.NewServer(testHandler(t, store))
+	defer server.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"/api/wishes/events", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if response.Header.Get("Content-Type") != "text/event-stream; charset=utf-8" {
+		t.Fatalf("unexpected event content type: %q", response.Header.Get("Content-Type"))
+	}
+	scanner := bufio.NewScanner(response.Body)
+	if !scanner.Scan() || scanner.Text() != "event: ready" {
+		t.Fatalf("missing ready event: %q", scanner.Text())
+	}
+
+	post, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		server.URL+"/api/wishes",
+		bytes.NewBufferString(`{"title":"希望圖書館座位更好找","detail":"","category":"learning"}`),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	post.Header.Set("Content-Type", "application/json")
+	post.Header.Set("Origin", server.URL)
+	posted, err := http.DefaultClient.Do(post)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer posted.Body.Close()
+	if posted.StatusCode != http.StatusCreated {
+		t.Fatalf("create returned %d", posted.StatusCode)
+	}
+
+	foundChange := false
+	for scanner.Scan() {
+		if scanner.Text() == "event: wishes" {
+			foundChange = true
+			break
+		}
+	}
+	if !foundChange {
+		t.Fatalf("missing wish change event: %v", scanner.Err())
 	}
 }
 

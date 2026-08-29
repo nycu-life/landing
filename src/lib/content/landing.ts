@@ -20,6 +20,7 @@ export type IconName =
 	| 'pin'
 	| 'globe'
 	| 'instagram'
+	| 'youtube'
 	| 'github'
 	| 'linkedin'
 	| 'mail'
@@ -32,6 +33,7 @@ export type IconName =
 
 /** Brand links used across the site. */
 export const INSTAGRAM_URL = 'https://instagram.com/nycu.life';
+export const YOUTUBE_URL = 'https://www.youtube.com/@NYCU_LIFE';
 export const GITHUB_URL = 'https://github.com/nycu-life';
 export const WEBSITE_URL = 'https://nycu.one';
 export const EVENTS_URL = 'https://events.life.nycu.edu.tw/';
@@ -397,6 +399,7 @@ export const footer = {
 
 export const footerLinks: FooterLink[] = [
 	{ label: m.footer_instagram, href: INSTAGRAM_URL, icon: 'instagram' },
+	{ label: m.footer_youtube, href: YOUTUBE_URL, icon: 'youtube' },
 	{ label: m.footer_github, href: GITHUB_URL, icon: 'github' },
 	{ label: m.footer_website, href: WEBSITE_URL, icon: 'globe' }
 ];

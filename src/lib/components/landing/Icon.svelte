@@ -16,7 +16,8 @@
 		Route,
 		Scale,
 		Sparkles,
-		Users
+		Users,
+		Youtube
 	} from '@lucide/svelte';
 	import type { IconName } from '$lib/content/landing';
 
@@ -42,6 +43,8 @@
 	<Globe class={className} aria-hidden="true" strokeWidth={1.8} />
 {:else if name === 'instagram'}
 	<Instagram class={className} aria-hidden="true" strokeWidth={1.8} />
+{:else if name === 'youtube'}
+	<Youtube class={className} aria-hidden="true" strokeWidth={1.8} />
 {:else if name === 'github'}
 	<Github class={className} aria-hidden="true" strokeWidth={1.8} />
 {:else if name === 'linkedin'}

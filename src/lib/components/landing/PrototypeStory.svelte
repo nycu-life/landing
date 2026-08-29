@@ -28,8 +28,15 @@
 	const touchThreshold = 28;
 	const lastStepIndex = storySteps.length - 1;
 	const heroReturnDuration = 1100;
+	const aboutFilmEmbedUrl =
+		'https://www.youtube-nocookie.com/embed/RrwKfb4BUaU?autoplay=0&mute=1&loop=1&playlist=RrwKfb4BUaU&playsinline=1&rel=0&enablejsapi=1';
 
 	let storyEl: HTMLElement;
+	let aboutFilmFrame: HTMLIFrameElement;
+	let aboutFilmLoaded = false;
+	let aboutFilmShouldPlay = $state(false);
+	let aboutFilmAudioUnlocked = false;
+	let aboutFilmRetryTimers: ReturnType<typeof setTimeout>[] = [];
 	let progressValue = 0;
 	let stepIndex = $state(0);
 	let animationFromIndex = $state(0);
@@ -38,6 +45,9 @@
 	let activeProduct = $state(0);
 	let activeProductData = $derived(products[activeProduct]);
 	let isAnimating = $state(false);
+	let aboutFilmActive = $derived(
+		stepIndex === 1 || (isAnimating && (animationFromIndex === 1 || animationToIndex === 1))
+	);
 	let storyReady = $state(false);
 	let heroReturn = $state(false);
 	let reducedMotion = $state(false);
@@ -52,16 +62,66 @@
 		progressValue = clamp(value);
 		storyEl?.style.setProperty('--story-progress', String(progressValue));
 	};
+	const sendAboutFilmCommand = (func: string, args: unknown[] = []) => {
+		if (!aboutFilmLoaded) return;
+		aboutFilmFrame.contentWindow?.postMessage(
+			JSON.stringify({ event: 'command', func, args }),
+			'https://www.youtube-nocookie.com'
+		);
+	};
+	const clearAboutFilmRetries = () => {
+		for (const timer of aboutFilmRetryTimers) clearTimeout(timer);
+		aboutFilmRetryTimers = [];
+	};
+	const playAboutFilm = () => {
+		if (aboutFilmAudioUnlocked) {
+			sendAboutFilmCommand('unMute');
+			sendAboutFilmCommand('setVolume', [100]);
+		} else sendAboutFilmCommand('mute');
+		sendAboutFilmCommand('playVideo');
+	};
+	const unlockAboutFilmAudio = () => {
+		aboutFilmAudioUnlocked = true;
+		if (aboutFilmShouldPlay) playAboutFilm();
+	};
+	const syncAboutFilmPlayback = () => {
+		clearAboutFilmRetries();
+		if (!aboutFilmLoaded) return;
+		if (aboutFilmShouldPlay) {
+			for (const delay of [0, 120, 350, 700, 1200, 2000, 3500, 5000]) {
+				if (delay === 0) playAboutFilm();
+				else {
+					aboutFilmRetryTimers.push(
+						setTimeout(() => {
+							if (aboutFilmShouldPlay) playAboutFilm();
+						}, delay)
+					);
+				}
+			}
+			return;
+		}
+		sendAboutFilmCommand('pauseVideo');
+	};
+	const setAboutFilmPlayback = (shouldPlay: boolean) => {
+		aboutFilmShouldPlay = shouldPlay;
+		syncAboutFilmPlayback();
+	};
+	const onAboutFilmLoad = () => {
+		aboutFilmLoaded = true;
+		syncAboutFilmPlayback();
+	};
 	const goToStep = (nextIndex: number, immediate = false) => {
 		if (isAnimating || nextIndex < 0 || nextIndex > lastStepIndex || nextIndex === stepIndex)
 			return false;
 
 		const fromIndex = stepIndex;
+		if (fromIndex === 1 && nextIndex !== 1) setAboutFilmPlayback(false);
 		const from = progressValue;
 		const target = storySteps[nextIndex].progress;
 		if (immediate || reducedMotion) {
 			stepIndex = nextIndex;
 			setProgress(target);
+			if (nextIndex === 1) setAboutFilmPlayback(true);
 			return true;
 		}
 
@@ -90,6 +150,7 @@
 			stepIndex = nextIndex;
 			isAnimating = false;
 			heroReturn = false;
+			if (nextIndex === 1) setAboutFilmPlayback(true);
 		};
 		animationFrame = requestAnimationFrame(tick);
 		return true;
@@ -134,6 +195,7 @@
 					storySteps.findIndex((step) => step.progress >= progressValue)
 				);
 				setProgress(storySteps[stepIndex].progress);
+				setAboutFilmPlayback(stepIndex === 1);
 			}
 		};
 		const storyIsEngaged = () => {
@@ -299,6 +361,9 @@
 		window.addEventListener('touchmove', onTouchMove, { passive: false });
 		window.addEventListener('touchend', onTouchEnd, { passive: true });
 		window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+		window.addEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
+		window.addEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
+		window.addEventListener('keydown', unlockAboutFilmAudio, { capture: true });
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('hashchange', onHashChange);
 		motionQuery.addEventListener('change', updateMotionPreference);
@@ -306,11 +371,15 @@
 		void prepareFirstScene();
 		return () => {
 			disposed = true;
+			clearAboutFilmRetries();
 			window.removeEventListener('wheel', onWheel);
 			window.removeEventListener('touchstart', onTouchStart);
 			window.removeEventListener('touchmove', onTouchMove);
 			window.removeEventListener('touchend', onTouchEnd);
 			window.removeEventListener('touchcancel', onTouchEnd);
+			window.removeEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
+			window.removeEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
+			window.removeEventListener('keydown', unlockAboutFilmAudio, { capture: true });
 			window.removeEventListener('keydown', onKeyDown);
 			window.removeEventListener('hashchange', onHashChange);
 			motionQuery.removeEventListener('change', updateMotionPreference);
@@ -331,6 +400,7 @@
 	data-phone-animating="false"
 	data-phone-slide={activeProduct.toFixed(3)}
 	data-story-ready={storyReady ? 'true' : 'false'}
+	data-about-film-should-play={aboutFilmShouldPlay ? 'true' : 'false'}
 	data-hero-return={heroReturn ? 'true' : 'false'}
 	data-reduced-motion={reducedMotion ? 'true' : 'false'}
 >
@@ -595,8 +665,7 @@
 		<section
 			id="about"
 			class="story-scene about-scene"
-			class:scene-active={stepIndex === 1 ||
-				(isAnimating && (animationFromIndex === 1 || animationToIndex === 1))}
+			class:scene-active={aboutFilmActive}
 			aria-label={m.story_about_label()}
 		>
 			<div class="section-shell about-shell">
@@ -609,18 +678,16 @@
 					</div>
 				</article>
 				<div class="team-film">
-					<!-- The film carries burned-in bilingual subtitles; no separate caption track exists. -->
-					<!-- svelte-ignore a11y_media_has_caption -->
-					<video
+					<iframe
+						bind:this={aboutFilmFrame}
 						class="team-video"
-						src="{base}/story/team-film.mp4"
-						poster="{base}/story/team-film-poster.jpg"
-						controls
-						playsinline
-						preload="metadata"
-						aria-label={m.story_about_film()}
-					></video>
-					<span>{m.story_about_film()}</span>
+						src={aboutFilmEmbedUrl}
+						title={m.story_about_film()}
+						allow="autoplay; encrypted-media; picture-in-picture; web-share"
+						referrerpolicy="strict-origin-when-cross-origin"
+						onload={onAboutFilmLoad}
+						allowfullscreen
+					></iframe>
 				</div>
 			</div>
 		</section>
@@ -1357,19 +1424,9 @@
 		inset: 0;
 		width: 100%;
 		height: 100%;
+		border: 0;
 		object-fit: cover;
 		background: #0c47ef;
-	}
-	.team-film span {
-		position: absolute;
-		left: 1.4rem;
-		top: 1.1rem;
-		padding: 0.3rem 0.6rem;
-		border-radius: 999px;
-		background: rgba(12, 71, 239, 0.75);
-		font-size: 0.68rem;
-		letter-spacing: 0.13em;
-		pointer-events: none;
 	}
 	.product-shell {
 		--scene-at: 0.5;

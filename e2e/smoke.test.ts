@@ -78,6 +78,39 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(joinLink).toHaveAttribute('data-analytics-source', 'home_story');
 	await expect(page.locator('#prototype-footer')).toBeAttached();
 	await expect(page.locator('a[href="mailto:life@nycu.edu.tw"]')).toHaveText('life@nycu.edu.tw');
+	await expect(page.locator('a[href="https://www.youtube.com/@NYCU_LIFE"]').first()).toHaveText(
+		'YouTube'
+	);
+	await expect(page.locator('#wishes').getByRole('link')).toHaveAttribute('href', '/wishpool/');
+	await expect(page.locator('.footer-contact a[href="/wishpool/"]')).toBeAttached();
+	const wishPoolNavigation = page.locator('.topbar-nav a[href="/wishpool/"]');
+	await expect(wishPoolNavigation).toBeVisible();
+	await expect(wishPoolNavigation).toHaveText('許願池');
+});
+
+test('phone header provides a direct wish pool button', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/');
+	const button = page.locator('.mobile-wish-link');
+	await expect(button).toBeVisible();
+	await expect(button).toHaveText(/許願池/);
+	await expect(button).toHaveAttribute('href', '/wishpool/');
+	const headerOverflow = await page
+		.locator('.topbar')
+		.evaluate((element) => element.scrollWidth - element.clientWidth);
+	expect(headerOverflow).toBe(0);
+});
+
+test('English desktop header uses the compact FAQ label', async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await page.goto('/');
+	await page.evaluate(() => {
+		document.cookie = 'PARAGLIDE_LOCALE=en; path=/';
+	});
+	await page.reload();
+	const faqLink = page.locator('.topbar-nav a[href="/#faq"]');
+	await expect(faqLink).toBeVisible();
+	await expect(faqLink).toHaveText('FAQ');
 });
 
 test('FAQ introduces NYCU LIFE without framing it as an official university system', async ({
@@ -97,6 +130,53 @@ test('FAQ introduces NYCU LIFE without framing it as an official university syst
 	});
 	await page.reload();
 	await expect(page.locator('.faq-item button').first()).toContainText('What is NYCU LIFE?');
+});
+
+test('about keeps and resumes the published YouTube player', async ({ page }) => {
+	await page.goto('/?motion=on#hero');
+	const player = page.locator('.team-film iframe');
+	await expect(player).toHaveCount(1);
+	await expect(player).toHaveAttribute(
+		'src',
+		/^https:\/\/www\.youtube-nocookie\.com\/embed\/RrwKfb4BUaU\?.*autoplay=0.*mute=1/
+	);
+	await expect(player).toHaveAttribute('allow', /autoplay/);
+	await expect(page.locator('.team-film video')).toHaveCount(0);
+
+	await player.evaluate((iframe) => {
+		(window as Window & { __aboutFilmFrame?: Element }).__aboutFilmFrame = iframe;
+	});
+	await page.evaluate(() => {
+		location.hash = 'about';
+	});
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about');
+	await page.evaluate(() => {
+		location.hash = 'products';
+	});
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
+	await page.evaluate(() => {
+		location.hash = 'about';
+	});
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about');
+	expect(
+		await player.evaluate(
+			(iframe) => (window as Window & { __aboutFilmFrame?: Element }).__aboutFilmFrame === iframe
+		)
+	).toBe(true);
+});
+
+test('about playback waits for the capsule reveal to finish', async ({ page }) => {
+	await page.goto('/?motion=on#hero');
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'false');
+
+	await page.mouse.wheel(0, 160);
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
+	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'false');
+
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 5000 });
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'false');
+	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'true');
 });
 
 test('hero uses the designer art direction for desktop, phone, and tablet', async ({ page }) => {
@@ -794,6 +874,7 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 				await page.reload();
 				await expect(page.locator('html')).toHaveAttribute('lang', locale);
 				await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+				await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
 
 				for (const chapter of chapters) {
 					await page.evaluate((nextChapter) => {
