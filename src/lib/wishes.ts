@@ -1,16 +1,11 @@
 export const wishCategories = ['life', 'transport', 'learning', 'space', 'other'] as const;
 export type WishCategory = (typeof wishCategories)[number];
 
-export const wishStatuses = ['new', 'picked', 'building', 'fulfilled', 'declined'] as const;
-export type WishStatus = (typeof wishStatuses)[number];
-
 export type Wish = {
 	id: string;
 	title: string;
 	detail: string;
 	category: WishCategory;
-	status: WishStatus;
-	teamResponse: string;
 	supportCount: number;
 	supportedByMe: boolean;
 	createdAt: string;
@@ -65,11 +60,4 @@ export async function toggleWishSupport(id: string): Promise<SupportResponse['da
 		method: 'POST'
 	});
 	return response.data;
-}
-
-export async function reportWish(id: string, reason: string): Promise<void> {
-	await request<{ data: { reported: true } }>(`/api/wishes/${encodeURIComponent(id)}/report`, {
-		method: 'POST',
-		body: JSON.stringify({ reason })
-	});
 }

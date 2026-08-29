@@ -81,6 +81,36 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(page.locator('a[href="https://www.youtube.com/@NYCU_LIFE"]').first()).toHaveText(
 		'YouTube'
 	);
+	await expect(page.locator('#wishes').getByRole('link')).toHaveAttribute('href', '/wishpool/');
+	await expect(page.locator('.footer-contact a[href="/wishpool/"]')).toBeAttached();
+	const wishPoolNavigation = page.locator('.topbar-nav a[href="/wishpool/"]');
+	await expect(wishPoolNavigation).toBeVisible();
+	await expect(wishPoolNavigation).toHaveText('許願池');
+});
+
+test('phone header provides a direct wish pool button', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/');
+	const button = page.locator('.mobile-wish-link');
+	await expect(button).toBeVisible();
+	await expect(button).toHaveText(/許願池/);
+	await expect(button).toHaveAttribute('href', '/wishpool/');
+	const headerOverflow = await page
+		.locator('.topbar')
+		.evaluate((element) => element.scrollWidth - element.clientWidth);
+	expect(headerOverflow).toBe(0);
+});
+
+test('English desktop header uses the compact FAQ label', async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await page.goto('/');
+	await page.evaluate(() => {
+		document.cookie = 'PARAGLIDE_LOCALE=en; path=/';
+	});
+	await page.reload();
+	const faqLink = page.locator('.topbar-nav a[href="/#faq"]');
+	await expect(faqLink).toBeVisible();
+	await expect(faqLink).toHaveText('FAQ');
 });
 
 test('FAQ introduces NYCU LIFE without framing it as an official university system', async ({

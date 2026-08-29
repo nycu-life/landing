@@ -14,7 +14,11 @@ const dirname =
 export default defineConfig({
 	server: {
 		proxy: {
-			'/api/wishes': 'http://127.0.0.1:3001'
+			'/api/wishes': {
+				target: 'http://127.0.0.1:3001',
+				changeOrigin: false,
+				xfwd: true
+			}
 		}
 	},
 	plugins: [

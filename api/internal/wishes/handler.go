@@ -39,6 +39,7 @@ type Handler struct {
 	adminToken   string
 	logger       *slog.Logger
 	now          func() time.Time
+	changes      *changeBroker
 }
 
 func NewHandler(store Store, cookieSecret, adminToken string, logger *slog.Logger) (*Handler, error) {
@@ -57,6 +58,7 @@ func NewHandler(store Store, cookieSecret, adminToken string, logger *slog.Logge
 		adminToken:   adminToken,
 		logger:       logger,
 		now:          time.Now,
+		changes:      newChangeBroker(),
 	}, nil
 }
 
@@ -64,9 +66,9 @@ func (h *Handler) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/wishes/healthz", h.health)
 	mux.HandleFunc("GET /api/wishes", h.list)
+	mux.HandleFunc("GET /api/wishes/events", h.events)
 	mux.HandleFunc("POST /api/wishes", h.create)
 	mux.HandleFunc("POST /api/wishes/{id}/support", h.support)
-	mux.HandleFunc("POST /api/wishes/{id}/report", h.report)
 	mux.HandleFunc("GET /api/wishes/admin", h.adminList)
 	mux.HandleFunc("PATCH /api/wishes/admin/{id}", h.adminUpdate)
 	return h.securityHeaders(h.recoverPanics(mux))
@@ -95,6 +97,39 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "private, no-store")
 	writeJSON(w, http.StatusOK, map[string]any{"data": items})
+}
+
+func (h *Handler) events(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		writeError(w, http.StatusInternalServerError, "live updates are unavailable")
+		return
+	}
+	// This response intentionally outlives the server's normal request write timeout.
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Time{})
+	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache, no-store, no-transform")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+	_, _ = io.WriteString(w, "event: ready\ndata: {}\n\n")
+	flusher.Flush()
+
+	updates, unsubscribe := h.changes.subscribe()
+	defer unsubscribe()
+	heartbeat := time.NewTicker(15 * time.Second)
+	defer heartbeat.Stop()
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case <-updates:
+			_, _ = io.WriteString(w, "event: wishes\ndata: {}\n\n")
+			flusher.Flush()
+		case <-heartbeat.C:
+			_, _ = io.WriteString(w, ": keepalive\n\n")
+			flusher.Flush()
+		}
+	}
 }
 
 func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
@@ -143,6 +178,9 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		"data": wish,
 		"meta": map[string]bool{"pending": wish.Visibility == VisibilityPending},
 	})
+	if wish.Visibility == VisibilityPublished {
+		h.changes.publish()
+	}
 }
 
 func (h *Handler) support(w http.ResponseWriter, r *http.Request) {
@@ -170,42 +208,7 @@ func (h *Handler) support(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"data": result})
-}
-
-func (h *Handler) report(w http.ResponseWriter, r *http.Request) {
-	if !sameOrigin(r) {
-		writeError(w, http.StatusForbidden, "cross-origin writes are not allowed")
-		return
-	}
-	id := r.PathValue("id")
-	if !validUUID(id) {
-		writeError(w, http.StatusNotFound, "wish not found")
-		return
-	}
-	actorHash, err := h.actorHash(w, r)
-	if err != nil {
-		h.internalError(w, r, err)
-		return
-	}
-	var input struct {
-		Reason string `json:"reason"`
-	}
-	if err := decodeJSON(w, r, &input); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if input.Reason != "personal_data" && input.Reason != "abuse" && input.Reason != "spam" {
-		writeError(w, http.StatusBadRequest, "invalid report reason")
-		return
-	}
-	if err := h.store.Report(r.Context(), id, actorHash, input.Reason); errors.Is(err, ErrNotFound) {
-		writeError(w, http.StatusNotFound, "wish not found")
-		return
-	} else if err != nil {
-		h.internalError(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"data": map[string]bool{"reported": true}})
+	h.changes.publish()
 }
 
 func (h *Handler) adminList(w http.ResponseWriter, r *http.Request) {
@@ -244,21 +247,9 @@ func (h *Handler) adminUpdate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if input.Status != nil && !input.Status.Valid() {
-		writeError(w, http.StatusBadRequest, "invalid status")
-		return
-	}
 	if input.Visibility != nil && !input.Visibility.Valid() {
 		writeError(w, http.StatusBadRequest, "invalid visibility")
 		return
-	}
-	if input.TeamResponse != nil {
-		clean := normalizeText(*input.TeamResponse)
-		if utf8.RuneCountInString(clean) > 800 {
-			writeError(w, http.StatusBadRequest, "team response is too long")
-			return
-		}
-		input.TeamResponse = &clean
 	}
 	wish, err := h.store.AdminUpdate(r.Context(), id, input)
 	if errors.Is(err, ErrNotFound) {
@@ -270,6 +261,7 @@ func (h *Handler) adminUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"data": wish})
+	h.changes.publish()
 }
 
 func (h *Handler) actorHash(w http.ResponseWriter, r *http.Request) ([]byte, error) {
@@ -395,7 +387,19 @@ func sameOrigin(r *http.Request) bool {
 		return true
 	}
 	parsed, err := url.Parse(origin)
-	return err == nil && strings.EqualFold(parsed.Host, r.Host)
+	if err != nil {
+		return false
+	}
+	hosts := []string{r.Host}
+	if forwarded := strings.TrimSpace(strings.Split(r.Header.Get("X-Forwarded-Host"), ",")[0]); forwarded != "" {
+		hosts = append(hosts, forwarded)
+	}
+	for _, host := range hosts {
+		if strings.EqualFold(parsed.Host, host) {
+			return true
+		}
+	}
+	return false
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, destination any) error {
