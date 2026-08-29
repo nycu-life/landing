@@ -170,17 +170,6 @@
 			const delta = normalizeWheelDelta(event);
 			if (!delta || reducedMotion) return;
 			const direction = Math.sign(delta);
-			// When JOIN has scrolled into the footer, the first upward gesture belongs to native
-			// page scrolling. Keep its inertia out of the chapter controller even after the story
-			// reaches the top; a separate gesture can then move from JOIN back to FAQ.
-			if (direction < 0 && (!storyIsAligned() || wheelRestoringStory)) {
-				wheelRestoringStory = true;
-				resetWheelGestureSoon();
-				return;
-			}
-			if (!storyIsEngaged()) return;
-			if (!isAnimating && isOutwardBoundary(direction)) return;
-
 			const now = performance.now();
 			const magnitude = Math.abs(delta);
 			const freshGesture =
@@ -189,6 +178,26 @@
 				(magnitude >= freshWheelDelta && magnitude > Math.abs(lastWheelDelta) * 1.5);
 			lastWheelAt = now;
 			lastWheelDelta = delta;
+			// When JOIN has scrolled into the footer, the first upward gesture belongs to native
+			// page scrolling. Keep its inertia out of the chapter controller even after the story
+			// reaches the top. A new accelerating flick can leave JOIN immediately; it must not be
+			// trapped behind a timer that continuous trackpad events keep resetting.
+			if (direction < 0 && !storyIsAligned()) {
+				wheelRestoringStory = true;
+				resetWheelGestureSoon();
+				return;
+			}
+			if (direction < 0 && wheelRestoringStory) {
+				if (!freshGesture) {
+					resetWheelGestureSoon();
+					return;
+				}
+				wheelRestoringStory = false;
+				wheelIntent = 0;
+				wheelConsumed = false;
+			}
+			if (!storyIsEngaged()) return;
+			if (!isAnimating && isOutwardBoundary(direction)) return;
 
 			event.preventDefault();
 			resetWheelGestureSoon();

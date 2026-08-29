@@ -34,6 +34,8 @@ export type IconName =
 export const INSTAGRAM_URL = 'https://instagram.com/nycu.life';
 export const GITHUB_URL = 'https://github.com/nycu-life';
 export const WEBSITE_URL = 'https://nycu.one';
+export const EVENTS_URL = 'https://events.life.nycu.edu.tw/';
+export const CONTACT_EMAIL = 'life@nycu.edu.tw';
 
 /** A section that can be reached from the header navigation. */
 export type SectionId = 'products' | 'courses' | 'devlog' | 'team';
@@ -254,11 +256,12 @@ export const products: Product[] = [
 	{
 		id: 'activity',
 		accent: 'sun',
-		status: 'soon',
+		status: 'live',
 		glyph: 'activity',
 		latin: 'Campus events',
 		// The source is currently desktop-only; bias the phone crop toward the search and cards.
 		screens: [{ src: '/products/activity.png', position: '37% top' }],
+		href: EVENTS_URL,
 		name: m.product_activity_name,
 		summary: m.product_activity_summary,
 		features: [

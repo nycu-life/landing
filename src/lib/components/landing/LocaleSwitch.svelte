@@ -1,14 +1,15 @@
 <script lang="ts">
-	import { getLocale, getTextDirection, setLocale } from '$lib/paraglide/runtime';
+	import { getTextDirection } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
+	import { localeState } from '$lib/i18n.svelte';
 
 	let { tone = 'glass', compact = false }: { tone?: 'glass' | 'menu'; compact?: boolean } =
 		$props();
 
-	let current = $state(getLocale());
+	let current = $derived(localeState.current);
 	const options = [
-		{ code: 'zh-tw' as const, short: m.nav_locale_zh() },
-		{ code: 'en' as const, short: m.nav_locale_en() }
+		{ code: 'zh-tw' as const, short: m.nav_locale_zh },
+		{ code: 'en' as const, short: m.nav_locale_en }
 	];
 
 	$effect(() => {
@@ -25,8 +26,7 @@
 			class="locale-btn locale-compact"
 			aria-label={m.nav_locale()}
 			onclick={() => {
-				current = current === 'zh-tw' ? 'en' : 'zh-tw';
-				setLocale(current);
+				localeState.set(current === 'zh-tw' ? 'en' : 'zh-tw');
 			}}
 		>
 			文A
@@ -39,11 +39,10 @@
 				class:active={option.code === current}
 				aria-pressed={option.code === current}
 				onclick={() => {
-					current = option.code;
-					setLocale(option.code);
+					localeState.set(option.code);
 				}}
 			>
-				{option.short}
+				{option.short()}
 			</button>
 		{/each}
 	{/if}

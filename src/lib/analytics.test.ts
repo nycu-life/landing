@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCampaignEventId } from './analytics';
+import { getCampaignEventId, getPageViewPath } from './analytics';
 
 describe('getCampaignEventId', () => {
 	it('accepts the event ids used by campaign links', () => {
@@ -10,5 +10,12 @@ describe('getCampaignEventId', () => {
 	it('rejects missing and unsafe ids', () => {
 		expect(getCampaignEventId(new URL('https://nycu.life/'))).toBeNull();
 		expect(getCampaignEventId(new URL('https://nycu.life/?event=hello%20world'))).toBeNull();
+	});
+});
+
+describe('getPageViewPath', () => {
+	it('keeps campaign parameters but excludes story-only hashes', () => {
+		expect(getPageViewPath(new URL('https://nycu.life/?event=e3#products'))).toBe('/?event=e3');
+		expect(getPageViewPath(new URL('https://nycu.life/about/#team'))).toBe('/about/');
 	});
 });
