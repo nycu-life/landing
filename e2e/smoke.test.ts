@@ -285,14 +285,32 @@ test('normal page scrolling reaches the footer only after the final chapter', as
 
 	await page.goto('/?motion=on&footer-test=1#join');
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
-	await story(page).evaluate((element) => {
-		element.style.height = '650px';
-		element.style.minHeight = '0';
-	});
 	await page.mouse.move(206, 400);
 	await page.mouse.wheel(0, 500);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 	await expect(page.locator('#prototype-footer')).toBeVisible();
+
+	// The first upward gesture only restores the complete landing stage. Inertia from that same
+	// gesture must not also send JOIN back to FAQ while the user is trying to leave the footer.
+	await page.mouse.wheel(0, -500);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'false');
+	await expect
+		.poll(() =>
+			page
+				.locator('#prototype-footer')
+				.evaluate((footer) => footer.getBoundingClientRect().top >= window.innerHeight - 2)
+		)
+		.toBe(true);
+	await page.mouse.wheel(0, -80);
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'false');
+
+	await page.waitForTimeout(220);
+	await page.mouse.wheel(0, -80);
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq', { timeout: 5200 });
 });
 
 test('motion opt-in overrides system reduced-motion for review', async ({ page }) => {
@@ -346,6 +364,112 @@ test('a mobile swipe advances exactly one chapter', async ({ page }) => {
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 5200 });
 	await page.waitForTimeout(250);
 	await expect(story(page)).toHaveAttribute('data-story-step', '1');
+});
+
+test('a mobile swipe restores the landing before leaving JOIN', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/?motion=on#join');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
+
+	const restoration = await story(page).evaluate((element) => {
+		document.documentElement.style.scrollBehavior = 'auto';
+		document.body.style.scrollBehavior = 'auto';
+		window.scrollTo(0, 400);
+		const startScrollY = window.scrollY;
+		const touch = (clientY: number) =>
+			new Touch({ identifier: 1, target: element, clientX: 195, clientY });
+		const start = touch(300);
+		const firstEnd = touch(340);
+		const secondEnd = touch(380);
+		element.dispatchEvent(
+			new TouchEvent('touchstart', {
+				bubbles: true,
+				cancelable: true,
+				touches: [start],
+				targetTouches: [start],
+				changedTouches: [start]
+			})
+		);
+		const firstMove = new TouchEvent('touchmove', {
+			bubbles: true,
+			cancelable: true,
+			touches: [firstEnd],
+			targetTouches: [firstEnd],
+			changedTouches: [firstEnd]
+		});
+		element.dispatchEvent(firstMove);
+		window.scrollTo(0, 0);
+		const secondMove = new TouchEvent('touchmove', {
+			bubbles: true,
+			cancelable: true,
+			touches: [secondEnd],
+			targetTouches: [secondEnd],
+			changedTouches: [secondEnd]
+		});
+		element.dispatchEvent(secondMove);
+		element.dispatchEvent(
+			new TouchEvent('touchend', {
+				bubbles: true,
+				cancelable: true,
+				touches: [],
+				targetTouches: [],
+				changedTouches: [secondEnd]
+			})
+		);
+		return {
+			firstPrevented: firstMove.defaultPrevented,
+			secondPrevented: secondMove.defaultPrevented,
+			startScrollY,
+			scrollY: window.scrollY
+		};
+	});
+
+	expect(restoration).toEqual({
+		firstPrevented: false,
+		secondPrevented: false,
+		startScrollY: 400,
+		scrollY: 0
+	});
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'false');
+
+	const nextGesturePrevented = await story(page).evaluate((element) => {
+		const touch = (clientY: number) =>
+			new Touch({ identifier: 2, target: element, clientX: 195, clientY });
+		const start = touch(300);
+		const end = touch(340);
+		element.dispatchEvent(
+			new TouchEvent('touchstart', {
+				bubbles: true,
+				cancelable: true,
+				touches: [start],
+				targetTouches: [start],
+				changedTouches: [start]
+			})
+		);
+		const move = new TouchEvent('touchmove', {
+			bubbles: true,
+			cancelable: true,
+			touches: [end],
+			targetTouches: [end],
+			changedTouches: [end]
+		});
+		element.dispatchEvent(move);
+		element.dispatchEvent(
+			new TouchEvent('touchend', {
+				bubbles: true,
+				cancelable: true,
+				touches: [],
+				targetTouches: [],
+				changedTouches: [end]
+			})
+		);
+		return move.defaultPrevented;
+	});
+
+	expect(nextGesturePrevented).toBe(true);
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq', { timeout: 5200 });
 });
 
 test('every prototype chapter stays readable across desktop, tablet, and compact phones', async ({

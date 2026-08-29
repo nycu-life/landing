@@ -113,12 +113,14 @@
 		const forceMotion = new URLSearchParams(window.location.search).get('motion') === 'on';
 		let wheelIntent = 0;
 		let wheelConsumed = false;
+		let wheelRestoringStory = false;
 		let lastWheelDelta = 0;
 		let lastWheelAt = 0;
 		let wheelResetTimer: ReturnType<typeof setTimeout> | undefined;
 		let touchStartY = 0;
 		let touchStartedInStory = false;
 		let touchConsumed = false;
+		let touchRestoringStory = false;
 		let disposed = false;
 
 		const updateMotionPreference = () => {
@@ -143,6 +145,12 @@
 			// boundary at the final chapter is allowed to fall through to normal page scrolling.
 			return rect.top <= topBarBottom + 3 && rect.bottom > topBarBottom + 3;
 		};
+		const storyIsAligned = () => {
+			const rect = storyEl.getBoundingClientRect();
+			const topBarBottom =
+				document.querySelector<HTMLElement>('.topbar')?.getBoundingClientRect().bottom ?? 0;
+			return rect.top >= topBarBottom - 3;
+		};
 		const isOutwardBoundary = (direction: number) =>
 			(direction < 0 && stepIndex === 0) || (direction > 0 && stepIndex === lastStepIndex);
 		const normalizeWheelDelta = (event: WheelEvent) => {
@@ -155,12 +163,22 @@
 			wheelResetTimer = setTimeout(() => {
 				wheelIntent = 0;
 				wheelConsumed = false;
+				wheelRestoringStory = false;
 			}, 180);
 		};
 		const onWheel = (event: WheelEvent) => {
 			const delta = normalizeWheelDelta(event);
-			if (!delta || reducedMotion || !storyIsEngaged()) return;
+			if (!delta || reducedMotion) return;
 			const direction = Math.sign(delta);
+			// When JOIN has scrolled into the footer, the first upward gesture belongs to native
+			// page scrolling. Keep its inertia out of the chapter controller even after the story
+			// reaches the top; a separate gesture can then move from JOIN back to FAQ.
+			if (direction < 0 && (!storyIsAligned() || wheelRestoringStory)) {
+				wheelRestoringStory = true;
+				resetWheelGestureSoon();
+				return;
+			}
+			if (!storyIsEngaged()) return;
 			if (!isAnimating && isOutwardBoundary(direction)) return;
 
 			const now = performance.now();
@@ -194,13 +212,19 @@
 			touchStartedInStory = target instanceof Node && storyEl.contains(target);
 			touchStartY = event.touches[0]?.clientY ?? 0;
 			touchConsumed = false;
+			touchRestoringStory = !storyIsAligned();
 		};
 		const onTouchMove = (event: TouchEvent) => {
-			if (!touchStartedInStory || reducedMotion || !storyIsEngaged()) return;
+			if (!touchStartedInStory || reducedMotion) return;
 			const currentY = event.touches[0]?.clientY;
 			if (currentY === undefined) return;
 			const distance = touchStartY - currentY;
 			const direction = Math.sign(distance);
+			if (direction < 0 && (touchRestoringStory || !storyIsAligned())) {
+				touchRestoringStory = true;
+				return;
+			}
+			if (!storyIsEngaged()) return;
 			if (!direction || (!isAnimating && isOutwardBoundary(direction))) return;
 			event.preventDefault();
 			if (isAnimating || touchConsumed || Math.abs(distance) < touchThreshold) return;
@@ -210,6 +234,7 @@
 		const onTouchEnd = () => {
 			touchStartedInStory = false;
 			touchConsumed = false;
+			touchRestoringStory = false;
 		};
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (reducedMotion || !storyIsEngaged()) return;
@@ -225,6 +250,7 @@
 				direction = 1;
 			else if (['ArrowUp', 'PageUp'].includes(event.key) || (event.key === ' ' && event.shiftKey))
 				direction = -1;
+			if (direction < 0 && !storyIsAligned()) return;
 			if (!direction || (!isAnimating && isOutwardBoundary(direction))) return;
 			event.preventDefault();
 			if (!event.repeat && !isAnimating) requestStep(direction);
