@@ -3,7 +3,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import PrototypeStory from '$lib/components/landing/PrototypeStory.svelte';
 	import WishPool from '$lib/components/landing/WishPool.svelte';
-	import { CONTACT_EMAIL, GITHUB_URL, INSTAGRAM_URL } from '$lib/content/landing';
+	import { CONTACT_EMAIL, GITHUB_URL, INSTAGRAM_URL, YOUTUBE_URL } from '$lib/content/landing';
 </script>
 
 <svelte:head>
@@ -35,6 +35,7 @@
 				<a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
 				<a href="#wishes">{m.footer_wishlist()} ✦</a>
 				<a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">Instagram</a>
+				<a href={YOUTUBE_URL} target="_blank" rel="noreferrer">YouTube</a>
 				<a href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</a>
 			</div>
 		</div>
