@@ -15,6 +15,34 @@ export function getPageViewPath(url: URL): string {
 	return `${url.pathname}${url.search}`;
 }
 
+export function getJoinFormClickParams(source: string, linkUrl: string, language: string) {
+	return {
+		link_url: linkUrl,
+		link_domain: new URL(linkUrl).hostname,
+		link_id: 'join_form',
+		link_source: source,
+		language
+	};
+}
+
+function trackMarkedLinkClick(event: MouseEvent) {
+	const eventTarget = event.target;
+	if (!(eventTarget instanceof Element) || !window.gtag) return;
+
+	const link = eventTarget.closest<HTMLAnchorElement>('a[data-analytics-event]');
+	if (!link || link.dataset.analyticsEvent !== 'join_form_click') return;
+
+	window.gtag(
+		'event',
+		'join_form_click',
+		getJoinFormClickParams(
+			link.dataset.analyticsSource ?? 'unknown',
+			link.href,
+			document.documentElement.lang
+		)
+	);
+}
+
 export function initAnalytics() {
 	if (!browser || !measurementId || initialized) return;
 	initialized = true;
@@ -28,6 +56,7 @@ export function initAnalytics() {
 	window.gtag = (...args: unknown[]) => window.dataLayer.push(args);
 	window.gtag('js', new Date());
 	window.gtag('config', measurementId, { send_page_view: false });
+	document.addEventListener('click', trackMarkedLinkClick, { capture: true });
 }
 
 export function trackPageView() {

@@ -25,7 +25,14 @@
 		{/each}
 	</ul>
 
-	<a class="contact-cta" href={joinSection.cta.href} target="_blank" rel="noreferrer">
+	<a
+		class="contact-cta"
+		href={joinSection.cta.href}
+		target="_blank"
+		rel="noreferrer"
+		data-analytics-event="join_form_click"
+		data-analytics-source="about_contact"
+	>
 		<span class="contact-cta-text">
 			<span class="contact-cta-title">{joinSection.title()}</span>
 			<span class="contact-cta-lede">{joinSection.lede()}</span>

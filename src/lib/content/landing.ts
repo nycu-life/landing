@@ -36,6 +36,8 @@ export const GITHUB_URL = 'https://github.com/nycu-life';
 export const WEBSITE_URL = 'https://nycu.one';
 export const EVENTS_URL = 'https://events.life.nycu.edu.tw/';
 export const CONTACT_EMAIL = 'life@nycu.edu.tw';
+export const JOIN_FORM_URL =
+	'https://docs.google.com/forms/d/e/1FAIpQLScCEb5rf9pGfClM68q6TjgpP_EAqatZo4MLwPoMTpqRfmq9Qg/viewform';
 
 /** A section that can be reached from the header navigation. */
 export type SectionId = 'products' | 'courses' | 'devlog' | 'team';
@@ -372,7 +374,7 @@ export const teamSection = {
 export const joinSection = {
 	title: m.join_title,
 	lede: m.join_lede,
-	cta: { label: m.join_cta, href: INSTAGRAM_URL }
+	cta: { label: m.join_cta, href: JOIN_FORM_URL }
 };
 
 /* -------------------------------------------------------------------------- */

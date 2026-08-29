@@ -69,6 +69,13 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(story(page)).toContainText('ABOUT US');
 	await expect(story(page)).toContainText('FAQ');
 	await expect(story(page)).toContainText('JOIN THE TEAM');
+	const joinLink = page.locator('#join a');
+	await expect(joinLink).toHaveAttribute(
+		'href',
+		'https://docs.google.com/forms/d/e/1FAIpQLScCEb5rf9pGfClM68q6TjgpP_EAqatZo4MLwPoMTpqRfmq9Qg/viewform'
+	);
+	await expect(joinLink).toHaveAttribute('data-analytics-event', 'join_form_click');
+	await expect(joinLink).toHaveAttribute('data-analytics-source', 'home_story');
 	await expect(page.locator('#prototype-footer')).toBeAttached();
 	await expect(page.locator('a[href="mailto:life@nycu.edu.tw"]')).toHaveText('life@nycu.edu.tw');
 });

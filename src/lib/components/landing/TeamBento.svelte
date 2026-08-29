@@ -3,7 +3,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { departmentOrder, membersInDepartment, type DepartmentId } from '$lib/content/team';
 	import { deptLabel } from '$lib/content/departments';
-	import { INSTAGRAM_URL, type IconName } from '$lib/content/landing';
+	import { JOIN_FORM_URL, type IconName } from '$lib/content/landing';
 	import Avatar from './Avatar.svelte';
 	import Icon from './Icon.svelte';
 
@@ -78,7 +78,14 @@
 						</a>
 					{/each}
 
-					<a class="bento-join" href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
+					<a
+						class="bento-join"
+						href={JOIN_FORM_URL}
+						target="_blank"
+						rel="noreferrer"
+						data-analytics-event="join_form_click"
+						data-analytics-source="team_bento"
+					>
 						<span class="bento-join-plus">＋</span>
 						<span>{m.join_cta()}</span>
 					</a>
