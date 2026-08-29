@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_手機" data-name=" 手機" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1863.64 1631.53">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #e7ebf4;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        stroke-miterlimit: 10;
+      }
+
+      .cls-1, .cls-3 {
+        stroke: #4b6390;
+        stroke-width: 2px;
+      }
+
+      .cls-2 {
+        stroke: #231815;
+      }
+
+      .cls-2, .cls-4 {
+        fill: #fafafa;
+      }
+
+      .cls-3 {
+        fill: #afadbd;
+      }
+
+      .cls-4 {
+        stroke: #49608a;
+      }
+    </style>
+  </defs>
+    <rect id="_充電線" data-name=" 充電線" class="cls-2" x="305.17" y="958.97" width="17.6" height="173.22"/>
+  <rect id="_充電孔" data-name=" 充電孔" class="cls-3" x="291.87" y="925.49" width="44.19" height="89.72" rx="12.14" ry="12.14"/>
+</svg>

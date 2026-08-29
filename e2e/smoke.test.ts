@@ -2,6 +2,21 @@ import { expect, test, type Page } from '@playwright/test';
 
 const story = (page: Page) => page.locator('.prototype-story');
 
+test('boot splash explains waits longer than two seconds', async ({ page }) => {
+	await page.route('**/story/designer/*.svg', async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 3600));
+		await route.continue();
+	});
+
+	await page.goto('/', { waitUntil: 'domcontentloaded' });
+	const loader = page.getByRole('status');
+	await expect(loader).toBeHidden();
+	await expect(loader).toBeVisible({ timeout: 3000 });
+	await expect(loader).toContainText(/載入中|Loading/);
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true', { timeout: 5000 });
+	await expect(page.locator('#boot-splash')).toHaveCount(0);
+});
+
 test('home renders the published-prototype chapter structure', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.getByRole('heading', { level: 1, name: /NYCU LIFE/i })).toBeVisible();
@@ -239,6 +254,12 @@ test('the first gesture is buffered until hero assets are ready', async ({ page 
 
 	await page.goto('/?motion=on', { waitUntil: 'commit' });
 	await story(page).waitFor({ state: 'attached' });
+	const shortStageBottom = await story(page).evaluate((element) => {
+		element.style.height = '480px';
+		element.style.minHeight = '0';
+		return element.getBoundingClientRect().bottom;
+	});
+	expect(shortStageBottom).toBeLessThan(await page.evaluate(() => innerHeight - 20));
 	await page.mouse.move(195, 420);
 	await page.mouse.wheel(0, 80);
 
@@ -246,6 +267,32 @@ test('the first gesture is buffered until hero assets are ready', async ({ page 
 	await expect(story(page)).toHaveAttribute('data-story-ready', 'true', { timeout: 6000 });
 	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 5200 });
+});
+
+test('normal page scrolling reaches the footer only after the final chapter', async ({ page }) => {
+	await page.setViewportSize({ width: 412, height: 915 });
+	await page.goto('/?motion=on#hero');
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+	await story(page).evaluate((element) => {
+		element.style.height = '650px';
+		element.style.minHeight = '0';
+	});
+
+	await page.mouse.move(206, 400);
+	await page.mouse.wheel(0, 80);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
+
+	await page.goto('/?motion=on&footer-test=1#join');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
+	await story(page).evaluate((element) => {
+		element.style.height = '650px';
+		element.style.minHeight = '0';
+	});
+	await page.mouse.move(206, 400);
+	await page.mouse.wheel(0, 500);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+	await expect(page.locator('#prototype-footer')).toBeVisible();
 });
 
 test('motion opt-in overrides system reduced-motion for review', async ({ page }) => {
@@ -311,6 +358,7 @@ test('every prototype chapter stays readable across desktop, tablet, and compact
 		{ width: 1024, height: 768 },
 		{ width: 768, height: 1024 },
 		{ width: 430, height: 932 },
+		{ width: 412, height: 915 },
 		{ width: 390, height: 844 },
 		{ width: 320, height: 568 }
 	];
@@ -422,35 +470,45 @@ test('product screens stay registered to the phone frame at every viewport size'
 				const phone = document.querySelector<HTMLElement>('.device-phone');
 				const screen = document.querySelector<HTMLElement>('.device-screen');
 				const frame = document.querySelector<HTMLImageElement>('.device-frame');
-				if (!backHand || frontHands.length !== 2 || !phone || !screen || !frame) {
+				if (!backHand || frontHands.length < 1 || !phone || !screen || !frame) {
 					throw new Error('Missing product phone or hand layers');
 				}
+				const card = document.querySelector<HTMLElement>('.device-card')!;
+				const cardRect = card.getBoundingClientRect();
 				const phoneRect = phone.getBoundingClientRect();
 				const screenRect = screen.getBoundingClientRect();
 				const frameRect = frame.getBoundingClientRect();
 				return {
 					backHandZ: Number(getComputedStyle(backHand).zIndex),
 					phoneZ: Number(getComputedStyle(phone).zIndex),
+					frameZ: Number(getComputedStyle(frame).zIndex),
 					frontHandZ: frontHands.map((hand) => Number(getComputedStyle(hand).zIndex)),
 					left: (screenRect.left - phoneRect.left) / phoneRect.width,
 					top: (screenRect.top - phoneRect.top) / phoneRect.height,
 					right: (phoneRect.right - screenRect.right) / phoneRect.width,
 					bottom: (phoneRect.bottom - screenRect.bottom) / phoneRect.height,
-					frameWidthDelta: Math.abs(frameRect.width - phoneRect.width),
-					frameHeightDelta: Math.abs(frameRect.height - phoneRect.height),
+					// The frame artwork shares the card's 1080×1350 box with every hand layer.
+					frameWidthDelta: Math.abs(frameRect.width - cardRect.width),
+					frameHeightDelta: Math.abs(frameRect.height - cardRect.height),
+					// Phone bounds inside the artwork (手機殼 path of phone.svg).
+					phoneLeft: (phoneRect.left - cardRect.left) / cardRect.width,
+					phoneTop: (phoneRect.top - cardRect.top) / cardRect.height,
 					overflow: getComputedStyle(screen).overflow
 				};
 			});
 
 			const label = `${viewport.width}x${viewport.height} product ${productIndex + 1}`;
 			expect.soft(result.backHandZ, `${label}: rear hand layer`).toBeLessThan(result.phoneZ);
-			expect
-				.soft(result.frontHandZ, `${label}: foreground fingers`)
-				.toEqual([result.phoneZ + 1, result.phoneZ + 1]);
-			expect.soft(result.left, `${label}: left inset`).toBeCloseTo(0.0663, 2);
-			expect.soft(result.top, `${label}: top inset`).toBeCloseTo(0.0346, 2);
-			expect.soft(result.right, `${label}: right inset`).toBeCloseTo(0.0649, 2);
-			expect.soft(result.bottom, `${label}: bottom inset`).toBeCloseTo(0.0325, 2);
+			expect.soft(result.frameZ, `${label}: frame over screen`).toBeGreaterThan(result.phoneZ);
+			for (const z of result.frontHandZ) {
+				expect.soft(z, `${label}: foreground fingers`).toBe(result.frameZ + 1);
+			}
+			expect.soft(result.left, `${label}: left inset`).toBeCloseTo(0.0295, 2);
+			expect.soft(result.top, `${label}: top inset`).toBeCloseTo(0.0165, 2);
+			expect.soft(result.right, `${label}: right inset`).toBeCloseTo(0.0286, 2);
+			expect.soft(result.bottom, `${label}: bottom inset`).toBeCloseTo(0.0176, 2);
+			expect.soft(result.phoneLeft, `${label}: phone x in artwork`).toBeCloseTo(0.0429, 2);
+			expect.soft(result.phoneTop, `${label}: phone y in artwork`).toBeCloseTo(0.0006, 2);
 			expect.soft(result.frameWidthDelta, `${label}: frame width`).toBeLessThanOrEqual(1);
 			expect.soft(result.frameHeightDelta, `${label}: frame height`).toBeLessThanOrEqual(1);
 			expect.soft(result.overflow, `${label}: screen clipping`).toBe('hidden');
@@ -470,7 +528,7 @@ test('product carousel exposes all four products without changing story chapter'
 	await page.goto('/?motion=on#products');
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
 	const next = page.getByRole('button', { name: '下一個產品' });
-	for (const product of ['NYCozU', '活動系統', '校園地圖']) {
+	for (const product of ['NYCozU', 'NYCU EVENTS', 'NYCU MAPS']) {
 		await next.click();
 		await expect(page.locator('.product-copy h2')).toContainText(product);
 		await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
@@ -484,7 +542,7 @@ test('FAQ and recruitment boards stay readable in dark mode', async ({ page }) =
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 	await expect(page.locator('.faq-list > strong')).toHaveCSS('color', 'rgb(23, 34, 53)');
 	await expect(page.locator('.faq-item button').first()).toHaveCSS('color', 'rgb(23, 34, 53)');
-	await expect(page.locator('.faq-item p').first()).toHaveCSS('color', 'rgb(102, 117, 138)');
+	await expect(page.locator('.faq-item p').first()).toHaveCSS('color', 'rgb(82, 100, 125)');
 
 	await page.evaluate(() => {
 		location.hash = 'join';
@@ -503,6 +561,8 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 		{ name: 'desktop', width: 1440, height: 900 },
 		{ name: 'tablet-landscape', width: 1024, height: 768 },
 		{ name: 'tablet-portrait', width: 768, height: 1024 },
+		{ name: 'phone-large', width: 430, height: 932 },
+		{ name: 'phone-user', width: 412, height: 915 },
 		{ name: 'mobile', width: 390, height: 844 },
 		{ name: 'compact', width: 320, height: 568 }
 	];
@@ -610,6 +670,143 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 			}
 		}
 	}
+});
+
+test('every expanded FAQ fits inside the notebook on phones', async ({ page }) => {
+	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
+	for (const viewport of [
+		{ width: 430, height: 932 },
+		{ width: 412, height: 915 },
+		{ width: 390, height: 844 },
+		{ width: 320, height: 568 }
+	]) {
+		await page.setViewportSize(viewport);
+		for (const locale of ['zh-tw', 'en']) {
+			await page.goto('/?motion=on#faq');
+			await page.evaluate((nextLocale) => {
+				document.cookie = `PARAGLIDE_LOCALE=${nextLocale}; path=/`;
+			}, locale);
+			await page.reload();
+			await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq');
+
+			const questions = page.locator('.faq-item button');
+			for (let index = 0; index < (await questions.count()); index += 1) {
+				await questions.nth(index).click();
+				await expect(questions.nth(index)).toHaveAttribute('aria-expanded', 'true');
+				await page.waitForTimeout(300);
+				const result = await page.locator('.faq-list').evaluate((list) => {
+					const listRect = list.getBoundingClientRect();
+					const notebook = list.closest<HTMLElement>('.notebook');
+					if (!notebook) throw new Error('Missing FAQ notebook');
+					const notebookRect = notebook.getBoundingClientRect();
+					const visibleChildren = Array.from(list.children).filter(
+						(child) => getComputedStyle(child).display !== 'none'
+					);
+					const horizontalOverflow = Array.from(
+						list.querySelectorAll<HTMLElement>('strong, button, p')
+					).filter((element) => {
+						const rect = element.getBoundingClientRect();
+						return (
+							rect.left < listRect.left - 1 ||
+							rect.right > listRect.right + 1 ||
+							element.scrollWidth > element.clientWidth + 1
+						);
+					}).length;
+					return {
+						scrollOverflow: list.scrollHeight - list.clientHeight,
+						horizontalOverflow,
+						topGridInset: (listRect.top - notebookRect.top) / notebookRect.height,
+						leftGridInset: (listRect.left - notebookRect.left) / notebookRect.width,
+						rightGridInset: (notebookRect.right - listRect.right) / notebookRect.width,
+						outside: visibleChildren
+							.map((child) => child.getBoundingClientRect())
+							.filter((rect) => rect.top < listRect.top - 1 || rect.bottom > listRect.bottom + 1)
+							.length
+					};
+				});
+				expect
+					.soft(result.scrollOverflow, `${viewport.width}/${locale}/faq ${index + 1}`)
+					.toBeLessThanOrEqual(1);
+				expect
+					.soft(result.horizontalOverflow, `${viewport.width}/${locale}/faq ${index + 1}`)
+					.toBe(0);
+				expect
+					.soft(result.topGridInset, `${viewport.width}/${locale}/faq ${index + 1} top grid`)
+					.toBeGreaterThanOrEqual(0.195);
+				expect
+					.soft(result.leftGridInset, `${viewport.width}/${locale}/faq ${index + 1} left grid`)
+					.toBeGreaterThanOrEqual(0.195);
+				expect
+					.soft(result.rightGridInset, `${viewport.width}/${locale}/faq ${index + 1} right grid`)
+					.toBeGreaterThanOrEqual(0.18);
+				expect.soft(result.outside, `${viewport.width}/${locale}/faq ${index + 1}`).toBe(0);
+				if (screenshotDirectory && viewport.width === 412 && locale === 'zh-tw' && index === 4) {
+					await page.screenshot({
+						path: `${screenshotDirectory}/phone-user-zh-tw-faq-expanded-5.png`,
+						animations: 'disabled'
+					});
+				}
+			}
+		}
+	}
+});
+
+test('phone chapters use the full stage without pushing their compositions down', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 430, height: 932 });
+	await page.goto('/?motion=on#about');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about');
+
+	const stage = page.locator('.story-stage');
+	const stageRect = await stage.boundingBox();
+	if (!stageRect) throw new Error('Missing story stage');
+
+	const aboutCopyRect = await page.locator('.about-copy').boundingBox();
+	const filmRect = await page.locator('.team-film').boundingBox();
+	if (!aboutCopyRect || !filmRect) throw new Error('Missing about composition');
+	const aboutTop = Math.min(aboutCopyRect.y, filmRect.y);
+	const aboutBottom = Math.max(
+		aboutCopyRect.y + aboutCopyRect.height,
+		filmRect.y + filmRect.height
+	);
+	const aboutCenter = (aboutTop + (aboutBottom - aboutTop) / 2 - stageRect.y) / stageRect.height;
+	expect(aboutCenter).toBeGreaterThan(0.45);
+	expect(aboutCenter).toBeLessThan(0.55);
+
+	for (const chapter of ['faq', 'join'] as const) {
+		await page.evaluate((nextChapter) => {
+			location.hash = nextChapter;
+		}, chapter);
+		await expect(story(page)).toHaveAttribute('data-story-step-name', chapter);
+		const board = page.locator(chapter === 'faq' ? '.notebook' : '.join-board');
+		const boardRect = await board.boundingBox();
+		if (!boardRect) throw new Error(`Missing ${chapter} board`);
+		expect(boardRect.width / stageRect.width, `${chapter} board width`).toBeGreaterThanOrEqual(
+			1.05
+		);
+		expect(boardRect.width / stageRect.width, `${chapter} board width`).toBeLessThanOrEqual(1.15);
+		if (chapter === 'join') {
+			const contentRect = await page.locator('.join-board-content').boundingBox();
+			if (!contentRect) throw new Error('Missing join content');
+			const contentCenter = contentRect.x + contentRect.width / 2;
+			const stageCenter = stageRect.x + stageRect.width / 2;
+			expect(Math.abs(contentCenter - stageCenter), 'join content horizontal centre').toBeLessThan(
+				stageRect.width * 0.035
+			);
+		}
+	}
+
+	await page.evaluate(() => {
+		location.hash = 'products';
+	});
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
+	const phoneRect = await page.locator('.device-phone').boundingBox();
+	if (!phoneRect) throw new Error('Missing product phone');
+	const visiblePhoneHeight =
+		Math.min(phoneRect.y + phoneRect.height, stageRect.y + stageRect.height) -
+		Math.max(phoneRect.y, stageRect.y);
+	expect(visiblePhoneHeight / stageRect.height).toBeGreaterThan(0.58);
 });
 
 test('theme persists and the burger menu is gone on phones', async ({ page }) => {

@@ -37,6 +37,11 @@
 				pointer-events: none;
 				transition: opacity 0.35s ease;
 			}
+			#boot-splash .splash-content {
+				display: grid;
+				place-items: center;
+				gap: 1.35rem;
+			}
 			html[data-theme='dark'] #boot-splash {
 				background: #0b1220;
 			}
@@ -52,8 +57,65 @@
 			html[data-theme='dark'] #boot-splash .splash-dark {
 				display: block;
 			}
+			#boot-splash .splash-loader {
+				display: grid;
+				grid-template-columns: auto auto;
+				align-items: center;
+				gap: 0.65rem;
+				color: #315fbf;
+				font:
+					600 0.78rem/1.2 ui-sans-serif,
+					system-ui,
+					-apple-system,
+					BlinkMacSystemFont,
+					'SF Pro Text',
+					sans-serif;
+				letter-spacing: 0.08em;
+				opacity: 0;
+				transform: translateY(-0.25rem);
+				transition:
+					opacity 0.25s ease,
+					transform 0.25s ease;
+				visibility: hidden;
+			}
+			html[data-theme='dark'] #boot-splash .splash-loader {
+				color: #a9c0ff;
+			}
+			#boot-splash.long-wait .splash-loader {
+				opacity: 1;
+				transform: translateY(0);
+				visibility: visible;
+			}
+			#boot-splash .splash-spinner {
+				box-sizing: border-box;
+				width: 1rem;
+				height: 1rem;
+				border: 2px solid currentColor;
+				border-right-color: transparent;
+				border-radius: 50%;
+				animation: splash-spin 0.75s linear infinite;
+			}
+			#boot-splash .splash-loading-en,
+			html[lang^='en'] #boot-splash .splash-loading-zh {
+				display: none;
+			}
+			html[lang^='en'] #boot-splash .splash-loading-en {
+				display: inline;
+			}
 			#boot-splash.done {
 				opacity: 0;
+			}
+			@keyframes splash-spin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+			@media (prefers-reduced-motion: reduce) {
+				#boot-splash .splash-spinner {
+					animation: none;
+					border-right-color: currentColor;
+					opacity: 0.55;
+				}
 			}
 		</style>
 		<script>
@@ -72,7 +134,10 @@
 					const rect = story.getBoundingClientRect();
 					const topBarBottom =
 						document.querySelector('.topbar')?.getBoundingClientRect().bottom ?? 0;
-					return rect.top <= topBarBottom + 3 && rect.bottom >= window.innerHeight - 3;
+					// Mobile browser chrome can make 100svh shorter than innerHeight. The story is still
+					// engaged while it sits below the top bar; requiring it to fill the viewport lets the
+					// first wheel/touch gesture leak through to the footer before Svelte hydrates.
+					return rect.top <= topBarBottom + 3 && rect.bottom > topBarBottom + 3;
 				};
 				const onWheel = (event) => {
 					if (!storyIsEngaged()) return;
@@ -133,10 +198,21 @@
 	</head>
 
 	<body data-sveltekit-preload-data="hover">
-		<div id="boot-splash" aria-hidden="true">
-			<img class="splash-light" src="%sveltekit.assets%/brand/logo-horizontal-blue.svg" alt="" />
-			<img class="splash-dark" src="%sveltekit.assets%/brand/logo-horizontal-white.svg" alt="" />
+		<div id="boot-splash">
+			<div class="splash-content">
+				<img class="splash-light" src="%sveltekit.assets%/brand/logo-horizontal-blue.svg" alt="" />
+				<img class="splash-dark" src="%sveltekit.assets%/brand/logo-horizontal-white.svg" alt="" />
+				<div class="splash-loader" role="status" aria-live="polite">
+					<span class="splash-spinner" aria-hidden="true"></span>
+					<span class="splash-loading-zh" lang="zh-TW">載入中…</span>
+					<span class="splash-loading-en" lang="en">Loading…</span>
+				</div>
+			</div>
 		</div>
+		<script>
+			// Fast loads keep the quiet wordmark-only splash. Explain the wait only when it lasts.
+			setTimeout(() => document.getElementById('boot-splash')?.classList.add('long-wait'), 2000);
+		</script>
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

@@ -199,8 +199,9 @@ export type Product = {
 	glyph: 'bus' | 'coz' | 'activity' | 'map';
 	/** Short Latin descriptor shown on the tile (same in both locales). */
 	latin: string;
-	/** A real product screenshot, or undefined for not-yet-shipped products. */
-	screenshot?: { src: string; frame: 'browser' | 'phone' };
+	/** Real product screens shown in the phone, or undefined for not-yet-shipped products. The
+	 * first is the stable landing preview; `darkSrc` swaps in under the dark theme. */
+	screens?: { src: string; darkSrc?: string; position?: string }[];
 	/** Optional link to the live product. */
 	href?: string;
 	name: Message;
@@ -229,7 +230,10 @@ export const products: Product[] = [
 		status: 'live',
 		glyph: 'bus',
 		latin: 'Campus shuttle',
-		screenshot: { src: '/products/bus.png', frame: 'browser' },
+		screens: [1, 2, 3, 4].map((n) => ({
+			src: `/products/bus-phone-${n}.png`,
+			darkSrc: `/products/bus-phone-${n}-dark.png`
+		})),
 		href: 'https://bus.nycu.one',
 		name: m.product_bus_name,
 		summary: m.product_bus_summary,
@@ -241,7 +245,7 @@ export const products: Product[] = [
 		status: 'live',
 		glyph: 'coz',
 		latin: 'Course explorer',
-		screenshot: { src: '/products/coz.png', frame: 'browser' },
+		screens: [{ src: '/products/coz-mobile.png' }],
 		href: 'https://coz.nycu.one',
 		name: m.product_coz_name,
 		summary: m.product_coz_summary,
@@ -253,7 +257,8 @@ export const products: Product[] = [
 		status: 'soon',
 		glyph: 'activity',
 		latin: 'Campus events',
-		screenshot: { src: '/products/activity.png', frame: 'browser' },
+		// The source is currently desktop-only; bias the phone crop toward the search and cards.
+		screens: [{ src: '/products/activity.png', position: '37% top' }],
 		name: m.product_activity_name,
 		summary: m.product_activity_summary,
 		features: [

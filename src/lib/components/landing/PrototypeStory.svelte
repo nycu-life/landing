@@ -9,7 +9,9 @@
 	const faqs = [
 		{ question: m.story_faq_q1, answer: m.story_faq_a1 },
 		{ question: m.story_faq_q2, answer: m.story_faq_a2 },
-		{ question: m.story_faq_q3, answer: m.story_faq_a3 }
+		{ question: m.story_faq_q3, answer: m.story_faq_a3 },
+		{ question: m.story_faq_q4, answer: m.story_faq_a4 },
+		{ question: m.story_faq_q5, answer: m.story_faq_a5 }
 	];
 	const storySteps = [
 		{ id: 'hero', progress: 0, duration: 0 },
@@ -25,6 +27,7 @@
 	const wheelGapMs = 120;
 	const touchThreshold = 28;
 	const lastStepIndex = storySteps.length - 1;
+	const heroReturnDuration = 1100;
 
 	let storyEl: HTMLElement;
 	let progressValue = 0;
@@ -36,6 +39,7 @@
 	let activeProductData = $derived(products[activeProduct]);
 	let isAnimating = $state(false);
 	let storyReady = $state(false);
+	let heroReturn = $state(false);
 	let reducedMotion = $state(false);
 	let animationFrame = 0;
 	let queuedDirection = 0;
@@ -61,8 +65,15 @@
 			return true;
 		}
 
-		const duration =
-			nextIndex > fromIndex ? storySteps[nextIndex].duration : storySteps[fromIndex].duration;
+		// Going back up from ABOUT is a short return: the machine and caption slide back in, but
+		// the capsule sequence only ever plays forward, so it's hidden for this transition.
+		const returningToHero = fromIndex === 1 && nextIndex === 0;
+		heroReturn = returningToHero;
+		const duration = returningToHero
+			? heroReturnDuration
+			: nextIndex > fromIndex
+				? storySteps[nextIndex].duration
+				: storySteps[fromIndex].duration;
 		const startedAt = performance.now();
 		animationFromIndex = fromIndex;
 		animationToIndex = nextIndex;
@@ -78,6 +89,7 @@
 			animationFrame = 0;
 			stepIndex = nextIndex;
 			isAnimating = false;
+			heroReturn = false;
 		};
 		animationFrame = requestAnimationFrame(tick);
 		return true;
@@ -126,7 +138,10 @@
 			const rect = storyEl.getBoundingClientRect();
 			const topBarBottom =
 				document.querySelector<HTMLElement>('.topbar')?.getBoundingClientRect().bottom ?? 0;
-			return rect.top <= topBarBottom + 3 && rect.bottom >= window.innerHeight - 3;
+			// `100svh` may be shorter than `innerHeight` under real mobile browser chrome. As long
+			// as some of the story remains below the top bar it owns navigation; only the outward
+			// boundary at the final chapter is allowed to fall through to normal page scrolling.
+			return rect.top <= topBarBottom + 3 && rect.bottom > topBarBottom + 3;
 		};
 		const isOutwardBoundary = (direction: number) =>
 			(direction < 0 && stepIndex === 0) || (direction > 0 && stepIndex === lastStepIndex);
@@ -281,6 +296,7 @@
 	data-phone-animating="false"
 	data-phone-slide={activeProduct.toFixed(3)}
 	data-story-ready={storyReady ? 'true' : 'false'}
+	data-hero-return={heroReturn ? 'true' : 'false'}
 	data-reduced-motion={reducedMotion ? 'true' : 'false'}
 >
 	<div class="story-stage">
@@ -558,9 +574,18 @@
 					</div>
 				</article>
 				<div class="team-film">
-					<div class="play-mark">▶</div>
+					<!-- The film carries burned-in bilingual subtitles; no separate caption track exists. -->
+					<!-- svelte-ignore a11y_media_has_caption -->
+					<video
+						class="team-video"
+						src="{base}/story/team-film.mp4"
+						poster="{base}/story/team-film-poster.jpg"
+						controls
+						playsinline
+						preload="metadata"
+						aria-label={m.story_about_film()}
+					></video>
 					<span>{m.story_about_film()}</span>
-					<strong>{m.story_about_quote()}</strong>
 				</div>
 			</div>
 		</section>
@@ -603,31 +628,43 @@
 						aria-label="上一個產品"
 						onclick={() => selectProduct(activeProduct - 1)}>←</button
 					>
+					<!-- Designer's layered hand, split from her composite so every layer shares the
+					     same 1863.64×1631.53 box: back fingers behind the phone, the screen inside
+					     the frame's cutout, then palm/wrist, little finger and the swiping thumb. -->
 					<div class="device-card" data-product={activeProductData.id}>
-						<img class="device-hand" src="{base}/story/phone-transparent.png" alt="" />
+						<img class="device-hand" src="{base}/story/designer/hand/back-fingers-v2.svg" alt="" />
 						<div class="device-phone">
 							<div class="device-screen">
-								{#if activeProductData.screenshot}
-									<img
-										src={`${base}${activeProductData.screenshot.src}`}
-										alt={activeProductData.name()}
-									/>
+								{#if activeProductData.screens}
+									{#each activeProductData.screens as screen, index (screen.src)}
+										<div
+											class="device-shot"
+											class:active={index === 0}
+											style:--screen-position={screen.position ?? 'top'}
+										>
+											<img
+												class="device-screen-light"
+												src={`${base}${screen.src}`}
+												alt={index === 0 ? activeProductData.name() : ''}
+											/>
+											{#if screen.darkSrc}
+												<img class="device-screen-dark" src={`${base}${screen.darkSrc}`} alt="" />
+											{/if}
+										</div>
+									{/each}
 								{:else}
 									<div class="map-placeholder"><span>NYCU</span><strong>MAP</strong><i></i></div>
 								{/if}
 							</div>
-							<img class="device-frame" src="{base}/story/designer/phone-frame.svg" alt="" />
 						</div>
+						<img class="device-frame" src="{base}/story/designer/hand/phone-v2.svg" alt="" />
 						<img
-							class="device-hand-front device-hand-thumb"
-							src="{base}/story/phone-transparent.png"
+							class="device-hand-front"
+							src="{base}/story/designer/hand/front-hand-v2.svg"
 							alt=""
 						/>
-						<img
-							class="device-hand-front device-hand-finger"
-							src="{base}/story/phone-transparent.png"
-							alt=""
-						/>
+						<!-- The charging cable runs in front of the little finger. -->
+						<img class="device-cable" src="{base}/story/designer/hand/cable-v2.svg" alt="" />
 					</div>
 					<button
 						type="button"
@@ -663,7 +700,11 @@
 					<p>{m.story_faq_body()}</p>
 				</article>
 				<div class="notebook">
-					<img src="{base}/story/designer/faq-notebook.svg" alt={m.story_faq_alt()} />
+					<img
+						class="notebook-art"
+						src="{base}/story/designer/faq-notebook.svg"
+						alt={m.story_faq_alt()}
+					/>
 					<div class="faq-list">
 						<strong>FAQ</strong>
 						{#each faqs as item, index (index)}
@@ -672,7 +713,10 @@
 									type="button"
 									aria-expanded={activeFaq === index}
 									onclick={() => (activeFaq = index)}
-									>{item.question()}<span class="faq-icon" aria-hidden="true"></span></button
+									><span class="faq-question-text">{item.question()}</span><span
+										class="faq-icon"
+										aria-hidden="true"
+									></span></button
 								>
 								{#if activeFaq === index}
 									<p transition:slide={{ duration: 260 }}>{item.answer()}</p>
@@ -698,7 +742,9 @@
 						<span class="eyebrow">{m.story_join_eyebrow()}</span>
 						<h2>{m.story_join_title_1()}<br />{m.story_join_title_2()}</h2>
 						<p>{m.story_join_body()}</p>
-						<a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">{m.story_join_cta()}</a>
+						<a href={INSTAGRAM_URL} target="_blank" rel="noreferrer"
+							><span class="join-cta-lead">{m.story_join_cta_lead()}</span>{m.story_join_cta()}</a
+						>
 					</div>
 				</article>
 			</div>
@@ -754,7 +800,7 @@
 	:global(:root[data-theme='dark']) .product-copy > p,
 	:global(:root[data-theme='dark']) .faq-copy > p,
 	:global(:root[data-theme='dark']) .hero-caption > p {
-		color: #b5c3d6;
+		color: #c8d4e5;
 	}
 	:global(:root[data-theme='dark']) .hero-orbit,
 	:global(:root[data-theme='dark']) .hero-orbit::before,
@@ -766,7 +812,7 @@
 		box-shadow: 0 0.7rem 2rem rgba(0, 0, 0, 0.2);
 	}
 	:global(:root[data-theme='dark']) .feature-list span {
-		color: #c1ccdc;
+		color: #d2dbea;
 	}
 	:global(:root[data-theme='dark']) .product-cta-soon {
 		background: #24354f;
@@ -1036,6 +1082,18 @@
 			)
 			scale(calc(0.42 + var(--capsule-emerge) * 0.58 + var(--capsule-roll) * var(--capsule-zoom)));
 	}
+	:global(.prototype-story[data-hero-return='true']) .capsule {
+		opacity: 0;
+	}
+	:global(.prototype-story[data-hero-return='true']) .gacha-machine {
+		--machine-exit: clamp(0, calc((var(--story-progress) - 0.02) * 4.35), 1);
+	}
+	:global(.prototype-story[data-hero-return='true']) .hero-caption {
+		opacity: clamp(0, calc((0.22 - var(--story-progress)) * 6), 1);
+	}
+	:global(.prototype-story[data-hero-return='true']) .hero-scene {
+		opacity: clamp(0, calc((0.25 - var(--story-progress)) * 12), 1);
+	}
 	.capsule-rotor {
 		position: absolute;
 		inset: 0;
@@ -1170,7 +1228,11 @@
 		margin-inline: 0;
 		opacity: clamp(0, calc((0.1 - var(--story-progress)) * 18), 1);
 		text-align: left;
-		transform: translateY(calc(-50% + clamp(0, calc(var(--story-progress) * 10), 1) * -40vh));
+		--caption-drift: clamp(0, calc(var(--story-progress) * 10), 1);
+		transform: translateY(calc(-50% + var(--caption-drift) * -40vh));
+	}
+	:global(.prototype-story[data-hero-return='true']) .hero-caption {
+		--caption-drift: clamp(0, calc(var(--story-progress) * 4.5), 1);
 	}
 	.hero-caption span {
 		color: #2462ff;
@@ -1181,9 +1243,11 @@
 	.hero-caption h1 {
 		margin: 0.5rem 0;
 		color: #333;
+		font-family: inherit;
 		font-size: clamp(1.8rem, 3.2vw, 3.4rem);
-		line-height: 1.08;
-		letter-spacing: -0.045em;
+		font-weight: 650;
+		line-height: 1.13;
+		letter-spacing: -0.04em;
 	}
 	.hero-caption p {
 		margin: 0;
@@ -1207,6 +1271,10 @@
 	}
 	.about-copy {
 		transform: translateX(calc((0.25 - var(--story-progress)) * -80vw));
+	}
+	.about-copy h2 {
+		/* Sized so 「我們不只找到問題，」 stays on one line in its column. */
+		font-size: clamp(2rem, 3vw, 3.2rem);
 	}
 	.about-copy p {
 		max-width: 34rem;
@@ -1235,47 +1303,33 @@
 	}
 	.team-film {
 		position: relative;
-		min-height: min(58vh, 31rem);
+		width: 100%;
+		aspect-ratio: 16 / 9;
 		border-radius: 2rem;
-		background: linear-gradient(135deg, #0c47ef, #7099ff);
+		background: #0c47ef;
 		box-shadow: 0 2rem 4rem rgba(36, 98, 255, 0.2);
-		display: grid;
-		place-items: center;
-		color: #fff;
 		overflow: hidden;
+		color: #fff;
 		transform: translateX(calc((0.25 - var(--story-progress)) * 80vw));
 	}
-	.team-film::before {
-		content: '';
+	.team-video {
 		position: absolute;
-		width: 14rem;
-		aspect-ratio: 1;
-		border: 2.5rem solid rgba(255, 255, 255, 0.13);
-		border-radius: 50%;
-	}
-	.team-film .play-mark {
-		position: relative;
-		z-index: 2;
-		display: grid;
-		place-items: center;
-		width: 4.5rem;
-		aspect-ratio: 1;
-		border: 1px solid rgba(255, 255, 255, 0.8);
-		border-radius: 50%;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		background: #0c47ef;
 	}
 	.team-film span {
 		position: absolute;
 		left: 1.4rem;
-		bottom: 1.3rem;
-		font-size: 0.72rem;
+		top: 1.1rem;
+		padding: 0.3rem 0.6rem;
+		border-radius: 999px;
+		background: rgba(12, 71, 239, 0.75);
+		font-size: 0.68rem;
 		letter-spacing: 0.13em;
-	}
-	.team-film strong {
-		position: absolute;
-		left: 1.4rem;
-		top: 1.3rem;
-		max-width: 18rem;
-		font-size: 1rem;
+		pointer-events: none;
 	}
 	.product-shell {
 		--scene-at: 0.5;
@@ -1331,105 +1385,97 @@
 		cursor: default;
 	}
 	.product-demo {
+		--device-card-width: min(146vh, 100rem);
 		position: relative;
 		display: grid;
 		place-items: center;
 		min-height: 34rem;
 	}
 	.device-card {
-		position: relative;
-		width: min(44vw, 38rem);
-		aspect-ratio: 781 / 984;
+		/* Out of flow so the oversized artwork can't stretch the column; anchored so the phone's
+		   centre (16.4%, 28.4% of the artwork) lands exactly on the demo area's centre. */
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		/* Sized so the phone (56.7% of the artwork's height) reads large; the wrist bleeds off. */
+		width: var(--device-card-width);
+		aspect-ratio: 1863.64 / 1631.53;
 		filter: drop-shadow(0 2rem 3rem rgba(36, 98, 255, 0.18));
-		transform: translateX(-13%);
+		transform: translate(-16.4%, -28.4%);
+	}
+	.device-card > img {
+		position: absolute;
+		inset: 0;
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		pointer-events: none;
 	}
 	.device-card > .device-hand {
-		position: absolute;
 		z-index: 1;
-		inset: 0;
-		display: block;
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-		pointer-events: none;
 	}
-	.device-card > .device-hand-front {
-		position: absolute;
-		z-index: 3;
-		inset: 0;
-		display: block;
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-		pointer-events: none;
-	}
-	.device-hand-thumb {
-		clip-path: polygon(
-			67.2% 52.2%,
-			69.5% 52.7%,
-			74% 55%,
-			79% 56.3%,
-			84.5% 55.8%,
-			87% 54.8%,
-			89% 55.5%,
-			100% 65.5%,
-			100% 72%,
-			94% 68%,
-			88% 64%,
-			84% 63%,
-			81.5% 63.8%,
-			78% 63.2%,
-			74.5% 62%,
-			71.5% 60%,
-			69% 57%,
-			67.5% 54.5%
-		);
-	}
-	.device-hand-finger {
-		clip-path: polygon(
-			43% 83.8%,
-			50% 82.8%,
-			55.5% 81.6%,
-			58.5% 82%,
-			60% 83.8%,
-			59.3% 86%,
-			55% 88.8%,
-			48% 91.8%,
-			44% 91.5%,
-			42.5% 89.5%,
-			42.5% 86%
-		);
-	}
+	/* Phone shell bounds inside the artwork (手機殼 path). */
 	.device-phone {
 		position: absolute;
 		z-index: 2;
-		left: 38.2%;
-		top: 11.8%;
-		width: 51.2%;
-		height: 76.4%;
+		left: 4.289%;
+		top: 0.061%;
+		width: 24.238%;
+		height: 56.718%;
 	}
+	/* Screen fills to the inner frame line (內框 outer path) relative to the shell bounds, so no
+	   bezel gap shows between the screenshot and the frame. */
 	.device-screen {
 		position: absolute;
 		z-index: 1;
-		inset: 3.46% 6.49% 3.25% 6.63%;
-		border-radius: 11% / 5%;
+		inset: 1.651% 2.86% 1.764% 2.947%;
+		border-radius: 16.5% / 7.9%;
 		overflow: hidden;
 		background: #fff;
 	}
-	.device-screen > img {
+	.device-shot {
+		position: absolute;
+		inset: 0;
+		opacity: 0;
+		transition: opacity 0.7s ease;
+	}
+	.device-shot.active {
+		opacity: 1;
+	}
+	.device-shot > img {
+		position: absolute;
+		inset: 0;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		object-position: top;
+		object-position: var(--screen-position);
 	}
-	.device-frame {
-		position: absolute;
-		z-index: 2;
-		inset: 0;
+	.device-screen-dark {
+		display: none;
+	}
+	:global(:root[data-theme='dark']) .device-screen-dark {
 		display: block;
-		width: 100%;
-		height: 100%;
-		pointer-events: none;
+	}
+	:global(:root[data-theme='dark']) .device-shot:has(.device-screen-dark) .device-screen-light {
+		display: none;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.device-shot {
+			transition: none;
+		}
+	}
+	.device-card > .device-frame {
+		z-index: 3;
+	}
+	.device-card > .device-hand-front {
+		z-index: 4;
+		/* The supplied hand leaves a hairline of screen between its thumb/palm join and the
+		   phone's lower-right edge. Pull the foreground hand under the bezel to close that seam. */
+		transform: translateX(-1.15%);
+	}
+	.device-card > .device-cable {
+		z-index: 5;
 	}
 	.map-placeholder {
 		height: 100%;
@@ -1477,9 +1523,14 @@
 	}
 	.product-dots {
 		position: absolute;
-		bottom: 0.5rem;
+		z-index: 5;
+		left: 50%;
+		/* Below the charging plug: the cable ends at 69.4% of the artwork's height, the phone's
+		   centre sits at 28.4%; (0.694 − 0.284) × H with H = W / 1.1423 ≈ 0.359 × W. */
+		top: calc(50% + var(--device-card-width) * 0.359 + 0.6rem);
 		display: flex;
 		gap: 0.45rem;
+		transform: translateX(-50%);
 	}
 	.product-dots button {
 		width: 0.5rem;
@@ -1508,7 +1559,7 @@
 		width: min(60vw, 46rem);
 		justify-self: end;
 	}
-	.notebook > img {
+	.notebook-art {
 		width: 100%;
 		display: block;
 	}
@@ -1528,8 +1579,8 @@
 	}
 	.faq-item button {
 		width: 100%;
-		min-height: 3rem;
-		padding: 0.6rem 0;
+		min-height: 2.6rem;
+		padding: 0.45rem 0;
 		border: 0;
 		background: transparent;
 		color: #172235;
@@ -1539,13 +1590,19 @@
 		gap: 1rem;
 		text-align: left;
 		font-weight: 650;
+		line-break: strict;
+		text-wrap: pretty;
 		cursor: pointer;
 	}
+	.faq-question-text {
+		min-width: 0;
+		text-wrap: balance;
+	}
 	.faq-item p {
-		margin: 0 0 0.7rem;
-		color: #66758a;
-		font-size: 0.82rem;
-		line-height: 1.6;
+		margin: 0 0 0.6rem;
+		color: #52647d;
+		font-size: 0.8rem;
+		line-height: 1.55;
 	}
 	/* ＋ / − built from two bars so the toggle morphs instead of swapping glyphs. */
 	.faq-icon {
@@ -1628,6 +1685,8 @@
 	.join-board-content a {
 		box-sizing: border-box;
 		max-width: 100%;
+		text-align: center;
+		text-wrap: balance;
 		margin-top: clamp(1rem, 2.3vh, 1.6rem);
 		padding: 0.85rem 1.35rem;
 		border-radius: 999px;
@@ -1639,6 +1698,7 @@
 	.story-count {
 		position: absolute;
 		z-index: 40;
+		pointer-events: none;
 		right: 1.3rem;
 		bottom: 1.1rem;
 		padding: 0.25rem 0.45rem;
@@ -1690,18 +1750,11 @@
 		.hero-caption p {
 			font-size: 1.12rem;
 		}
-		.team-film {
-			min-height: min(58vh, 40rem);
-		}
-		.team-film strong {
-			max-width: 24rem;
-			font-size: 1.15rem;
-		}
 		.product-demo {
 			min-height: 44rem;
 		}
-		.device-card {
-			width: min(40vw, 48rem);
+		.product-demo {
+			--device-card-width: min(146vh, 120rem);
 		}
 		.notebook {
 			width: min(50vw, 58rem);
@@ -1718,6 +1771,23 @@
 		}
 	}
 
+	@media (max-width: 1200px) and (min-width: 901px) {
+		.faq-list > strong {
+			margin-bottom: 0.1rem;
+			font-size: clamp(2rem, 3.5vw, 2.6rem);
+		}
+		.faq-item button {
+			min-height: 2.25rem;
+			padding-block: 0.3rem;
+			font-size: 0.86rem;
+		}
+		.faq-item p {
+			margin-bottom: 0.45rem;
+			font-size: 0.76rem;
+			line-height: 1.45;
+		}
+	}
+
 	@media (max-width: 900px) {
 		.prototype-story {
 			height: calc(100svh - 4.75rem);
@@ -1729,6 +1799,14 @@
 		.section-shell {
 			width: calc(100% - 2.25rem);
 		}
+		/* The mobile/tablet artwork occupies the lower edge, so keep utility copy out of it. */
+		.scroll-hint {
+			display: none;
+		}
+		.story-count.hero-count {
+			top: 0.75rem;
+			bottom: auto;
+		}
 		.hero-caption {
 			left: 1.4rem;
 			right: 1.4rem;
@@ -1738,7 +1816,14 @@
 			max-width: none;
 			/* The machine rises through the caption on phones, so fade it out before they meet. */
 			opacity: clamp(0, calc((0.05 - var(--story-progress)) * 30), 1);
-			transform: translateY(calc(clamp(0, calc(var(--story-progress) * 20), 1) * -30vh));
+			--caption-drift: clamp(0, calc(var(--story-progress) * 20), 1);
+			transform: translateY(calc(var(--caption-drift) * -30vh));
+		}
+		/* On phones the caption sits above the machine, so on the return it must wait until the
+		   machine has slid past — keep the forward timing rather than the desktop early fade-in. */
+		:global(.prototype-story[data-hero-return='true']) .hero-caption {
+			opacity: clamp(0, calc((0.05 - var(--story-progress)) * 30), 1);
+			--caption-drift: clamp(0, calc(var(--story-progress) * 20), 1);
 		}
 		.hero-caption h1 {
 			font-size: clamp(1.65rem, 7vw, 2.7rem);
@@ -1805,19 +1890,18 @@
 		}
 		.team-film {
 			width: min(92%, 38rem);
-			min-height: clamp(12rem, 28svh, 18rem);
 			justify-self: center;
 			border-radius: 1.3rem;
 			transform: none;
 		}
 		.product-shell {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 			grid-template-rows: auto minmax(0, 1fr);
 			align-content: center;
 			gap: 0.75rem;
 			box-sizing: border-box;
 			width: 100%;
-			padding: clamp(3rem, 7svh, 5rem) 1.125rem 1rem;
+			padding: clamp(1.25rem, 3svh, 2rem) 1.125rem 0;
 		}
 		.product-copy {
 			width: 100%;
@@ -1838,21 +1922,50 @@
 			text-wrap: pretty;
 		}
 		.feature-list {
-			display: none;
+			gap: 0.4rem;
+			margin: 0.8rem auto 0;
+			max-width: 34rem;
+			text-align: left;
+		}
+		.feature-list div {
+			gap: 0.65rem;
+			padding: 0.5rem 0.8rem;
+			border-radius: 0.75rem;
+		}
+		.feature-list strong {
+			font-size: 0.85rem;
+		}
+		.feature-list span {
+			font-size: 0.78rem;
 		}
 		.product-cta {
-			margin-top: 0.75rem;
-			padding: 0.6rem 1.1rem;
+			margin-top: 0.7rem;
+			padding: 0.55rem 1.1rem;
 			font-size: 0.8rem;
 		}
 		.product-demo {
 			min-height: 0;
+			min-width: 0;
 			height: 100%;
 			transform: none;
 		}
+		/* Phones: the phone hangs from the top of the demo area, as large as the viewport width
+		   allows (≈62vw), and may run off the bottom of the stage. */
+		.product-demo {
+			--device-card-width: min(292vw, 116svh, 68rem);
+		}
 		.device-card {
-			width: min(78vw, 32rem, 46svh, calc(100vw - 2.25rem));
-			max-width: 100%;
+			top: 0;
+			transform: translate(-16.4%, -0.06%);
+		}
+		/* The phone may run off the stage on short phones: keep the indicator pinned to the
+		   stage bottom and the arrows within reach. */
+		.product-dots {
+			top: auto;
+			bottom: 0.6rem;
+		}
+		.arrow {
+			top: min(calc(var(--device-card-width) * 0.2483), calc(100% - 3.5rem));
 		}
 		.arrow {
 			width: 2.8rem;
@@ -1863,14 +1976,15 @@
 		.arrow.next {
 			right: 8%;
 		}
-		.product-dots {
-			bottom: -0.35rem;
-		}
+		/* Phones: heading on top, then the notebook turned 90° into a portrait pad that takes the
+		   full width or the remaining height, whichever binds. One shared --pad-width drives the
+		   board, its art and the type, so they can never disagree. */
 		.faq-shell {
-			grid-template-columns: 1fr;
+			--pad-width: min(100vw, 46rem, calc((100svh - 15rem) * 0.7857));
+			grid-template-columns: minmax(0, 1fr);
 			grid-template-rows: auto auto;
 			align-content: center;
-			gap: clamp(1.25rem, 3svh, 2.5rem);
+			gap: 0.9rem;
 			width: 100%;
 		}
 		.faq-copy {
@@ -1887,26 +2001,53 @@
 			font-size: 0.82rem;
 			text-wrap: pretty;
 		}
+		/* Phones: the landscape notebook (1120×880) is turned 90° into a portrait pad with the
+		   spiral on top, which gives the five questions far more room. */
 		.notebook {
-			width: min(96%, 44rem);
+			width: var(--pad-width);
+			height: calc(var(--pad-width) * 1.2727);
 			max-width: none;
 			justify-self: center;
+			overflow: hidden;
 		}
+		.notebook-art {
+			position: absolute;
+			left: 50%;
+			top: 50%;
+			width: calc(var(--pad-width) * 1.2727);
+			height: var(--pad-width);
+			transform: translate(-50%, -50%) rotate(90deg);
+		}
+		/* The landscape insets (top 16 / right 11 / bottom 12 / left 18) rotated with the art. */
 		.faq-list {
-			inset: 17% 12% 14% 18%;
+			/* Align copy to the actual front sheet, not the transparent/decorative SVG canvas. */
+			inset: 21% 14% 6% 15%;
 		}
+		/* Type scales with the pad, so a bigger board means bigger text. */
 		.faq-list > strong {
-			margin-bottom: 0.6rem;
-			font-size: clamp(2.7rem, 8vw, 4rem);
+			margin-bottom: calc(var(--pad-width) * 0.006);
+			font-size: calc(var(--pad-width) * 0.075);
 		}
 		.faq-item button {
-			min-height: 3.15rem;
-			font-size: 0.85rem;
+			min-height: calc(var(--pad-width) * 0.075);
+			padding-block: calc(var(--pad-width) * 0.008);
+			gap: calc(var(--pad-width) * 0.02);
+			font-size: calc(var(--pad-width) * 0.029);
+			line-height: 1.25;
 		}
 		.faq-item p {
-			max-width: 94%;
-			font-size: 0.8rem;
+			margin-bottom: calc(var(--pad-width) * 0.01);
+			max-width: 98%;
+			font-size: calc(var(--pad-width) * 0.0255);
+			line-height: 1.42;
 			text-wrap: pretty;
+		}
+		.faq-icon {
+			width: calc(var(--pad-width) * 0.028);
+			height: calc(var(--pad-width) * 0.028);
+		}
+		.join-cta-lead {
+			display: none;
 		}
 		.join-shell {
 			width: 100%;
@@ -1916,17 +2057,27 @@
 			transform: translate(-6%, 2svh);
 		}
 		.join-board-content {
-			inset: 19% 10% 18% 27%;
+			inset: 17.5% 10% 16.5% 27%;
 		}
 		.join-board-content h2 {
-			font-size: clamp(1.8rem, 6.5vw, 2.6rem);
+			margin: 0.45rem 0 0.6rem;
+			font-size: clamp(1.7rem, 6.2vw, 2.4rem);
 		}
 		.join-board-content p {
-			font-size: clamp(0.76rem, 2.2vw, 0.92rem);
+			font-size: clamp(0.72rem, 2.1vw, 0.88rem);
+			line-height: 1.45;
 			text-wrap: pretty;
 		}
 		.join-board-content a {
-			padding: 0.75rem 1.15rem;
+			margin-top: 0.8rem;
+			padding: 0.7rem 1.1rem;
+		}
+	}
+
+	@media (min-width: 431px) and (max-width: 900px) {
+		/* Keep the tablet hero copy above the tall mobile machine artwork. */
+		.hero-caption {
+			top: clamp(5.5rem, 11svh, 7rem);
 		}
 	}
 
@@ -1947,23 +2098,22 @@
 			--capsule-travel-y: -2svh;
 			--capsule-zoom: 1.8;
 			aspect-ratio: 1179 / 1320;
-			transform: translateY(calc(14svh + var(--machine-exit) * var(--machine-exit-distance)));
+			/* Leave a dependable text-to-art gutter even when mobile browser chrome reduces the
+			   usable viewport. The lower part of this illustration is intentionally allowed to crop. */
+			transform: translateY(calc(18svh + var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.capsule {
 			left: 22.6%;
 			top: 80%;
 		}
 		.hero-caption {
-			top: clamp(7rem, 18svh, 9rem);
+			top: clamp(5.5rem, 14svh, 7rem);
 			bottom: auto;
-		}
-		.scroll-hint,
-		.story-count.hero-count {
-			bottom: 3rem;
 		}
 		.about-shell {
 			gap: 0.75rem;
-			--shell-shift: 6svh;
+			/* Keep the title-to-film group centred as one unit in the usable stage. */
+			--shell-shift: 0px;
 		}
 		.about-copy h2 {
 			font-size: 1.85rem;
@@ -1981,16 +2131,16 @@
 		}
 		.team-film {
 			width: min(100%, 29rem);
-			min-height: 9.5rem;
 		}
 		.product-shell {
-			padding-top: calc(0.75rem + 9svh);
+			/* Start the copy near the top of the stage so more of the phone remains visible. */
+			padding-top: 0.5rem;
 		}
 		.product-copy h2 {
 			font-size: 1.65rem;
 		}
-		.device-card {
-			width: min(96vw, 25rem, 46svh, calc(100vw - 2.25rem));
+		.product-demo {
+			--device-card-width: min(292vw, 116svh, 68rem);
 		}
 		.arrow.previous {
 			left: 4%;
@@ -1999,59 +2149,62 @@
 			right: 4%;
 		}
 		.faq-copy p {
-			display: none;
-		}
-		.notebook {
-			width: 125%;
+			font-size: 0.78rem;
 		}
 		.faq-shell {
-			gap: 0.9rem;
-			--shell-shift: 2svh;
+			--mobile-board-size: min(110vw, 34rem, calc((100svh - 10rem) * 0.7857));
+			--pad-width: var(--mobile-board-size);
+			--shell-shift: 0px;
+			gap: 0.55rem;
 		}
-		.faq-copy {
-			transform: none;
+		.join-shell {
+			--mobile-board-size: min(110vw, 34rem, calc((100svh - 10rem) * 0.7857));
 		}
 		.faq-list {
-			inset: 16% 11% 7% 18%;
+			/* Keep the board full-size. Only the text block moves down below the spiral; slightly
+			   smaller type prevents short orphan lines such as a standalone 「嗎？」. */
+			inset: 21.5% 18.1% 4% 20%;
 		}
 		.faq-list > strong {
-			font-size: clamp(2.6rem, 12vw, 3.4rem);
+			font-size: calc(var(--pad-width) * 0.069);
 		}
 		.faq-item button {
-			min-height: 2.8rem;
-			font-size: 0.8rem;
+			font-size: calc(var(--pad-width) * 0.0275);
+			line-height: 1.3;
 		}
 		.faq-item p {
-			font-size: 0.74rem;
+			font-size: calc(var(--pad-width) * 0.0245);
+			line-height: 1.48;
 		}
 		.join-board {
-			width: min(72vh, 100vw);
-			transform: translate(-6%, 6svh);
+			width: var(--mobile-board-size, min(126vw, 34rem));
+			/* The SVG has extra paper on its left, so its main white board is right of canvas centre. */
+			transform: translate(-12%, 0);
 		}
 		.join-board-content {
-			inset: 18.5% 9% 17% 27%;
+			inset: 14% 9% 12% 25%;
 		}
 		.join-board-content .eyebrow {
-			font-size: 0.62rem;
+			font-size: 0.7rem;
 		}
 		.join-board-content h2 {
 			margin-block: 0.55rem 0.7rem;
-			font-size: clamp(1.55rem, 7.2vw, 2rem);
+			font-size: clamp(1.75rem, 7.6vw, 2.3rem);
 		}
 		.join-board-content p {
-			font-size: clamp(0.7rem, 3vw, 0.82rem);
-			line-height: 1.55;
+			font-size: clamp(0.74rem, 3.1vw, 0.88rem);
+			line-height: 1.45;
 		}
 		.join-board-content a {
 			margin-top: 0.85rem;
-			padding: 0.68rem 1rem;
-			font-size: 0.76rem;
+			padding: 0.75rem 1.15rem;
+			font-size: 0.82rem;
 		}
 	}
 
 	@media (max-width: 430px) and (max-height: 700px) {
-		.device-card {
-			width: min(82vw, 21rem, 43svh, calc(100vw - 2.25rem));
+		.product-demo {
+			--device-card-width: min(274vw, 110svh, 64rem);
 		}
 		.gacha-machine {
 			--gacha-width: min(90vw, 22rem);
@@ -2060,10 +2213,6 @@
 		.hero-caption {
 			top: 4rem;
 			bottom: auto;
-		}
-		.scroll-hint,
-		.story-count.hero-count {
-			bottom: 1.5rem;
 		}
 		.hero-caption span {
 			font-size: 0.56rem;
@@ -2075,41 +2224,29 @@
 			display: none;
 		}
 		.about-shell {
-			--shell-shift: 2svh;
+			--shell-shift: 0px;
 		}
-		.team-film {
-			min-height: 8.5rem;
+		.faq-shell,
+		.join-shell {
+			--mobile-board-size: min(104vw, 34rem, calc((100svh - 6rem) * 0.7857));
 		}
 		.faq-shell {
-			gap: 0.35rem;
-			--shell-shift: 1svh;
+			--pad-width: var(--mobile-board-size);
+		}
+		.faq-copy .eyebrow {
+			display: none;
 		}
 		.faq-copy h2 {
-			font-size: 1.55rem;
+			margin-block: 0;
+			font-size: 1.2rem;
+			line-height: 1.08;
 		}
-		.notebook {
-			width: 112%;
-		}
-		.faq-list {
-			inset: 16% 10% 5% 18%;
-		}
-		.faq-list > strong {
-			margin-bottom: 0.25rem;
-			font-size: 2.35rem;
-		}
-		.faq-item button {
-			min-height: 2.2rem;
-			padding-block: 0.35rem;
-			font-size: 0.72rem;
-		}
-		.faq-item p {
-			margin-bottom: 0.35rem;
-			font-size: 0.64rem;
-			line-height: 1.4;
+		.faq-copy p {
+			display: none;
 		}
 		.join-board {
-			width: min(76vh, 90vw);
-			transform: translate(-6%, 4svh);
+			width: var(--mobile-board-size);
+			transform: translate(-11%, 0);
 		}
 		.join-board-content p {
 			display: none;
