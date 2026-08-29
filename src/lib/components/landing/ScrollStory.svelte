@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
-	import { INSTAGRAM_URL, products } from '$lib/content/landing';
+	import { JOIN_FORM_URL, products } from '$lib/content/landing';
 	import { m } from '$lib/paraglide/messages';
 
 	const faqs = [
@@ -501,7 +501,13 @@
 					<span>{m.story_join_eyebrow()}</span>
 					<h2>{m.story_join_title_1()}<br />{m.story_join_title_2()}</h2>
 					<p>{m.story_join_body()}</p>
-					<a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">{m.story_join_cta()}</a>
+					<a
+						href={JOIN_FORM_URL}
+						target="_blank"
+						rel="noreferrer"
+						data-analytics-event="join_form_click"
+						data-analytics-source="legacy_story">{m.story_join_cta()}</a
+					>
 				</article>
 			</div>
 		</section>
