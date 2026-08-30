@@ -138,7 +138,7 @@ test('about keeps and resumes the published YouTube player', async ({ page }) =>
 	await expect(player).toHaveCount(1);
 	await expect(player).toHaveAttribute(
 		'src',
-		/^https:\/\/www\.youtube-nocookie\.com\/embed\/RrwKfb4BUaU\?.*autoplay=0.*mute=1/
+		/^https:\/\/www\.youtube-nocookie\.com\/embed\/WbndciSLhD8\?.*autoplay=0.*mute=1/
 	);
 	await expect(player).toHaveAttribute('allow', /autoplay/);
 	await expect(page.locator('.team-film video')).toHaveCount(0);
