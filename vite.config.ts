@@ -12,6 +12,11 @@ const dirname =
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
+	server: {
+		proxy: {
+			'/api/wishes': 'http://127.0.0.1:3001'
+		}
+	},
 	plugins: [
 		tailwindcss(),
 		sveltekit(),

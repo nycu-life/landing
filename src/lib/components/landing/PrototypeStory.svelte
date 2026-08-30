@@ -28,8 +28,13 @@
 	const touchThreshold = 28;
 	const lastStepIndex = storySteps.length - 1;
 	const heroReturnDuration = 1100;
+	const aboutFilmEmbedUrl =
+		'https://www.youtube-nocookie.com/embed/RrwKfb4BUaU?autoplay=0&mute=0&loop=1&playlist=RrwKfb4BUaU&playsinline=1&rel=0&enablejsapi=1';
 
 	let storyEl: HTMLElement;
+	let aboutFilmFrame: HTMLIFrameElement;
+	let aboutFilmLoaded = false;
+	let aboutFilmShouldPlay = false;
 	let progressValue = 0;
 	let stepIndex = $state(0);
 	let animationFromIndex = $state(0);
@@ -38,6 +43,9 @@
 	let activeProduct = $state(0);
 	let activeProductData = $derived(products[activeProduct]);
 	let isAnimating = $state(false);
+	let aboutFilmActive = $derived(
+		stepIndex === 1 || (isAnimating && (animationFromIndex === 1 || animationToIndex === 1))
+	);
 	let storyReady = $state(false);
 	let heroReturn = $state(false);
 	let reducedMotion = $state(false);
@@ -52,11 +60,38 @@
 		progressValue = clamp(value);
 		storyEl?.style.setProperty('--story-progress', String(progressValue));
 	};
+	const sendAboutFilmCommand = (func: string, args: unknown[] = []) => {
+		if (!aboutFilmLoaded) return;
+		aboutFilmFrame.contentWindow?.postMessage(
+			JSON.stringify({ event: 'command', func, args }),
+			'https://www.youtube-nocookie.com'
+		);
+	};
+	const syncAboutFilmPlayback = () => {
+		if (!aboutFilmLoaded) return;
+		if (aboutFilmShouldPlay) {
+			sendAboutFilmCommand('unMute');
+			sendAboutFilmCommand('setVolume', [100]);
+			sendAboutFilmCommand('playVideo');
+			return;
+		}
+		sendAboutFilmCommand('pauseVideo');
+	};
+	const setAboutFilmPlayback = (shouldPlay: boolean) => {
+		aboutFilmShouldPlay = shouldPlay;
+		syncAboutFilmPlayback();
+	};
+	const onAboutFilmLoad = () => {
+		aboutFilmLoaded = true;
+		syncAboutFilmPlayback();
+	};
 	const goToStep = (nextIndex: number, immediate = false) => {
 		if (isAnimating || nextIndex < 0 || nextIndex > lastStepIndex || nextIndex === stepIndex)
 			return false;
 
 		const fromIndex = stepIndex;
+		if (nextIndex === 1) setAboutFilmPlayback(true);
+		else if (fromIndex === 1) setAboutFilmPlayback(false);
 		const from = progressValue;
 		const target = storySteps[nextIndex].progress;
 		if (immediate || reducedMotion) {
@@ -595,8 +630,7 @@
 		<section
 			id="about"
 			class="story-scene about-scene"
-			class:scene-active={stepIndex === 1 ||
-				(isAnimating && (animationFromIndex === 1 || animationToIndex === 1))}
+			class:scene-active={aboutFilmActive}
 			aria-label={m.story_about_label()}
 		>
 			<div class="section-shell about-shell">
@@ -609,17 +643,16 @@
 					</div>
 				</article>
 				<div class="team-film">
-					<!-- The film carries burned-in bilingual subtitles; no separate caption track exists. -->
-					<!-- svelte-ignore a11y_media_has_caption -->
-					<video
+					<iframe
+						bind:this={aboutFilmFrame}
 						class="team-video"
-						src="{base}/story/team-film.mp4"
-						poster="{base}/story/team-film-poster.jpg"
-						controls
-						playsinline
-						preload="metadata"
-						aria-label={m.story_about_film()}
-					></video>
+						src={aboutFilmEmbedUrl}
+						title={m.story_about_film()}
+						allow="autoplay; encrypted-media; picture-in-picture; web-share"
+						referrerpolicy="strict-origin-when-cross-origin"
+						onload={onAboutFilmLoad}
+						allowfullscreen
+					></iframe>
 					<span>{m.story_about_film()}</span>
 				</div>
 			</div>
@@ -1357,6 +1390,7 @@
 		inset: 0;
 		width: 100%;
 		height: 100%;
+		border: 0;
 		object-fit: cover;
 		background: #0c47ef;
 	}
