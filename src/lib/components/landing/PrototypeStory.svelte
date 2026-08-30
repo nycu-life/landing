@@ -1695,7 +1695,8 @@
 		width: var(--device-card-width);
 		aspect-ratio: 1863.64 / 1631.53;
 		filter: drop-shadow(0 2rem 3rem rgba(36, 98, 255, 0.18));
-		transform: translate(-16.4%, -28.4%);
+		/* Nudged right of the phone-centre anchor so the hand doesn't sit too far left. */
+		transform: translate(-15.2%, -28.4%);
 	}
 	.device-card > img {
 		position: absolute;
