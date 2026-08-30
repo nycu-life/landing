@@ -1432,11 +1432,14 @@
 		gap: clamp(2rem, 6vw, 6rem);
 	}
 	/* Two-stage entrance (#46): the copy drops in first and settles with two shrinking
-	   bounces; only after the reader keeps scrolling does the film rise into place. */
+	   bounces; only after the reader keeps scrolling does the film rise into place. Before it
+	   lands it must hide via visibility, not a transform — an upward offset would cancel the
+	   scene's own below-viewport enter offset and leak the copy over the hero. */
 	.about-copy {
-		transform: translateY(-120vh);
+		visibility: hidden;
 	}
 	.about-copy.landed {
+		visibility: visible;
 		animation: about-drop 0.95s cubic-bezier(0.22, 0.8, 0.36, 1) forwards;
 	}
 	@keyframes about-drop {
