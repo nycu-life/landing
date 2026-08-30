@@ -2245,7 +2245,8 @@
 		}
 		.device-card {
 			top: 0;
-			transform: translate(-16.4%, -0.06%);
+			/* Nudged right of the phone-centre anchor so the hand doesn't sit too far left. */
+			transform: translate(-15.2%, -0.06%);
 		}
 		/* The phone may run off the stage on short phones: keep the indicator pinned to the
 		   stage bottom and the arrows within reach. */
