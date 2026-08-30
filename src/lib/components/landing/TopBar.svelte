@@ -43,6 +43,8 @@
 			<span class="mobile-wish-label">{m.footer_wishlist()}</span>
 		</a>
 		<LocaleSwitch />
+		<!-- Designer's star badge (static/ui/theme-*.svg); both faces stay mounted per mode so
+		     the hover swap never flickers. -->
 		<button
 			class="theme-toggle"
 			type="button"
@@ -50,17 +52,16 @@
 			aria-pressed={darkMode}
 			onclick={ontoggletheme}
 		>
-			{#if darkMode}
-				<svg viewBox="0 0 24 24" aria-hidden="true"
-					><path d="M20.6 15.4A8.5 8.5 0 0 1 8.6 3.4 8.5 8.5 0 1 0 20.6 15.4Z" /></svg
-				>
-			{:else}
-				<svg viewBox="0 0 24 24" aria-hidden="true"
-					><circle cx="12" cy="12" r="4" /><path
-						d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"
-					/></svg
-				>
-			{/if}
+			<img
+				class="theme-face theme-face-default"
+				src="{base}/ui/theme-{darkMode ? 'dark' : 'light'}.svg"
+				alt=""
+			/>
+			<img
+				class="theme-face theme-face-hover"
+				src="{base}/ui/theme-{darkMode ? 'dark' : 'light'}-hover.svg"
+				alt=""
+			/>
 		</button>
 	</div>
 </header>
@@ -130,30 +131,34 @@
 		filter: brightness(1.06);
 	}
 	.theme-toggle {
-		display: grid;
-		place-items: center;
-		width: 2.5rem;
-		height: 2.5rem;
-		border: 1px solid var(--line);
-		border-radius: 50%;
-		background: var(--surface);
-		color: var(--ink);
-		font-size: 1.25rem;
+		position: relative;
+		width: 2.9rem;
+		height: 2.6rem;
+		padding: 0;
+		border: 0;
+		background: none;
 		cursor: pointer;
 		flex: 0 0 auto;
 	}
-	.theme-toggle svg {
-		width: 1.1rem;
-		height: 1.1rem;
-		fill: none;
-		stroke: currentColor;
-		stroke-width: 1.8;
-		stroke-linecap: round;
-		stroke-linejoin: round;
+	.theme-face {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		opacity: 0;
+		pointer-events: none;
 	}
-	.theme-toggle:hover {
-		color: var(--brand);
-		border-color: var(--brand);
+	.theme-face-default {
+		opacity: 1;
+	}
+	.theme-toggle:hover .theme-face-default,
+	.theme-toggle:focus-visible .theme-face-default {
+		opacity: 0;
+	}
+	.theme-toggle:hover .theme-face-hover,
+	.theme-toggle:focus-visible .theme-face-hover {
+		opacity: 1;
 	}
 	@media (max-width: 900px) {
 		.topbar-nav {

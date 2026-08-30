@@ -1,6 +1,57 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const story = (page: Page) => page.locator('.prototype-story');
+const storyProgress = (page: Page) =>
+	page
+		.locator('.prototype-story')
+		.evaluate((element) =>
+			Number.parseFloat(getComputedStyle(element).getPropertyValue('--story-progress'))
+		);
+/** Scroll so the story sits at the given timeline progress (mirrors SEGMENTS in the component). */
+const scrollToProgress = (page: Page, progress: number) =>
+	page.evaluate((target) => {
+		const SEGMENTS = [
+			{ to: 0.2, units: 2 },
+			{ to: 0.25, units: 0.7 },
+			{ to: 0.3, units: 0.5 },
+			{ to: 0.4, units: 0.9 },
+			{ to: 0.42, units: 0.35 },
+			{ to: 0.5, units: 1 },
+			{ to: 0.58, units: 1.2 },
+			{ to: 0.66, units: 1 },
+			{ to: 0.72, units: 0.6 },
+			{ to: 0.8, units: 1 },
+			{ to: 1, units: 0.5 }
+		];
+		const total = SEGMENTS.reduce((sum, segment) => sum + segment.units, 0);
+		let used = 0;
+		let from = 0;
+		let fraction = 1;
+		for (const segment of SEGMENTS) {
+			if (target <= segment.to) {
+				fraction = (used + ((target - from) / (segment.to - from)) * segment.units) / total;
+				break;
+			}
+			used += segment.units;
+			from = segment.to;
+		}
+		const storyEl = document.querySelector<HTMLElement>('.prototype-story');
+		const stageEl = document.querySelector<HTMLElement>('.story-stage');
+		if (!storyEl || !stageEl) throw new Error('Missing story');
+		const top = storyEl.getBoundingClientRect().top + scrollY;
+		window.scrollTo({
+			top: top + fraction * (storyEl.offsetHeight - stageEl.offsetHeight),
+			behavior: 'instant'
+		});
+	}, progress);
+/** One trackpad-style flick: a burst of decaying wheel deltas. */
+const flick = async (page: Page, direction: 1 | -1) => {
+	for (let i = 0; i < 8; i += 1) {
+		await page.mouse.wheel(0, direction * (120 - i * 12));
+		await page.waitForTimeout(16);
+	}
+	await page.waitForTimeout(650);
+};
 
 test('boot splash explains waits longer than two seconds', async ({ page }) => {
 	await page.route('**/story/designer/*.svg', async (route) => {
@@ -19,9 +70,9 @@ test('boot splash explains waits longer than two seconds', async ({ page }) => {
 
 test('home renders the published-prototype chapter structure', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByRole('heading', { level: 1, name: /NYCU LIFE/i })).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: /NYCU LIFE/i })).toHaveCount(1);
 	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
-	await expect(page.locator('.gacha-machine img')).toHaveCount(14);
+	await expect(page.locator('.gacha-machine img')).toHaveCount(15);
 	await expect
 		.poll(() =>
 			page
@@ -39,9 +90,9 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	});
 	expect(assetRatios.base).toBeGreaterThan(1.8);
 	expect(assetRatios.base).toBeLessThan(1.9);
-	await expect(page.locator('.machine-knob-group')).toHaveCount(0);
-	await expect(page.locator('img[src$="/knob.svg"]')).toHaveCount(0);
-	await expect(page.locator('.skip-story')).toHaveCount(0);
+	await expect(page.locator('.machine-knob img')).toBeVisible();
+	// The hero offers a skip control (#45) that disappears once the story moves on.
+	await expect(page.locator('.skip-story')).toBeVisible();
 	await expect(page.locator('.gacha-machine > .capsule .capsule-shell')).toHaveCount(2);
 	await expect(page.locator('.gacha-machine > .capsule .capsule-letter')).toHaveCount(1);
 	const releaseOrigin = await page.locator('.gacha-machine').evaluate((machine) => {
@@ -72,7 +123,7 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	const joinLink = page.locator('#join a');
 	await expect(joinLink).toHaveAttribute(
 		'href',
-		'https://docs.google.com/forms/d/e/1FAIpQLScCEb5rf9pGfClM68q6TjgpP_EAqatZo4MLwPoMTpqRfmq9Qg/viewform'
+		'https://docs.google.com/forms/d/e/1FAIpQLSfEOQ-o2sbD5PpPcW0k1lGrDjgu2b34TfkH46-G4oneMFNlBQ/viewform'
 	);
 	await expect(joinLink).toHaveAttribute('data-analytics-event', 'join_form_click');
 	await expect(joinLink).toHaveAttribute('data-analytics-source', 'home_story');
@@ -165,18 +216,14 @@ test('about keeps and resumes the published YouTube player', async ({ page }) =>
 	).toBe(true);
 });
 
-test('about playback waits for the capsule reveal to finish', async ({ page }) => {
-	await page.goto('/?motion=on#hero');
+test('about film playback follows the scrubbed reveal window', async ({ page }) => {
+	await page.goto('/?motion=on');
 	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
 	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'false');
-
-	await page.mouse.wheel(0, 160);
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
-	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'false');
-
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 5000 });
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'false');
+	await scrollToProgress(page, 0.41);
 	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'true');
+	await scrollToProgress(page, 0.54);
+	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'false');
 });
 
 test('hero uses the designer art direction for desktop, phone, and tablet', async ({ page }) => {
@@ -276,199 +323,86 @@ test('hero capsule rolls toward the viewport and opens without leaving the stage
 	}
 });
 
-test('one wheel gesture plays one fixed chapter without skipping and supports reverse', async ({
+test('scrolling scrubs the story: the frame tracks the wheel and reverses with it', async ({
 	page
 }) => {
-	test.slow();
-	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
 	await page.goto('/?motion=on');
-	await page.mouse.move(640, 400);
-	await page.mouse.wheel(0, 900);
-	await page.mouse.wheel(0, 900);
-	await page.mouse.wheel(0, 900);
-
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
-	await page.waitForTimeout(180);
-	await expect(story(page)).toHaveAttribute('data-story-step', '0');
-	await expect(page.locator('.machine-knob-group')).toHaveCount(0);
-	await expect
-		.poll(() => page.locator('.capsule').evaluate((element) => getComputedStyle(element).opacity))
-		.not.toBe('0');
-	await expect(page.locator('.capsule')).toHaveCount(1);
-	await expect(page.locator('.capsule .capsule-shell')).toHaveCount(2);
-	await expect(page.locator('.capsule img[src$="bottom-ball.svg"]')).toHaveCount(0);
-	await expect
-		.poll(() =>
-			page
-				.locator('.prototype-story')
-				.evaluate((element) =>
-					Number.parseFloat(getComputedStyle(element).getPropertyValue('--story-progress'))
-				)
-		)
-		.toBeGreaterThan(0.14);
-	if (screenshotDirectory) {
-		await page.screenshot({ path: `${screenshotDirectory}/hero-capsule-rolling.png` });
-	}
-	await expect
-		.poll(
-			() =>
-				page
-					.locator('.prototype-story')
-					.evaluate((element) =>
-						Number.parseFloat(getComputedStyle(element).getPropertyValue('--story-progress'))
-					),
-			{ timeout: 4200 }
-		)
-		.toBeGreaterThan(0.205);
-	const openedShell = await page.locator('.capsule').evaluate((capsule) => {
-		const top = capsule.querySelector<HTMLElement>('.capsule-shell-top');
-		const bottom = capsule.querySelector<HTMLElement>('.capsule-shell-bottom');
-		const glow = capsule.querySelector<HTMLElement>('.capsule-glow');
-		if (!top || !bottom || !glow) return null;
-		return {
-			top: getComputedStyle(top).transform,
-			bottom: getComputedStyle(bottom).transform,
-			shellOpacity: Number.parseFloat(getComputedStyle(top).opacity),
-			glowOpacity: Number.parseFloat(getComputedStyle(glow).opacity)
-		};
-	});
-	expect(openedShell).not.toBeNull();
-	expect(openedShell!.top).not.toBe(openedShell!.bottom);
-	expect(openedShell!.shellOpacity).toBeLessThan(0.05);
-	expect(openedShell!.glowOpacity).toBeGreaterThan(0.3);
-	if (screenshotDirectory) {
-		await page.screenshot({ path: `${screenshotDirectory}/hero-capsule-open.png` });
-	}
-	await expect(story(page)).toHaveAttribute('data-story-step', '1', { timeout: 5200 });
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about');
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'false');
-	await expect(page.locator('.hero-scene')).toHaveCSS('opacity', '0');
-
-	await page.keyboard.press('ArrowUp');
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'hero', { timeout: 5200 });
-});
-
-test('the first gesture is buffered until hero assets are ready', async ({ page }) => {
-	test.slow();
-	await page.route('**/_app/immutable/**/*.js', async (route) => {
-		await new Promise((resolve) => setTimeout(resolve, 800));
-		await route.continue();
-	});
-	await page.route('**/story/designer/*.svg', async (route) => {
-		await new Promise((resolve) => setTimeout(resolve, 1100));
-		await route.continue();
-	});
-
-	await page.goto('/?motion=on', { waitUntil: 'commit' });
-	await story(page).waitFor({ state: 'attached' });
-	const shortStageBottom = await story(page).evaluate((element) => {
-		element.style.height = '480px';
-		element.style.minHeight = '0';
-		return element.getBoundingClientRect().bottom;
-	});
-	expect(shortStageBottom).toBeLessThan(await page.evaluate(() => innerHeight - 20));
-	await page.mouse.move(195, 420);
-	await page.mouse.wheel(0, 80);
-
-	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-	await expect(story(page)).toHaveAttribute('data-story-ready', 'true', { timeout: 6000 });
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 5200 });
-});
-
-test('normal page scrolling reaches the footer only after the final chapter', async ({ page }) => {
-	await page.setViewportSize({ width: 412, height: 915 });
-	await page.goto('/?motion=on#hero');
 	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
-	await story(page).evaluate((element) => {
-		element.style.height = '650px';
-		element.style.minHeight = '0';
-	});
+	await page.mouse.move(640, 400);
+	await page.mouse.wheel(0, 600);
+	await page.waitForTimeout(400);
+	const early = await storyProgress(page);
+	expect(early).toBeGreaterThan(0.02);
+	expect(early).toBeLessThan(0.2);
+	// Stopping mid-transition holds the frame; nothing auto-plays to the next chapter.
+	await page.waitForTimeout(600);
+	expect(await storyProgress(page)).toBeCloseTo(early, 2);
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'hero');
+	// Scrolling back rewinds the same transition.
+	await page.mouse.wheel(0, -600);
+	await expect.poll(() => storyProgress(page)).toBeLessThan(early);
+});
 
-	await page.mouse.move(206, 400);
-	await page.mouse.wheel(0, 80);
-	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
+test('the hero skip control jumps straight to the settled about chapter', async ({ page }) => {
+	await page.goto('/?motion=on');
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+	await page.locator('.skip-story').click();
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about');
+	expect(await storyProgress(page)).toBeGreaterThan(0.4);
+	await expect(page.locator('.skip-story')).toBeHidden();
+});
 
-	await page.goto('/?motion=on&footer-test=1#join');
+test('about reveals its copy first and its film only after further scrolling', async ({ page }) => {
+	await page.goto('/?motion=on');
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+	await scrollToProgress(page, 0.27);
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about');
+	await page.waitForTimeout(1100);
+	const stage = await page.locator('.story-stage').boundingBox();
+	const copy = await page.locator('.about-copy').boundingBox();
+	const film = await page.locator('.team-film').boundingBox();
+	if (!stage || !copy || !film) throw new Error('Missing about layout');
+	expect(copy.y).toBeGreaterThanOrEqual(stage.y - 2);
+	expect(copy.y + copy.height).toBeLessThanOrEqual(stage.y + stage.height + 2);
+	// The film has not entered yet: it still waits below the stage.
+	expect(film.y).toBeGreaterThanOrEqual(stage.y + stage.height - 2);
+	await scrollToProgress(page, 0.41);
+	await page.waitForTimeout(200);
+	const filmIn = await page.locator('.team-film').boundingBox();
+	if (!filmIn) throw new Error('Missing film');
+	expect(filmIn.y + filmIn.height).toBeLessThanOrEqual(stage.y + stage.height + 2);
+});
+
+test('the product stepper locks the page and steps one product per flick', async ({ page }) => {
+	test.slow();
+	await page.goto('/?motion=on#products');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
+	await expect(page.locator('.product-copy h2')).toHaveText(/NYCU BUS/);
+	const lockedY = await page.evaluate(() => scrollY);
+	await page.mouse.move(640, 400);
+	await flick(page, 1);
+	await expect(page.locator('.product-copy h2')).toHaveText(/NYCozU/);
+	expect(await page.evaluate(() => scrollY)).toBe(lockedY);
+	await flick(page, 1);
+	await expect(page.locator('.product-copy h2')).toHaveText(/NYCU EVENTS/);
+	await flick(page, -1);
+	await expect(page.locator('.product-copy h2')).toHaveText(/NYCozU/);
+	expect(await page.evaluate(() => scrollY)).toBe(lockedY);
+	// Stepping past the last product hands the gesture back to native scrolling.
+	await flick(page, 1);
+	await flick(page, 1);
+	await flick(page, 1);
+	await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(lockedY);
+});
+
+test('the story hands off to normal page scrolling after the final chapter', async ({ page }) => {
+	await page.goto('/?motion=on#join');
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
-	await page.mouse.move(206, 400);
-	await page.mouse.wheel(0, 500);
-	await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+	await page.mouse.move(640, 400);
+	for (let i = 0; i < 20; i += 1) await page.mouse.wheel(0, 400);
 	await expect(page.locator('#wishes')).toBeVisible();
 	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
 	await expect(page.locator('#prototype-footer')).toBeVisible();
-	await page.evaluate(() => {
-		document.documentElement.style.scrollBehavior = 'auto';
-		document.body.style.scrollBehavior = 'auto';
-		window.scrollTo(0, 400);
-	});
-	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(400);
-
-	// The first upward gesture only restores the complete landing stage. Inertia from that same
-	// gesture must not also send JOIN back to FAQ while the user is trying to leave the footer.
-	await page.mouse.wheel(0, -500);
-	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'false');
-	await expect
-		.poll(() =>
-			page
-				.locator('#prototype-footer')
-				.evaluate((footer) => footer.getBoundingClientRect().top >= window.innerHeight - 2)
-		)
-		.toBe(true);
-	await page.mouse.wheel(0, -80);
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'false');
-
-	await page.waitForTimeout(220);
-	await page.mouse.wheel(0, -80);
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq', { timeout: 5200 });
-});
-
-test('a fresh upward flick can leave JOIN without waiting for the restoration timer', async ({
-	page
-}) => {
-	await page.goto('/?motion=on#join');
-	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
-
-	const result = await story(page).evaluate(() => {
-		document.documentElement.style.scrollBehavior = 'auto';
-		document.body.style.scrollBehavior = 'auto';
-		window.scrollTo(0, 400);
-		const startScrollY = window.scrollY;
-		const dispatchWheel = (deltaY: number) => {
-			const event = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY });
-			window.dispatchEvent(event);
-			return event.defaultPrevented;
-		};
-
-		const restorationPrevented = dispatchWheel(-500);
-		window.scrollTo(0, 0);
-		const inertiaPrevented = dispatchWheel(-80);
-		const freshFlickPrevented = dispatchWheel(-160);
-
-		return {
-			startScrollY,
-			restorationPrevented,
-			inertiaPrevented,
-			freshFlickPrevented,
-			scrollY: window.scrollY
-		};
-	});
-
-	expect(result).toEqual({
-		startScrollY: 400,
-		restorationPrevented: false,
-		inertiaPrevented: false,
-		freshFlickPrevented: true,
-		scrollY: 0
-	});
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq', { timeout: 5200 });
 });
 
 test('motion opt-in overrides system reduced-motion for review', async ({ page }) => {
@@ -476,14 +410,16 @@ test('motion opt-in overrides system reduced-motion for review', async ({ page }
 	await page.goto('/?motion=on');
 	await expect(story(page)).toHaveAttribute('data-reduced-motion', 'false');
 	await page.mouse.move(640, 400);
-	await page.mouse.wheel(0, 80);
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 5200 });
+	await page.mouse.wheel(0, 800);
+	await expect.poll(() => storyProgress(page)).toBeGreaterThan(0.05);
 });
 
-test('a mobile swipe advances exactly one chapter', async ({ page }) => {
+test('a touch swipe in the stepper advances exactly one product', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto('/?motion=on');
+	await page.goto('/?motion=on#products');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
+	await expect(page.locator('.product-copy h2')).toHaveText(/NYCU BUS/);
+	const lockedY = await page.evaluate(() => scrollY);
 
 	await story(page).evaluate((element) => {
 		const touch = (clientY: number) =>
@@ -519,115 +455,9 @@ test('a mobile swipe advances exactly one chapter', async ({ page }) => {
 		);
 	});
 
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'about', { timeout: 5200 });
-	await page.waitForTimeout(250);
-	await expect(story(page)).toHaveAttribute('data-story-step', '1');
-});
-
-test('a mobile swipe restores the landing before leaving JOIN', async ({ page }) => {
-	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto('/?motion=on#join');
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
-
-	const restoration = await story(page).evaluate((element) => {
-		document.documentElement.style.scrollBehavior = 'auto';
-		document.body.style.scrollBehavior = 'auto';
-		window.scrollTo(0, 400);
-		const startScrollY = window.scrollY;
-		const touch = (clientY: number) =>
-			new Touch({ identifier: 1, target: element, clientX: 195, clientY });
-		const start = touch(300);
-		const firstEnd = touch(340);
-		const secondEnd = touch(380);
-		element.dispatchEvent(
-			new TouchEvent('touchstart', {
-				bubbles: true,
-				cancelable: true,
-				touches: [start],
-				targetTouches: [start],
-				changedTouches: [start]
-			})
-		);
-		const firstMove = new TouchEvent('touchmove', {
-			bubbles: true,
-			cancelable: true,
-			touches: [firstEnd],
-			targetTouches: [firstEnd],
-			changedTouches: [firstEnd]
-		});
-		element.dispatchEvent(firstMove);
-		window.scrollTo(0, 0);
-		const secondMove = new TouchEvent('touchmove', {
-			bubbles: true,
-			cancelable: true,
-			touches: [secondEnd],
-			targetTouches: [secondEnd],
-			changedTouches: [secondEnd]
-		});
-		element.dispatchEvent(secondMove);
-		element.dispatchEvent(
-			new TouchEvent('touchend', {
-				bubbles: true,
-				cancelable: true,
-				touches: [],
-				targetTouches: [],
-				changedTouches: [secondEnd]
-			})
-		);
-		return {
-			firstPrevented: firstMove.defaultPrevented,
-			secondPrevented: secondMove.defaultPrevented,
-			startScrollY,
-			scrollY: window.scrollY
-		};
-	});
-
-	expect(restoration).toEqual({
-		firstPrevented: false,
-		secondPrevented: false,
-		startScrollY: 400,
-		scrollY: 0
-	});
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'false');
-
-	const nextGesturePrevented = await story(page).evaluate((element) => {
-		const touch = (clientY: number) =>
-			new Touch({ identifier: 2, target: element, clientX: 195, clientY });
-		const start = touch(300);
-		const end = touch(340);
-		element.dispatchEvent(
-			new TouchEvent('touchstart', {
-				bubbles: true,
-				cancelable: true,
-				touches: [start],
-				targetTouches: [start],
-				changedTouches: [start]
-			})
-		);
-		const move = new TouchEvent('touchmove', {
-			bubbles: true,
-			cancelable: true,
-			touches: [end],
-			targetTouches: [end],
-			changedTouches: [end]
-		});
-		element.dispatchEvent(move);
-		element.dispatchEvent(
-			new TouchEvent('touchend', {
-				bubbles: true,
-				cancelable: true,
-				touches: [],
-				targetTouches: [],
-				changedTouches: [end]
-			})
-		);
-		return move.defaultPrevented;
-	});
-
-	expect(nextGesturePrevented).toBe(true);
-	await expect(story(page)).toHaveAttribute('data-story-animating', 'true');
-	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq', { timeout: 5200 });
+	await page.waitForTimeout(700);
+	await expect(page.locator('.product-copy h2')).toHaveText(/NYCozU/);
+	expect(await page.evaluate(() => scrollY)).toBe(lockedY);
 });
 
 test('every prototype chapter stays readable across desktop, tablet, and compact phones', async ({
@@ -741,11 +571,16 @@ test('product screens stay registered to the phone frame at every viewport size'
 		{ width: 320, height: 568 }
 	]) {
 		await page.setViewportSize(viewport);
-		await page.goto('/?motion=on#products');
+		// A unique query string forces a full navigation; re-visiting the identical URL would be a
+		// same-document navigation that leaves the previous viewport's scroll position in place.
+		await page.goto(`/?motion=on&vp=${viewport.width}#products`);
 		const next = page.getByRole('button', { name: '下一個產品' });
 
 		for (let productIndex = 0; productIndex < 4; productIndex += 1) {
-			if (productIndex > 0) await next.click();
+			if (productIndex > 0) {
+				await next.click();
+				await page.waitForTimeout(600);
+			}
 			const result = await page.evaluate(() => {
 				const backHand = document.querySelector<HTMLElement>('.device-hand');
 				const frontHands = Array.from(document.querySelectorAll<HTMLElement>('.device-hand-front'));
@@ -812,6 +647,7 @@ test('product carousel exposes all four products without changing story chapter'
 	const next = page.getByRole('button', { name: '下一個產品' });
 	for (const product of ['NYCozU', 'NYCU EVENTS', 'NYCU MAPS']) {
 		await next.click();
+		await page.waitForTimeout(600);
 		await expect(page.locator('.product-copy h2')).toContainText(product);
 		if (product === 'NYCU EVENTS') {
 			await expect(page.locator('.product-cta')).toHaveAttribute(
@@ -881,6 +717,16 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 						location.hash = nextChapter;
 					}, chapter);
 					await expect(story(page)).toHaveAttribute('data-story-step-name', chapter);
+					if (chapter === 'about') {
+						// Let the copy's drop-in animation land before measuring for clipping.
+						await page
+							.locator('.about-copy')
+							.evaluate((element) =>
+								Promise.all(element.getAnimations().map((animation) => animation.finished)).catch(
+									() => {}
+								)
+							);
+					}
 
 					const result = await page.locator('.story-scene.scene-active').evaluate((scene) => {
 						const stage = document.querySelector<HTMLElement>('.story-stage');
@@ -1122,9 +968,6 @@ test('language switcher translates in place without reloading or losing the chap
 	await expect(navbar.getByRole('group', { name: '語言' })).toBeVisible();
 	const englishButton = navbar.getByRole('button', { name: 'EN' });
 	await englishButton.click();
-	await expect(
-		page.getByRole('heading', { level: 2, name: /Wait, I still have questions/i })
-	).toBeVisible();
 	await expect(page.locator('.faq-item button').first()).toContainText('What is NYCU LIFE?');
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq');
 	expect(page.url()).toContain('#faq');

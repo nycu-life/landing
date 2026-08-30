@@ -38,8 +38,9 @@ export const GITHUB_URL = 'https://github.com/nycu-life';
 export const WEBSITE_URL = 'https://nycu.one';
 export const EVENTS_URL = 'https://events.life.nycu.edu.tw/';
 export const CONTACT_EMAIL = 'life@nycu.edu.tw';
+/* 2026 recruitment form (engineering + design combined), aka https://forms.gle/QdkDrnu9LjCjk8yK8 */
 export const JOIN_FORM_URL =
-	'https://docs.google.com/forms/d/e/1FAIpQLScCEb5rf9pGfClM68q6TjgpP_EAqatZo4MLwPoMTpqRfmq9Qg/viewform';
+	'https://docs.google.com/forms/d/e/1FAIpQLSfEOQ-o2sbD5PpPcW0k1lGrDjgu2b34TfkH46-G4oneMFNlBQ/viewform';
 
 /** A section that can be reached from the header navigation. */
 export type SectionId = 'products' | 'courses' | 'devlog' | 'team';
@@ -251,7 +252,7 @@ export const products: Product[] = [
 		status: 'live',
 		glyph: 'coz',
 		latin: 'Course explorer',
-		screens: [{ src: '/products/coz-mobile.png' }],
+		screens: [{ src: '/products/coz-phone-1.png', darkSrc: '/products/coz-phone-1-dark.png' }],
 		href: 'https://coz.nycu.one',
 		name: m.product_coz_name,
 		summary: m.product_coz_summary,
@@ -264,7 +265,9 @@ export const products: Product[] = [
 		glyph: 'activity',
 		latin: 'Campus events',
 		// The source is currently desktop-only; bias the phone crop toward the search and cards.
-		screens: [{ src: '/products/activity.png', position: '37% top' }],
+		screens: [
+			{ src: '/products/activity-phone-1.png', darkSrc: '/products/activity-phone-1-dark.png' }
+		],
 		href: EVENTS_URL,
 		name: m.product_activity_name,
 		summary: m.product_activity_summary,
@@ -280,6 +283,8 @@ export const products: Product[] = [
 		status: 'dev',
 		glyph: 'map',
 		latin: 'Campus map',
+		/* Captured from the maps.dev preview; still no public href while the product is in dev. */
+		screens: [{ src: '/products/map-phone-1.png', darkSrc: '/products/map-phone-1-dark.png' }],
 		name: m.product_map_name,
 		summary: m.product_map_summary,
 		features: [m.product_map_feature_1, m.product_map_feature_2, m.product_map_feature_3]

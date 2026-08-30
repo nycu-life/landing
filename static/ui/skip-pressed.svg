@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_圖層_1" data-name="圖層 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="913.0 29.5 359.5 137.0">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke: #36f;
+        stroke-width: 2px;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        fill: none;
+      }
+
+      .cls-5 {
+        fill: #fff;
+        font-family: NotoSansCJKHK-SemiBold, 'Noto Sans CJK HK';
+        font-size: 38px;
+        font-variation-settings: 'wght' 600;
+        font-weight: 600;
+        isolation: isolate;
+      }
+
+      .cls-2 {
+        stroke: url(#_未命名漸層_24-3);
+      }
+
+      .cls-2, .cls-3, .cls-4 {
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .cls-2, .cls-3, .cls-4, .cls-6 {
+        stroke-width: 4px;
+      }
+
+      .cls-3 {
+        stroke: url(#_未命名漸層_24);
+      }
+
+      .cls-4 {
+        stroke: url(#_未命名漸層_24-2);
+      }
+
+      .cls-6 {
+        fill: #33f;
+        stroke: #171b27;
+      }
+    </style>
+    <linearGradient id="_未命名漸層_24" data-name="未命名漸層 24" x1="1166.93" y1="101.98" x2="1185.28" y2="101.98" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#f2f3fa"/>
+    </linearGradient>
+    <linearGradient id="_未命名漸層_24-2" data-name="未命名漸層 24" x1="1183.75" y1="102.12" x2="1202.19" y2="102.12" xlink:href="#_未命名漸層_24"/>
+    <linearGradient id="_未命名漸層_24-3" data-name="未命名漸層 24" x1="1201.11" y1="101.79" x2="1205.55" y2="101.79" xlink:href="#_未命名漸層_24"/>
+  </defs>
+  <g id="Animation-pressed">
+    <path class="cls-6" d="M932.79,70.87c15-25,55-31,80-21,30-9,63-7,86,0,28-9,65-7,84,3,31-3,67,10,72,38,9,25-13,54-42,53-24,14-56,6-76,2-26,11-63,4-83,0-30,11-65,5-84-2-28,2-47-22-39-44-7-11-5-20,2-29Z"/>
+    
+    
+    <path class="cls-1" d="M925.16,66.42c15.87-29.22,58.18-36.23,84.62-24.55,31.73-10.52,66.64-8.18,90.97,0,29.62-10.52,68.75-8.18,88.85,3.51,32.79-3.51,70.87,11.69,76.16,44.42,9.52,29.22-13.75,63.12-44.42,61.95-25.39,16.36-59.23,7.01-80.39,2.34-27.5,12.86-66.64,4.68-87.79,0-31.73,12.86-68.75,5.84-88.85-2.34-29.62,2.34-49.71-25.72-41.25-51.43-7.4-12.86-5.29-23.38,2.12-33.9Z"/>
+  </g>
+</svg>

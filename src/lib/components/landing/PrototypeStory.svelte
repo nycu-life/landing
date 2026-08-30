@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
-	import { slide } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
+	import { fly, slide } from 'svelte/transition';
 	import { JOIN_FORM_URL, products, productStatusLabel } from '$lib/content/landing';
 	import { m } from '$lib/paraglide/messages';
 	import { dismissBootSplash } from '$lib/boot-splash';
@@ -13,54 +14,143 @@
 		{ question: m.story_faq_q4, answer: m.story_faq_a4 },
 		{ question: m.story_faq_q5, answer: m.story_faq_a5 }
 	];
-	const storySteps = [
-		{ id: 'hero', progress: 0, duration: 0 },
-		{ id: 'about', progress: 0.25, duration: 3600 },
-		{ id: 'products', progress: 0.5, duration: 1050 },
-		{ id: 'faq', progress: 0.75, duration: 950 },
-		{ id: 'join', progress: 1, duration: 950 }
+	/* The story is one continuous progress value (0 → 1) scrubbed by native page scrolling: the
+	   outer section is tall, the stage is sticky, and every scene choreographs itself off
+	   --story-progress. Chapters push each other vertically; the position always tracks the
+	   user's scroll and reverses with it. SEGMENTS assigns each stretch of the timeline its
+	   share of scroll distance, measured in stage heights; the stage-height multiplier in the
+	   CSS (see .prototype-story) must stay equal to 1 + the sum of these units. */
+	const SEGMENTS = [
+		{ to: 0.2, units: 2 }, // capsule drops, rolls and opens; the machine rises away
+		{ to: 0.25, units: 0.7 }, // hero pushes up while about slides in
+		{ to: 0.3, units: 0.5 }, // about copy holds after its drop-in
+		{ to: 0.4, units: 0.9 }, // the team film rises into place
+		{ to: 0.42, units: 0.35 }, // complete about composition holds
+		{ to: 0.5, units: 1 }, // about → products push
+		{ to: 0.58, units: 1.2 }, // product stepper zone
+		{ to: 0.66, units: 1 }, // products → faq push
+		{ to: 0.72, units: 0.6 }, // faq hold
+		{ to: 0.8, units: 1 }, // faq → join push
+		{ to: 1, units: 0.5 } // join hold
+	];
+	const TOTAL_UNITS = SEGMENTS.reduce((sum, segment) => sum + segment.units, 0);
+	const chapters = [
+		{ id: 'hero', anchor: 0 },
+		{ id: 'about', anchor: 0.41 },
+		{ id: 'products', anchor: 0.54 },
+		{ id: 'faq', anchor: 0.69 },
+		{ id: 'join', anchor: 0.9 }
 	] as const;
+	/* Which chapter "owns" a progress value, for the nav and data attributes. */
+	const CHAPTER_BOUNDS = [0.225, 0.46, 0.62, 0.76];
+	/* A scene participates from the start of its enter push to the end of its exit push;
+	   outside that span it is hidden entirely. */
+	const SCENE_SPANS = [
+		[0, 0.25],
+		[0.2, 0.5],
+		[0.42, 0.66],
+		[0.58, 0.8],
+		[0.72, 1]
+	] as const;
+	/* Inside this band the page stops scrolling and each scroll gesture steps one product. */
+	const PRODUCT_ZONE = { start: 0.5, end: 0.58, center: 0.54 };
 	const wheelThreshold = 32;
 	/* A wheel delta at least this large that also out-accelerates the previous one is a new
 	   flick, not trackpad inertia — inertia only ever decays. */
 	const freshWheelDelta = 40;
 	const wheelGapMs = 120;
 	const touchThreshold = 28;
-	const lastStepIndex = storySteps.length - 1;
-	const heroReturnDuration = 1100;
+	const productStepMs = 460;
 	const aboutFilmEmbedUrl =
 		'https://www.youtube-nocookie.com/embed/WbndciSLhD8?autoplay=0&mute=1&loop=1&playlist=WbndciSLhD8&playsinline=1&rel=0&enablejsapi=1';
 
 	let storyEl: HTMLElement;
+	let stageEl: HTMLElement;
 	let aboutFilmFrame: HTMLIFrameElement;
 	let aboutFilmLoaded = false;
 	let aboutFilmShouldPlay = $state(false);
 	let aboutFilmAudioUnlocked = false;
 	let aboutFilmRetryTimers: ReturnType<typeof setTimeout>[] = [];
 	let progressValue = 0;
-	let stepIndex = $state(0);
-	let animationFromIndex = $state(0);
-	let animationToIndex = $state(0);
+	let chapterIndex = $state(0);
+	let sceneVisible = $state([true, false, false, false, false]);
 	let activeFaq = $state(0);
 	let activeProduct = $state(0);
-	let activeProductData = $derived(products[activeProduct]);
-	let isAnimating = $state(false);
-	let aboutFilmActive = $derived(
-		stepIndex === 1 || (isAnimating && (animationFromIndex === 1 || animationToIndex === 1))
-	);
+	let switchDir = $state(1);
+	let productStepping = $state(false);
+	let aboutTextIn = $state(false);
 	let storyReady = $state(false);
-	let heroReturn = $state(false);
 	let reducedMotion = $state(false);
-	let animationFrame = 0;
-	let queuedDirection = 0;
+	let activeProductData = $derived(products[activeProduct]);
 
-	type StoryBootstrap = { consume: () => number; cleanup: () => void };
 	const clamp = (value: number) => Math.min(1, Math.max(0, value));
-	const easeInOutCubic = (value: number) =>
-		value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2;
-	const setProgress = (value: number) => {
+	const flyIn = (direction: number) => ({
+		y: reducedMotion ? 0 : 34 * direction,
+		duration: reducedMotion ? 0 : 420,
+		delay: reducedMotion ? 0 : 90,
+		easing: cubicOut
+	});
+	const flyOut = (direction: number) => ({
+		y: reducedMotion ? 0 : -34 * direction,
+		duration: reducedMotion ? 0 : 300,
+		easing: cubicOut
+	});
+
+	/* Piecewise-linear mapping between the scrolled fraction of the story and the timeline. */
+	const progressFromFraction = (fraction: number) => {
+		const target = clamp(fraction) * TOTAL_UNITS;
+		let usedUnits = 0;
+		let from = 0;
+		for (const segment of SEGMENTS) {
+			if (target <= usedUnits + segment.units) {
+				return from + ((target - usedUnits) / segment.units) * (segment.to - from);
+			}
+			usedUnits += segment.units;
+			from = segment.to;
+		}
+		return 1;
+	};
+	const fractionFromProgress = (progress: number) => {
+		const value = clamp(progress);
+		let usedUnits = 0;
+		let from = 0;
+		for (const segment of SEGMENTS) {
+			if (value <= segment.to) {
+				const local = segment.to === from ? 1 : (value - from) / (segment.to - from);
+				return (usedUnits + local * segment.units) / TOTAL_UNITS;
+			}
+			usedUnits += segment.units;
+			from = segment.to;
+		}
+		return 1;
+	};
+
+	let scrollMetrics = { top: 0, length: 1 };
+	const measure = () => {
+		if (!storyEl || !stageEl) return;
+		const rect = storyEl.getBoundingClientRect();
+		scrollMetrics = {
+			top: rect.top + window.scrollY,
+			length: Math.max(1, storyEl.offsetHeight - stageEl.offsetHeight)
+		};
+	};
+	const readProgress = () =>
+		progressFromFraction((window.scrollY - scrollMetrics.top) / scrollMetrics.length);
+	const scrollYFor = (progress: number) =>
+		scrollMetrics.top + fractionFromProgress(progress) * scrollMetrics.length;
+
+	const applyProgress = (value: number) => {
 		progressValue = clamp(value);
 		storyEl?.style.setProperty('--story-progress', String(progressValue));
+		// Native anchor navigation (e.g. loading /#products) scrolls the overflow-hidden stage
+		// itself to reach the target scene; the stage must always stay at its own origin.
+		if (stageEl && stageEl.scrollTop !== 0) stageEl.scrollTop = 0;
+		chapterIndex = CHAPTER_BOUNDS.filter((boundary) => progressValue >= boundary).length;
+		sceneVisible = SCENE_SPANS.map(([from, to]) => progressValue >= from && progressValue <= to);
+		if (progressValue >= 0.25) aboutTextIn = true;
+		else if (progressValue < 0.21) aboutTextIn = false;
+		const filmShouldPlay = progressValue >= 0.36 && progressValue <= 0.47;
+		if (filmShouldPlay !== aboutFilmShouldPlay) setAboutFilmPlayback(filmShouldPlay);
 	};
 	const sendAboutFilmCommand = (func: string, args: unknown[] = []) => {
 		if (!aboutFilmLoaded) return;
@@ -110,111 +200,76 @@
 		aboutFilmLoaded = true;
 		syncAboutFilmPlayback();
 	};
-	const goToStep = (nextIndex: number, immediate = false) => {
-		if (isAnimating || nextIndex < 0 || nextIndex > lastStepIndex || nextIndex === stepIndex)
+	/* Product stepper state. While the lock is engaged the page holds still and one scroll
+	   gesture advances exactly one product; stepping past either end releases the lock back to
+	   native scrolling. The zone must be fully left before the lock can re-arm. */
+	let lockEngaged = false;
+	let zoneExited = true;
+	let snappingToZone = false;
+	let lastProgress = 0;
+	let stepTimer: ReturnType<typeof setTimeout> | undefined;
+
+	const beginProductStep = (direction: number) => {
+		switchDir = direction;
+		productStepping = true;
+		if (stepTimer) clearTimeout(stepTimer);
+		stepTimer = setTimeout(() => (productStepping = false), productStepMs);
+	};
+	const stepProduct = (direction: number) => {
+		const next = activeProduct + direction;
+		if (next < 0 || next >= products.length) {
+			// Leaving the stepper: hand this gesture back to native scrolling.
+			lockEngaged = false;
+			zoneExited = false;
 			return false;
-
-		const fromIndex = stepIndex;
-		if (fromIndex === 1 && nextIndex !== 1) setAboutFilmPlayback(false);
-		const from = progressValue;
-		const target = storySteps[nextIndex].progress;
-		if (immediate || reducedMotion) {
-			stepIndex = nextIndex;
-			setProgress(target);
-			if (nextIndex === 1) setAboutFilmPlayback(true);
-			return true;
 		}
-
-		// Going back up from ABOUT is a short return: the machine and caption slide back in, but
-		// the capsule sequence only ever plays forward, so it's hidden for this transition.
-		const returningToHero = fromIndex === 1 && nextIndex === 0;
-		heroReturn = returningToHero;
-		const duration = returningToHero
-			? heroReturnDuration
-			: nextIndex > fromIndex
-				? storySteps[nextIndex].duration
-				: storySteps[fromIndex].duration;
-		const startedAt = performance.now();
-		animationFromIndex = fromIndex;
-		animationToIndex = nextIndex;
-		isAnimating = true;
-		const tick = (now: number) => {
-			const elapsed = clamp((now - startedAt) / duration);
-			const eased = fromIndex === 0 && nextIndex === 1 ? elapsed : easeInOutCubic(elapsed);
-			setProgress(from + (target - from) * eased);
-			if (elapsed < 1) {
-				animationFrame = requestAnimationFrame(tick);
-				return;
-			}
-			animationFrame = 0;
-			stepIndex = nextIndex;
-			isAnimating = false;
-			heroReturn = false;
-			if (nextIndex === 1) setAboutFilmPlayback(true);
-		};
-		animationFrame = requestAnimationFrame(tick);
+		beginProductStep(direction);
+		activeProduct = next;
 		return true;
 	};
-	const requestStep = (direction: number) => {
-		if (!storyReady) {
-			queuedDirection = direction;
-			return true;
-		}
-		return goToStep(stepIndex + direction);
-	};
 	const selectProduct = (index: number) => {
-		activeProduct = (index + products.length) % products.length;
+		const next = (index + products.length) % products.length;
+		if (next === activeProduct) return;
+		beginProductStep(index > activeProduct ? 1 : -1);
+		activeProduct = next;
+	};
+	const snapToZoneCenter = () => {
+		snappingToZone = true;
+		window.scrollTo({ top: scrollYFor(PRODUCT_ZONE.center), behavior: 'instant' });
+		requestAnimationFrame(() => (snappingToZone = false));
+	};
+	const goToChapter = (id: string) => {
+		const chapter = chapters.find((entry) => entry.id === id);
+		if (!chapter) return;
+		measure();
+		if (chapter.id === 'products') {
+			// Jumping straight into the stepper: arm the lock at the first product so the scroll
+			// event fired by the jump is not mistaken for an entry from below.
+			lockEngaged = !reducedMotion;
+			zoneExited = false;
+			activeProduct = 0;
+		}
+		window.scrollTo({ top: scrollYFor(chapter.anchor), behavior: 'instant' });
+		lastProgress = chapter.anchor;
+		applyProgress(chapter.anchor);
 	};
 	onMount(() => {
-		const bootstrap = (window as Window & { __nycuStoryBootstrap?: StoryBootstrap })
-			.__nycuStoryBootstrap;
-		const initialIntent = bootstrap?.consume() ?? 0;
-		bootstrap?.cleanup();
 		const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 		const forceMotion = new URLSearchParams(window.location.search).get('motion') === 'on';
 		let wheelIntent = 0;
 		let wheelConsumed = false;
-		let wheelRestoringStory = false;
 		let lastWheelDelta = 0;
 		let lastWheelAt = 0;
 		let wheelResetTimer: ReturnType<typeof setTimeout> | undefined;
 		let touchStartY = 0;
-		let touchStartedInStory = false;
+		let touchLocked = false;
 		let touchConsumed = false;
-		let touchRestoringStory = false;
 		let disposed = false;
 
 		const updateMotionPreference = () => {
 			reducedMotion = motionQuery.matches && !forceMotion;
-			if (reducedMotion && animationFrame) {
-				cancelAnimationFrame(animationFrame);
-				animationFrame = 0;
-				isAnimating = false;
-				stepIndex = Math.max(
-					0,
-					storySteps.findIndex((step) => step.progress >= progressValue)
-				);
-				setProgress(storySteps[stepIndex].progress);
-				setAboutFilmPlayback(stepIndex === 1);
-			}
+			if (reducedMotion) lockEngaged = false;
 		};
-		const storyIsEngaged = () => {
-			const rect = storyEl.getBoundingClientRect();
-			const topBarBottom =
-				document.querySelector<HTMLElement>('.topbar')?.getBoundingClientRect().bottom ?? 0;
-			// `100svh` may be shorter than `innerHeight` under real mobile browser chrome. As long
-			// as some of the story remains below the top bar it owns navigation; only the outward
-			// boundary at the final chapter is allowed to fall through to normal page scrolling.
-			return rect.top <= topBarBottom + 3 && rect.bottom > topBarBottom + 3;
-		};
-		const storyIsAligned = () => {
-			const rect = storyEl.getBoundingClientRect();
-			const topBarBottom =
-				document.querySelector<HTMLElement>('.topbar')?.getBoundingClientRect().bottom ?? 0;
-			return rect.top >= topBarBottom - 3;
-		};
-		const isOutwardBoundary = (direction: number) =>
-			(direction < 0 && stepIndex === 0) || (direction > 0 && stepIndex === lastStepIndex);
 		const normalizeWheelDelta = (event: WheelEvent) => {
 			if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return event.deltaY * 16;
 			if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return event.deltaY * window.innerHeight;
@@ -225,12 +280,51 @@
 			wheelResetTimer = setTimeout(() => {
 				wheelIntent = 0;
 				wheelConsumed = false;
-				wheelRestoringStory = false;
 			}, 180);
 		};
+		const onScroll = () => {
+			const progress = readProgress();
+			const inZone = progress > PRODUCT_ZONE.start && progress < PRODUCT_ZONE.end;
+			if (!inZone) {
+				zoneExited = true;
+				lockEngaged = false;
+			} else if (lockEngaged && !snappingToZone) {
+				// The lock swallows wheel and touch input, so any movement came from something we
+				// cannot intercept (scrollbar drag, find-in-page, iOS momentum). Small drifts are
+				// pulled back to the anchor; a deliberate jump falls back to plain scrubbing.
+				const drift = window.scrollY - scrollYFor(PRODUCT_ZONE.center);
+				const zoneLength =
+					(fractionFromProgress(PRODUCT_ZONE.end) - fractionFromProgress(PRODUCT_ZONE.start)) *
+					scrollMetrics.length;
+				if (Math.abs(drift) > zoneLength * 0.35) {
+					lockEngaged = false;
+					zoneExited = false;
+				} else if (Math.abs(drift) > 1) {
+					snapToZoneCenter();
+					return;
+				}
+			} else if (!lockEngaged && zoneExited && !reducedMotion) {
+				lockEngaged = true;
+				zoneExited = false;
+				activeProduct = lastProgress <= PRODUCT_ZONE.start ? 0 : products.length - 1;
+				snapToZoneCenter();
+			}
+			if (reducedMotion && inZone) {
+				const zoneShare = (progress - PRODUCT_ZONE.start) / (PRODUCT_ZONE.end - PRODUCT_ZONE.start);
+				activeProduct = Math.min(products.length - 1, Math.floor(zoneShare * products.length));
+			}
+			lastProgress = progress;
+			applyProgress(progress);
+		};
+		const onResize = () => {
+			measure();
+			onScroll();
+		};
 		const onWheel = (event: WheelEvent) => {
+			if (!lockEngaged) return;
 			const delta = normalizeWheelDelta(event);
-			if (!delta || reducedMotion) return;
+			if (!delta) return;
+			event.preventDefault();
 			const direction = Math.sign(delta);
 			const now = performance.now();
 			const magnitude = Math.abs(delta);
@@ -240,35 +334,13 @@
 				(magnitude >= freshWheelDelta && magnitude > Math.abs(lastWheelDelta) * 1.5);
 			lastWheelAt = now;
 			lastWheelDelta = delta;
-			// When JOIN has scrolled into the footer, the first upward gesture belongs to native
-			// page scrolling. Keep its inertia out of the chapter controller even after the story
-			// reaches the top. A new accelerating flick can leave JOIN immediately; it must not be
-			// trapped behind a timer that continuous trackpad events keep resetting.
-			if (direction < 0 && !storyIsAligned()) {
-				wheelRestoringStory = true;
-				resetWheelGestureSoon();
-				return;
-			}
-			if (direction < 0 && wheelRestoringStory) {
-				if (!freshGesture) {
-					resetWheelGestureSoon();
-					return;
-				}
-				wheelRestoringStory = false;
-				wheelIntent = 0;
-				wheelConsumed = false;
-			}
-			if (!storyIsEngaged()) return;
-			if (!isAnimating && isOutwardBoundary(direction)) return;
-
-			event.preventDefault();
 			resetWheelGestureSoon();
-			if (isAnimating) {
+			if (productStepping) {
 				wheelConsumed = true;
 				return;
 			}
-			// Inertia from the flick that started the last step keeps arriving after it ends;
-			// ignore it, but let a genuinely new flick through right away.
+			// Inertia from the flick that switched the last product keeps arriving after the
+			// animation ends; ignore it, but let a genuinely new flick through right away.
 			if (wheelConsumed && !freshGesture) return;
 			wheelConsumed = false;
 			if (wheelIntent && Math.sign(wheelIntent) !== direction) wheelIntent = 0;
@@ -276,60 +348,58 @@
 			if (Math.abs(wheelIntent) < wheelThreshold) return;
 			wheelConsumed = true;
 			wheelIntent = 0;
-			requestStep(direction);
+			stepProduct(direction);
 		};
 		const onTouchStart = (event: TouchEvent) => {
-			const target = event.target;
-			touchStartedInStory = target instanceof Node && storyEl.contains(target);
 			touchStartY = event.touches[0]?.clientY ?? 0;
+			touchLocked = lockEngaged;
 			touchConsumed = false;
-			touchRestoringStory = !storyIsAligned();
 		};
 		const onTouchMove = (event: TouchEvent) => {
-			if (!touchStartedInStory || reducedMotion) return;
+			if (!touchLocked || !lockEngaged) return;
 			const currentY = event.touches[0]?.clientY;
 			if (currentY === undefined) return;
 			const distance = touchStartY - currentY;
-			const direction = Math.sign(distance);
-			if (direction < 0 && (touchRestoringStory || !storyIsAligned())) {
-				touchRestoringStory = true;
-				return;
-			}
-			if (!storyIsEngaged()) return;
-			if (!direction || (!isAnimating && isOutwardBoundary(direction))) return;
+			if (!distance) return;
 			event.preventDefault();
-			if (isAnimating || touchConsumed || Math.abs(distance) < touchThreshold) return;
+			if (productStepping || touchConsumed || Math.abs(distance) < touchThreshold) return;
 			touchConsumed = true;
-			requestStep(direction);
+			stepProduct(Math.sign(distance));
 		};
 		const onTouchEnd = () => {
-			touchStartedInStory = false;
+			touchLocked = false;
 			touchConsumed = false;
-			touchRestoringStory = false;
 		};
 		const onKeyDown = (event: KeyboardEvent) => {
-			if (reducedMotion || !storyIsEngaged()) return;
+			if (!lockEngaged || event.repeat) return;
 			const target = event.target;
 			if (
 				target instanceof HTMLElement &&
 				target.closest('a, button, input, textarea, select, [contenteditable="true"]')
 			)
 				return;
-
 			let direction = 0;
 			if (['ArrowDown', 'PageDown'].includes(event.key) || (event.key === ' ' && !event.shiftKey))
 				direction = 1;
 			else if (['ArrowUp', 'PageUp'].includes(event.key) || (event.key === ' ' && event.shiftKey))
 				direction = -1;
-			if (direction < 0 && !storyIsAligned()) return;
-			if (!direction || (!isAnimating && isOutwardBoundary(direction))) return;
+			if (!direction) return;
+			const next = activeProduct + direction;
+			if (next < 0 || next >= products.length) {
+				// Releasing at the boundary: let the browser handle this keypress as page scroll.
+				lockEngaged = false;
+				zoneExited = false;
+				return;
+			}
 			event.preventDefault();
-			if (!event.repeat && !isAnimating) requestStep(direction);
+			if (!productStepping) stepProduct(direction);
 		};
 		const onHashChange = () => {
 			const hash = window.location.hash.slice(1);
-			const nextIndex = storySteps.findIndex((step) => step.id === hash);
-			if (nextIndex >= 0) goToStep(nextIndex, true);
+			if (chapters.some((chapter) => chapter.id === hash)) goToChapter(hash);
+			// Anchors past the story (e.g. #wishes): the browser's own jump lands short because the
+			// tall story runway settles its height only after layout, so re-aim at the element.
+			else if (hash) document.getElementById(hash)?.scrollIntoView({ behavior: 'instant' });
 		};
 		const prepareFirstScene = async () => {
 			const images = Array.from(storyEl.querySelectorAll<HTMLImageElement>('.gacha-machine img'));
@@ -348,43 +418,49 @@
 			if (disposed) return;
 			storyReady = true;
 			dismissBootSplash();
-			const direction = queuedDirection || initialIntent;
-			queuedDirection = 0;
-			if (direction && !reducedMotion && !isOutwardBoundary(direction))
-				goToStep(stepIndex + direction);
+			// Image decoding can change the page height; realign any deep link once it settles.
+			if (window.location.hash) {
+				measure();
+				onHashChange();
+			}
 		};
 
 		updateMotionPreference();
-		setProgress(storySteps[stepIndex].progress);
+		measure();
+		window.addEventListener('scroll', onScroll, { passive: true });
+		window.addEventListener('resize', onResize);
 		window.addEventListener('wheel', onWheel, { passive: false });
 		window.addEventListener('touchstart', onTouchStart, { passive: true });
 		window.addEventListener('touchmove', onTouchMove, { passive: false });
 		window.addEventListener('touchend', onTouchEnd, { passive: true });
 		window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+		window.addEventListener('keydown', onKeyDown);
+		window.addEventListener('hashchange', onHashChange);
 		window.addEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
 		window.addEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
 		window.addEventListener('keydown', unlockAboutFilmAudio, { capture: true });
-		window.addEventListener('keydown', onKeyDown);
-		window.addEventListener('hashchange', onHashChange);
 		motionQuery.addEventListener('change', updateMotionPreference);
-		onHashChange();
+		if (window.location.hash) onHashChange();
+		else onScroll();
 		void prepareFirstScene();
 		return () => {
 			disposed = true;
-			clearAboutFilmRetries();
+			window.removeEventListener('scroll', onScroll);
+			window.removeEventListener('resize', onResize);
 			window.removeEventListener('wheel', onWheel);
 			window.removeEventListener('touchstart', onTouchStart);
 			window.removeEventListener('touchmove', onTouchMove);
 			window.removeEventListener('touchend', onTouchEnd);
 			window.removeEventListener('touchcancel', onTouchEnd);
+			window.removeEventListener('keydown', onKeyDown);
+			window.removeEventListener('hashchange', onHashChange);
 			window.removeEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
 			window.removeEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
 			window.removeEventListener('keydown', unlockAboutFilmAudio, { capture: true });
-			window.removeEventListener('keydown', onKeyDown);
-			window.removeEventListener('hashchange', onHashChange);
+			clearAboutFilmRetries();
 			motionQuery.removeEventListener('change', updateMotionPreference);
 			if (wheelResetTimer) clearTimeout(wheelResetTimer);
-			if (animationFrame) cancelAnimationFrame(animationFrame);
+			if (stepTimer) clearTimeout(stepTimer);
 		};
 	});
 </script>
@@ -394,40 +470,63 @@
 	class="scroll-story prototype-story"
 	id="home"
 	aria-label={m.story_region_label()}
-	data-story-step={stepIndex}
-	data-story-step-name={storySteps[stepIndex].id}
-	data-story-animating={isAnimating}
-	data-phone-animating="false"
-	data-phone-slide={activeProduct.toFixed(3)}
+	data-story-step={chapterIndex}
+	data-story-step-name={chapters[chapterIndex].id}
+	data-story-animating={productStepping}
 	data-story-ready={storyReady ? 'true' : 'false'}
 	data-about-film-should-play={aboutFilmShouldPlay ? 'true' : 'false'}
-	data-hero-return={heroReturn ? 'true' : 'false'}
 	data-reduced-motion={reducedMotion ? 'true' : 'false'}
 >
-	<div class="story-stage">
+	<div class="story-stage" bind:this={stageEl}>
 		<div class="story-progress"></div>
-		<nav class="chapter-nav" aria-label="Story chapters">
-			{#each storySteps as step, index (step.id)}
+		<nav class="chapter-nav" class:on-hero={chapterIndex === 0} aria-label="Story chapters">
+			{#each chapters as chapter, index (chapter.id)}
 				<a
-					href={`#${step.id}`}
-					class:active={stepIndex === index}
-					aria-current={stepIndex === index ? 'step' : undefined}><i></i><span>{step.id}</span></a
+					href={`#${chapter.id}`}
+					class:active={chapterIndex === index}
+					aria-current={chapterIndex === index ? 'step' : undefined}
+					onclick={(event) => {
+						event.preventDefault();
+						history.replaceState(null, '', `#${chapter.id}`);
+						goToChapter(chapter.id);
+					}}><i></i><span>{chapter.id}</span></a
 				>
 			{/each}
 		</nav>
-
-		<section
-			id="hero"
-			class="story-scene hero-scene"
-			class:scene-active={stepIndex === 0 ||
-				(isAnimating && (animationFromIndex === 0 || animationToIndex === 0))}
+		<button
+			type="button"
+			class="skip-story"
+			tabindex={chapterIndex === 0 ? 0 : -1}
+			onclick={() => {
+				history.replaceState(null, '', '#about');
+				goToChapter('about');
+			}}
 		>
+			<img class="skip-face skip-face-default" src="{base}/ui/skip-default.svg" alt="" />
+			<img class="skip-face skip-face-hover" src="{base}/ui/skip-hover.svg" alt="" />
+			<img class="skip-face skip-face-pressed" src="{base}/ui/skip-pressed.svg" alt="" />
+			<span class="skip-label">{m.story_skip()}</span>
+			<svg class="skip-icon" viewBox="0 0 40 28" aria-hidden="true">
+				<polygon points="3,3 3,25 14,14" />
+				<polygon points="19,3 19,25 30,14" />
+				<line x1="36" y1="3" x2="36" y2="25" />
+			</svg>
+		</button>
+
+		<section id="hero" class="story-scene hero-scene" class:scene-active={sceneVisible[0]}>
 			<div class="hero-orbit" aria-hidden="true"></div>
 			<div class="gacha-machine" role="img" aria-label={m.story_gacha_alt()}>
 				<picture class="gacha-device-art" aria-hidden="true">
 					<source media="(max-width: 430px)" srcset="{base}/story/designer/gacha-mobile.svg" />
 					<source media="(max-width: 900px)" srcset="{base}/story/designer/gacha-tablet.svg" />
 					<img src="{base}/story/designer/gacha-desktop.svg" alt="" />
+				</picture>
+				<!-- The dial cut from each artwork's 旋鈕本體 layer, sitting exactly over its baked
+				     twin so it can spin as the capsule dispenses. -->
+				<picture class="machine-knob" aria-hidden="true">
+					<source media="(max-width: 430px)" srcset="{base}/story/designer/knob-mobile.svg" />
+					<source media="(max-width: 900px)" srcset="{base}/story/designer/knob-tablet.svg" />
+					<img src="{base}/story/designer/knob-desktop.svg" alt="" />
 				</picture>
 				<img class="machine-base" src="{base}/story/designer/gacha-machine.svg" alt="" />
 				<img class="machine-glass" src="{base}/story/designer/gacha-glass.svg" alt="" />
@@ -651,25 +750,18 @@
 					</div>
 				</div>
 			</div>
-			<div class="hero-caption">
-				<span>{m.story_hero_eyebrow()}</span>
-				<h1>
-					<span class="sr-only">NYCU LIFE — </span>{m.story_hero_title_1()}<br
-					/>{m.story_hero_title_2()}
-				</h1>
-				<p>{m.story_hero_lede()}</p>
-			</div>
+			<h1 class="sr-only">NYCU LIFE — {m.story_hero_title_1()}{m.story_hero_title_2()}</h1>
 			<div class="scroll-hint">{m.story_scroll_cue()} ↓</div>
 		</section>
 
 		<section
 			id="about"
 			class="story-scene about-scene"
-			class:scene-active={aboutFilmActive}
+			class:scene-active={sceneVisible[1]}
 			aria-label={m.story_about_label()}
 		>
 			<div class="section-shell about-shell">
-				<article class="about-copy">
+				<article class="about-copy" class:landed={aboutTextIn}>
 					<span class="eyebrow">{m.story_about_eyebrow()}</span>
 					<h2>{m.story_about_title_1()}<br />{m.story_about_title_2()}</h2>
 					<p>{m.story_about_body()}</p>
@@ -695,34 +787,37 @@
 		<section
 			id="products"
 			class="story-scene product-scene"
-			class:scene-active={stepIndex === 2 ||
-				(isAnimating && (animationFromIndex === 2 || animationToIndex === 2))}
+			class:scene-active={sceneVisible[2]}
 			aria-label={m.story_products_label()}
 		>
 			<div class="section-shell product-shell">
-				<article class="product-copy">
-					<span class="eyebrow"
-						>PRODUCT {String(activeProduct + 1).padStart(2, '0')} · {activeProductData.latin}</span
-					>
-					<h2>{activeProductData.name()}</h2>
-					<p>{activeProductData.summary()}</p>
-					<div class="feature-list">
-						{#each activeProductData.features as feature, index (index)}
-							<div>
-								<strong>{String(index + 1).padStart(2, '0')}</strong><span>{feature()}</span>
+				<div class="product-copy-stack">
+					{#key activeProduct}
+						<article class="product-copy" in:fly={flyIn(switchDir)} out:fly={flyOut(switchDir)}>
+							<h2>{activeProductData.name()}</h2>
+							<p>{activeProductData.summary()}</p>
+							<div class="feature-list">
+								{#each activeProductData.features as feature, index (index)}
+									<div>
+										<strong>{String(index + 1).padStart(2, '0')}</strong><span>{feature()}</span>
+									</div>
+								{/each}
 							</div>
-						{/each}
-					</div>
-					{#if activeProductData.href}
-						<a class="product-cta" href={activeProductData.href} target="_blank" rel="noreferrer"
-							>{m.products_visit()} →</a
-						>
-					{:else}
-						<span class="product-cta product-cta-soon"
-							>{productStatusLabel[activeProductData.status]()}</span
-						>
-					{/if}
-				</article>
+							{#if activeProductData.href}
+								<a
+									class="product-cta"
+									href={activeProductData.href}
+									target="_blank"
+									rel="noreferrer">{m.products_visit()} →</a
+								>
+							{:else}
+								<span class="product-cta product-cta-soon"
+									>{productStatusLabel[activeProductData.status]()}</span
+								>
+							{/if}
+						</article>
+					{/key}
+				</div>
 				<div class="product-demo">
 					<button
 						type="button"
@@ -737,31 +832,47 @@
 						<img class="device-hand" src="{base}/story/designer/hand/back-fingers-v2.svg" alt="" />
 						<div class="device-phone">
 							<div class="device-screen">
-								{#if activeProductData.screens}
-									{#each activeProductData.screens as screen, index (screen.src)}
-										<div
-											class="device-shot"
-											class:active={index === 0}
-											style:--screen-position={screen.position ?? 'top'}
-										>
-											<img
-												class="device-screen-light"
-												src={`${base}${screen.src}`}
-												alt={index === 0 ? activeProductData.name() : ''}
-											/>
-											{#if screen.darkSrc}
-												<img class="device-screen-dark" src={`${base}${screen.darkSrc}`} alt="" />
-											{/if}
-										</div>
-									{/each}
-								{:else}
-									<div class="map-placeholder"><span>NYCU</span><strong>MAP</strong><i></i></div>
-								{/if}
+								{#key activeProduct}
+									<div
+										class="device-shot-group"
+										in:fly={flyIn(switchDir)}
+										out:fly={flyOut(switchDir)}
+									>
+										{#if activeProductData.screens}
+											{#each activeProductData.screens as screen, index (screen.src)}
+												<div
+													class="device-shot"
+													class:active={index === 0}
+													style:--screen-position={screen.position ?? 'top'}
+												>
+													<img
+														class="device-screen-light"
+														src={`${base}${screen.src}`}
+														alt={index === 0 ? activeProductData.name() : ''}
+													/>
+													{#if screen.darkSrc}
+														<img
+															class="device-screen-dark"
+															src={`${base}${screen.darkSrc}`}
+															alt=""
+														/>
+													{/if}
+												</div>
+											{/each}
+										{:else}
+											<div class="map-placeholder">
+												<span>NYCU</span><strong>MAP</strong><i></i>
+											</div>
+										{/if}
+									</div>
+								{/key}
 							</div>
 						</div>
 						<img class="device-frame" src="{base}/story/designer/hand/phone-v2.svg" alt="" />
 						<img
 							class="device-hand-front"
+							class:swipe-up={productStepping && switchDir === 1}
+							class:swipe-down={productStepping && switchDir === -1}
 							src="{base}/story/designer/hand/front-hand-v2.svg"
 							alt=""
 						/>
@@ -791,16 +902,10 @@
 		<section
 			id="faq"
 			class="story-scene faq-scene"
-			class:scene-active={stepIndex === 3 ||
-				(isAnimating && (animationFromIndex === 3 || animationToIndex === 3))}
+			class:scene-active={sceneVisible[3]}
 			aria-label={m.story_faq_label()}
 		>
 			<div class="section-shell faq-shell">
-				<article class="faq-copy">
-					<span class="eyebrow">{m.story_faq_eyebrow()}</span>
-					<h2>{m.story_faq_title_1()}<br />{m.story_faq_title_2()}</h2>
-					<p>{m.story_faq_body()}</p>
-				</article>
 				<div class="notebook">
 					<img
 						class="notebook-art"
@@ -833,8 +938,7 @@
 		<section
 			id="join"
 			class="story-scene join-scene"
-			class:scene-active={stepIndex === 4 ||
-				(isAnimating && (animationFromIndex === 4 || animationToIndex === 4))}
+			class:scene-active={sceneVisible[4]}
 			aria-label={m.story_join_label()}
 		>
 			<div class="section-shell join-shell">
@@ -857,8 +961,8 @@
 			</div>
 		</section>
 
-		<span class="story-count" class:hero-count={stepIndex === 0} aria-hidden="true"
-			>{stepIndex + 1} / {storySteps.length}</span
+		<span class="story-count" class:hero-count={chapterIndex === 0} aria-hidden="true"
+			>{chapterIndex + 1} / {chapters.length}</span
 		>
 	</div>
 </section>
@@ -866,19 +970,32 @@
 <style>
 	.prototype-story {
 		--story-progress: 0;
+		--stage-height: max(calc(100svh - 4.75rem), 34rem);
 		position: relative;
-		height: calc(100svh - 4.75rem);
-		min-height: 34rem;
+		/* Tall scroll runway for the sticky stage: 1 stage height on screen plus one per timeline
+		   unit (must equal 1 + the sum of SEGMENTS units in the script). */
+		height: calc(var(--stage-height) * 10.75);
 		background: #f3f4f6;
 		color: #333;
-		overflow: hidden;
 	}
 	.story-stage {
-		position: relative;
+		position: sticky;
+		top: 4.75rem;
 		width: 100%;
-		height: 100%;
+		height: var(--stage-height);
 		overflow: hidden;
 		background: #fff;
+	}
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		border: 0;
+		clip-path: inset(50%);
+		overflow: hidden;
+		white-space: nowrap;
 	}
 	.story-stage::before {
 		content: '';
@@ -899,14 +1016,11 @@
 			radial-gradient(circle at 14% 78%, rgba(92, 137, 235, 0.34), transparent 36%),
 			radial-gradient(circle at 88% 82%, rgba(226, 128, 141, 0.25), transparent 36%);
 	}
-	:global(:root[data-theme='dark']) .section-shell h2,
-	:global(:root[data-theme='dark']) .hero-caption h1 {
+	:global(:root[data-theme='dark']) .section-shell h2 {
 		color: #edf4ff;
 	}
 	:global(:root[data-theme='dark']) .section-shell > article > p,
-	:global(:root[data-theme='dark']) .product-copy > p,
-	:global(:root[data-theme='dark']) .faq-copy > p,
-	:global(:root[data-theme='dark']) .hero-caption > p {
+	:global(:root[data-theme='dark']) .product-copy > p {
 		color: #c8d4e5;
 	}
 	:global(:root[data-theme='dark']) .hero-orbit,
@@ -957,60 +1071,48 @@
 		transform: scaleX(var(--story-progress));
 		background: #2462ff;
 	}
+	/* Chapters push each other vertically (#47/#50): during a transition the outgoing scene
+	   slides from 0 to -100% while the incoming one slides from 100% to 0, tiling exactly like
+	   stacked pages driven by the scroll position. No fades. */
 	.story-scene {
+		--scene-enter: 1;
+		--scene-exit: 0;
 		position: absolute;
 		inset: 0;
-		opacity: 0;
 		visibility: hidden;
 		pointer-events: none;
-		transition: visibility 0s linear 0.2s;
+		will-change: transform;
+		transform: translateY(calc((1 - var(--scene-enter)) * 100% - var(--scene-exit) * 100%));
 	}
 	.story-scene.scene-active {
 		visibility: visible;
 		pointer-events: auto;
-		transition-delay: 0s;
 	}
 	.hero-scene {
 		display: grid;
 		place-items: center;
-		opacity: clamp(0, calc((0.25 - var(--story-progress)) * 40), 1);
+		--scene-exit: clamp(0, calc((var(--story-progress) - 0.2) * 20), 1);
 		background: #fff;
 	}
 	.about-scene {
-		opacity: clamp(
-			0,
-			min(calc((var(--story-progress) - 0.225) * 40), calc((0.42 - var(--story-progress)) * 18)),
-			1
-		);
+		--scene-enter: clamp(0, calc((var(--story-progress) - 0.2) * 20), 1);
+		--scene-exit: clamp(0, calc((var(--story-progress) - 0.42) * 12.5), 1);
 	}
 	.product-scene {
-		opacity: clamp(
-			0,
-			min(calc((var(--story-progress) - 0.35) * 18), calc((0.67 - var(--story-progress)) * 18)),
-			1
-		);
+		--scene-enter: clamp(0, calc((var(--story-progress) - 0.42) * 12.5), 1);
+		--scene-exit: clamp(0, calc((var(--story-progress) - 0.58) * 12.5), 1);
 	}
 	.faq-scene {
-		opacity: clamp(
-			0,
-			min(calc((var(--story-progress) - 0.6) * 18), calc((0.91 - var(--story-progress)) * 18)),
-			1
-		);
+		--scene-enter: clamp(0, calc((var(--story-progress) - 0.58) * 12.5), 1);
+		--scene-exit: clamp(0, calc((var(--story-progress) - 0.72) * 12.5), 1);
 	}
 	.join-scene {
-		opacity: clamp(0, calc((var(--story-progress) - 0.84) * 14), 1);
+		--scene-enter: clamp(0, calc((var(--story-progress) - 0.72) * 12.5), 1);
 	}
 	.section-shell {
-		--shell-shift: 0px;
-		--scene-at: 0;
 		position: relative;
 		z-index: 2;
-		will-change: transform;
-		/* Chapters drift 30vh per step: outgoing scene rises, incoming one comes up from below. */
-		transform: translateY(
-			calc(var(--shell-shift) + (var(--story-progress) - var(--scene-at)) * -120vh)
-		);
-		width: min(72rem, calc(100% - 8rem));
+		width: min(72rem, calc(100% - 2 * var(--stage-gutter, 4rem)));
 		height: 100%;
 		margin: 0 auto;
 		display: grid;
@@ -1035,6 +1137,17 @@
 		color: #4b5563;
 		line-height: 1.75;
 	}
+	/* Nav-to-content clearance follows the design spec (#53): ≥1440px keeps 80–96px between the
+	   nav and the shell, 1024–1439px keeps 56–64px, 768–1023px keeps 32–48px (dots only), and
+	   below 768px the side nav disappears entirely. */
+	.story-stage {
+		--stage-gutter: 9.25rem;
+	}
+	@media (min-width: 1440px) {
+		.story-stage {
+			--stage-gutter: 11rem;
+		}
+	}
 	.chapter-nav {
 		position: absolute;
 		z-index: 40;
@@ -1044,6 +1157,98 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.9rem;
+		transition:
+			opacity 0.3s ease,
+			transform 0.3s ease,
+			visibility 0.3s;
+	}
+	/* The hero keeps the whole stage for the machine (#45). */
+	.chapter-nav.on-hero {
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(-50%) translateX(-0.6rem);
+		pointer-events: none;
+	}
+	/* The designer's cloud pill (static/ui/skip-*.svg). All three faces are stacked and kept
+	   loaded so hover/press swaps never flicker; the label stays live text for i18n. */
+	.skip-story {
+		position: absolute;
+		z-index: 40;
+		top: 1rem;
+		right: 1.3rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		width: 9.25rem;
+		height: 3.5rem;
+		padding: 0 0.75rem;
+		border: 0;
+		background: none;
+		color: #1b2030;
+		font-size: 0.86rem;
+		font-weight: 650;
+		letter-spacing: 0.05em;
+		cursor: pointer;
+		transition:
+			opacity 0.3s ease,
+			visibility 0.3s;
+	}
+	.skip-face {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		opacity: 0;
+		pointer-events: none;
+	}
+	/* The hover face carries a soft halo beyond the pill, so it renders oversized to keep the
+	   pill itself the same size as the other faces. */
+	.skip-face-hover {
+		width: 104%;
+		height: 120%;
+		inset: -10% 0 auto -2%;
+	}
+	.skip-face-default {
+		opacity: 1;
+	}
+	.skip-story:hover {
+		color: #36f;
+	}
+	.skip-story:hover .skip-face-default {
+		opacity: 0;
+	}
+	.skip-story:hover .skip-face-hover {
+		opacity: 1;
+	}
+	.skip-story:active {
+		color: #fff;
+	}
+	.skip-story:active .skip-face-hover,
+	.skip-story:active .skip-face-default {
+		opacity: 0;
+	}
+	.skip-story:active .skip-face-pressed {
+		opacity: 1;
+	}
+	.skip-label {
+		position: relative;
+	}
+	.skip-icon {
+		position: relative;
+		width: 1.05rem;
+		height: auto;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 3.2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+	:global(.prototype-story:not([data-story-step='0'])) .skip-story {
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
 	}
 	.chapter-nav a {
 		display: flex;
@@ -1093,7 +1298,9 @@
 	.gacha-machine {
 		--gacha-width: min(64vw, 145svh, 112rem);
 		--capsule-size: clamp(4.5rem, 8vw, 8rem);
-		--capsule-travel-x: 0vw;
+		/* The roll carries the capsule from the machine's release hole (17.3% into the artwork)
+		   to the horizontal centre of the viewport: 0.5 − 0.173 of the machine width. */
+		--capsule-travel-x: calc(var(--gacha-width) * 0.327);
 		--capsule-travel-y: -9vh;
 		--capsule-zoom: 1.7;
 		--hero-art-shift: 0px;
@@ -1111,7 +1318,7 @@
 		contain: layout style;
 		isolation: isolate;
 		will-change: transform;
-		transform: translate(18vw, calc(-1vh + var(--machine-exit) * var(--machine-exit-distance)));
+		transform: translateY(calc(-1vh + var(--machine-exit) * var(--machine-exit-distance)));
 	}
 	.gacha-machine > img {
 		position: absolute;
@@ -1135,6 +1342,23 @@
 		width: 100%;
 		height: 100%;
 		object-fit: contain;
+	}
+	/* Anchors below are the 旋鈕本體 bbox within each artwork's viewBox; the dial makes one
+	   decisive turn while the capsule is dispensed (progress 0 → 0.025). */
+	.machine-knob {
+		position: absolute;
+		left: 80.89%;
+		top: 77.22%;
+		width: 9.22%;
+		height: 16.3%;
+		will-change: transform;
+		transform: translateY(var(--hero-art-shift))
+			rotate(calc(clamp(0, calc(var(--story-progress) * 40), 1) * 160deg));
+	}
+	.machine-knob img {
+		display: block;
+		width: 100%;
+		height: 100%;
 	}
 	.gacha-machine > .machine-base,
 	.gacha-machine > .machine-glass,
@@ -1188,18 +1412,6 @@
 				0
 			)
 			scale(calc(0.42 + var(--capsule-emerge) * 0.58 + var(--capsule-roll) * var(--capsule-zoom)));
-	}
-	:global(.prototype-story[data-hero-return='true']) .capsule {
-		opacity: 0;
-	}
-	:global(.prototype-story[data-hero-return='true']) .gacha-machine {
-		--machine-exit: clamp(0, calc((var(--story-progress) - 0.02) * 4.35), 1);
-	}
-	:global(.prototype-story[data-hero-return='true']) .hero-caption {
-		opacity: clamp(0, calc((0.22 - var(--story-progress)) * 6), 1);
-	}
-	:global(.prototype-story[data-hero-return='true']) .hero-scene {
-		opacity: clamp(0, calc((0.25 - var(--story-progress)) * 12), 1);
 	}
 	.capsule-rotor {
 		position: absolute;
@@ -1325,59 +1537,60 @@
 		transform: translateX(calc(14px + var(--capsule-open) * 106px))
 			scale(calc(0.1 + sin(var(--capsule-open) * 3.1416) * 0.85));
 	}
-	.hero-caption {
-		position: absolute;
-		z-index: 10;
-		left: 10vw;
-		right: auto;
-		top: 50%;
-		max-width: min(30rem, 26vw);
-		margin-inline: 0;
-		opacity: clamp(0, calc((0.1 - var(--story-progress)) * 18), 1);
-		text-align: left;
-		--caption-drift: clamp(0, calc(var(--story-progress) * 10), 1);
-		transform: translateY(calc(-50% + var(--caption-drift) * -40vh));
-	}
-	:global(.prototype-story[data-hero-return='true']) .hero-caption {
-		--caption-drift: clamp(0, calc(var(--story-progress) * 4.5), 1);
-	}
-	.hero-caption span {
-		color: #2462ff;
-		font-size: 0.72rem;
-		font-weight: 700;
-		letter-spacing: 0.18em;
-	}
-	.hero-caption h1 {
-		margin: 0.5rem 0;
-		color: #333;
-		font-family: inherit;
-		font-size: clamp(1.8rem, 3.2vw, 3.4rem);
-		font-weight: 650;
-		line-height: 1.13;
-		letter-spacing: -0.04em;
-	}
-	.hero-caption p {
-		margin: 0;
-		color: #6b7280;
-	}
 	.scroll-hint {
+		/* Gone by the time the capsule emerges: fades and drifts upward over the first 4%. */
+		--hint-out: clamp(0, calc(var(--story-progress) * 25), 1);
 		position: absolute;
 		z-index: 10;
-		bottom: clamp(2.75rem, 5vh, 4rem);
+		bottom: calc(clamp(2.75rem, 5vh, 4rem) + var(--hint-out) * 8vh);
 		left: 50%;
 		transform: translateX(-50%);
+		opacity: calc(1 - var(--hint-out));
 		color: #9ca3af;
 		font-size: 0.65rem;
 		letter-spacing: 0.16em;
 		animation: bob 1.8s ease-in-out infinite;
 	}
 	.about-shell {
-		--scene-at: 0.25;
 		grid-template-columns: minmax(0, 0.9fr) minmax(25rem, 1.1fr);
 		gap: clamp(2rem, 6vw, 6rem);
 	}
+	/* Two-stage entrance (#46): the copy drops in first and settles with two shrinking
+	   bounces; only after the reader keeps scrolling does the film rise into place. Before it
+	   lands it must hide via visibility, not a transform — an upward offset would cancel the
+	   scene's own below-viewport enter offset and leak the copy over the hero. */
 	.about-copy {
-		transform: translateX(calc((0.25 - var(--story-progress)) * -80vw));
+		visibility: hidden;
+	}
+	.about-copy.landed {
+		visibility: visible;
+		animation: about-drop 0.95s cubic-bezier(0.22, 0.8, 0.36, 1) forwards;
+	}
+	@keyframes about-drop {
+		0% {
+			transform: translateY(-120vh);
+		}
+		46% {
+			transform: translateY(0);
+		}
+		62% {
+			transform: translateY(-2.2rem);
+		}
+		77% {
+			transform: translateY(0);
+		}
+		88% {
+			transform: translateY(-0.7rem);
+		}
+		100% {
+			transform: translateY(0);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.about-copy {
+			transform: none;
+			animation: none;
+		}
 	}
 	.about-copy h2 {
 		/* Sized so 「我們不只找到問題，」 stays on one line in its column. */
@@ -1417,7 +1630,8 @@
 		box-shadow: 0 2rem 4rem rgba(36, 98, 255, 0.2);
 		overflow: hidden;
 		color: #fff;
-		transform: translateX(calc((0.25 - var(--story-progress)) * 80vw));
+		--film-in: clamp(0, calc((var(--story-progress) - 0.3) * 10), 1);
+		transform: translateY(calc((1 - var(--film-in)) * 95svh));
 	}
 	.team-video {
 		position: absolute;
@@ -1429,9 +1643,16 @@
 		background: #0c47ef;
 	}
 	.product-shell {
-		--scene-at: 0.5;
 		grid-template-columns: minmax(22rem, 0.9fr) minmax(27rem, 1.1fr);
 		gap: clamp(2rem, 6vw, 6rem);
+	}
+	/* Outgoing and incoming copy overlap in the same grid cell while they crossfade. */
+	.product-copy-stack {
+		min-width: 0;
+		display: grid;
+	}
+	.product-copy-stack > .product-copy {
+		grid-area: 1 / 1;
 	}
 	.product-copy {
 		min-width: 0;
@@ -1531,6 +1752,10 @@
 		overflow: hidden;
 		background: #fff;
 	}
+	.device-shot-group {
+		position: absolute;
+		inset: 0;
+	}
 	.device-shot {
 		position: absolute;
 		inset: 0;
@@ -1568,8 +1793,31 @@
 	.device-card > .device-hand-front {
 		z-index: 4;
 		/* The supplied hand leaves a hairline of screen between its thumb/palm join and the
-		   phone's lower-right edge. Pull the foreground hand under the bezel to close that seam. */
-		transform: translateX(-1.15%);
+		   phone's lower-right edge. -1.15% closed that seam;
+		   the extra +0.85% sits the thumb a touch further right per design feedback. */
+		transform: translateX(-0.3%);
+	}
+	/* The thumb mimes the swipe that switches products (#49). */
+	.device-card > .device-hand-front.swipe-up {
+		animation: thumb-swipe-up 0.46s ease;
+	}
+	.device-card > .device-hand-front.swipe-down {
+		animation: thumb-swipe-down 0.46s ease;
+	}
+	@keyframes thumb-swipe-up {
+		40% {
+			transform: translateX(-0.3%) translateY(-1.6%) rotate(-0.6deg);
+		}
+	}
+	@keyframes thumb-swipe-down {
+		40% {
+			transform: translateX(-0.3%) translateY(1.6%) rotate(0.6deg);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.device-card > .device-hand-front {
+			animation: none;
+		}
 	}
 	.device-card > .device-cable {
 		z-index: 5;
@@ -1643,18 +1891,15 @@
 		width: 1.4rem;
 		background: #2462ff;
 	}
+	/* The notebook holds the whole FAQ chapter, centred on the stage (#52). */
 	.faq-shell {
-		--scene-at: 0.75;
-		grid-template-columns: 0.7fr 1.3fr;
-		gap: clamp(2rem, 4vw, 4rem);
-	}
-	.faq-copy {
-		align-self: center;
+		grid-template-columns: minmax(0, 1fr);
+		place-items: center;
 	}
 	.notebook {
 		position: relative;
 		width: min(60vw, 46rem);
-		justify-self: end;
+		justify-self: center;
 	}
 	.notebook-art {
 		width: 100%;
@@ -1739,7 +1984,6 @@
 		}
 	}
 	.join-shell {
-		--scene-at: 1;
 		width: 100%;
 		place-items: center;
 	}
@@ -1819,7 +2063,7 @@
 
 	@media (min-width: 1800px) {
 		.section-shell {
-			width: min(100rem, calc(100% - 12rem));
+			width: min(100rem, calc(100% - 2 * var(--stage-gutter)));
 		}
 		.section-shell h2 {
 			font-size: clamp(3.5rem, 3.2vw, 5rem);
@@ -1832,20 +2076,6 @@
 		}
 		.gacha-machine {
 			--gacha-width: min(64vw, 145svh, 112rem);
-		}
-		.hero-caption {
-			max-width: min(42rem, 26vw);
-		}
-		.hero-caption span {
-			font-size: 0.9rem;
-		}
-		.hero-caption h1 {
-			font-size: clamp(2.8rem, 2.75vw, 4.2rem);
-			line-height: 1.08;
-			padding-bottom: 0.05em;
-		}
-		.hero-caption p {
-			font-size: 1.12rem;
 		}
 		.product-demo {
 			min-height: 44rem;
@@ -1885,53 +2115,46 @@
 		}
 	}
 
-	@media (max-width: 900px) {
-		.prototype-story {
-			height: calc(100svh - 4.75rem);
-			min-height: 35rem;
+	@media (max-width: 1023px) {
+		/* Tablets keep the side nav as dots only (#53). */
+		.story-stage {
+			--stage-gutter: 4.5rem;
 		}
+		.chapter-nav span {
+			display: none;
+		}
+	}
+	@media (max-width: 767px) {
 		.chapter-nav {
 			display: none;
 		}
+		.story-stage {
+			--stage-gutter: 1.125rem;
+		}
+	}
+	@media (max-width: 900px) {
+		.prototype-story {
+			--stage-height: max(calc(100svh - 4.75rem), 35rem);
+		}
 		.section-shell {
-			width: calc(100% - 2.25rem);
+			width: calc(100% - 2 * var(--stage-gutter));
 		}
 		/* The mobile/tablet artwork occupies the lower edge, so keep utility copy out of it. */
 		.scroll-hint {
 			display: none;
 		}
+		/* Top-left on the hero: the skip pill owns the top-right corner. */
 		.story-count.hero-count {
 			top: 0.75rem;
 			bottom: auto;
-		}
-		.hero-caption {
-			left: 1.4rem;
-			right: 1.4rem;
-			top: clamp(8rem, 18svh, 11rem);
-			bottom: auto;
-			text-align: center;
-			max-width: none;
-			/* The machine rises through the caption on phones, so fade it out before they meet. */
-			opacity: clamp(0, calc((0.05 - var(--story-progress)) * 30), 1);
-			--caption-drift: clamp(0, calc(var(--story-progress) * 20), 1);
-			transform: translateY(calc(var(--caption-drift) * -30vh));
-		}
-		/* On phones the caption sits above the machine, so on the return it must wait until the
-		   machine has slid past — keep the forward timing rather than the desktop early fade-in. */
-		:global(.prototype-story[data-hero-return='true']) .hero-caption {
-			opacity: clamp(0, calc((0.05 - var(--story-progress)) * 30), 1);
-			--caption-drift: clamp(0, calc(var(--story-progress) * 20), 1);
-		}
-		.hero-caption h1 {
-			font-size: clamp(1.65rem, 7vw, 2.7rem);
-		}
-		.hero-caption p {
-			font-size: 0.86rem;
+			right: auto;
+			left: 1.3rem;
 		}
 		.gacha-machine {
 			--gacha-width: min(94vw, 44rem);
 			--capsule-size: clamp(4.5rem, 14vw, 6.5rem);
-			--capsule-travel-x: 30vw;
+			/* Release hole sits 18.5% into the mobile artwork. */
+			--capsule-travel-x: calc(var(--gacha-width) * 0.315);
 			--capsule-travel-y: -4svh;
 			--capsule-zoom: 1.65;
 			--hero-art-shift: 0px;
@@ -1939,7 +2162,7 @@
 			aspect-ratio: 1179 / 1050;
 			--machine-exit-distance: -110vh;
 			--capsule-drift: calc(var(--story-progress) * -70vh);
-			transform: translateY(calc(14svh + var(--machine-exit) * var(--machine-exit-distance)));
+			transform: translateY(calc(var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.gacha-device-art {
 			position: absolute;
@@ -1962,16 +2185,20 @@
 			left: 18.5%;
 			top: 80%;
 		}
+		.machine-knob {
+			left: 78.54%;
+			top: 77.71%;
+			width: 15.01%;
+			height: 16.86%;
+		}
 		.about-shell {
 			grid-template-columns: 1fr;
 			grid-template-rows: auto auto;
 			align-content: center;
 			gap: clamp(1.25rem, 2.5svh, 2rem);
-			--shell-shift: 2svh;
 		}
 		.about-copy {
 			text-align: center;
-			transform: none;
 		}
 		.about-copy h2 {
 			font-size: clamp(1.9rem, 7vw, 2.7rem);
@@ -1989,7 +2216,6 @@
 			width: min(92%, 38rem);
 			justify-self: center;
 			border-radius: 1.3rem;
-			transform: none;
 		}
 		.product-shell {
 			grid-template-columns: minmax(0, 1fr);
@@ -2084,20 +2310,6 @@
 			gap: 0.9rem;
 			width: 100%;
 		}
-		.faq-copy {
-			text-align: center;
-			padding-inline: 1.2rem;
-		}
-		.faq-copy h2 {
-			margin: 0.35rem 0;
-			font-size: clamp(1.8rem, 7vw, 2.6rem);
-		}
-		.faq-copy p {
-			margin: 0 auto;
-			max-width: 40rem;
-			font-size: 0.82rem;
-			text-wrap: pretty;
-		}
 		/* Phones: the landscape notebook (1120×880) is turned 90° into a portrait pad with the
 		   spiral on top, which gives the five questions far more room. */
 		.notebook {
@@ -2118,7 +2330,9 @@
 		/* The landscape insets (top 16 / right 11 / bottom 12 / left 18) rotated with the art. */
 		.faq-list {
 			/* Align copy to the actual front sheet, not the transparent/decorative SVG canvas. */
-			inset: 21% 14% 6% 15%;
+			/* Match the phone insets: the looser 14/15% margins let long answers and the +/-
+			   toggles spill past the sheet's grid squares on mid-size tablets (e.g. 853×1280). */
+			inset: 21.5% 18.1% 4% 20%;
 		}
 		/* Type scales with the pad, so a bigger board means bigger text. */
 		.faq-list > strong {
@@ -2171,46 +2385,35 @@
 		}
 	}
 
-	@media (min-width: 431px) and (max-width: 900px) {
-		/* Keep the tablet hero copy above the tall mobile machine artwork. */
-		.hero-caption {
-			top: clamp(5.5rem, 11svh, 7rem);
-		}
-	}
-
 	@media (max-width: 430px) {
 		.prototype-story {
-			min-height: 31rem;
-		}
-		.hero-caption span {
-			font-size: 0.62rem;
-		}
-		.hero-caption h1 {
-			font-size: clamp(1.55rem, 7vw, 2rem);
+			--stage-height: max(calc(100svh - 4.75rem), 31rem);
 		}
 		.gacha-machine {
 			--gacha-width: min(96vw, 26rem);
 			--capsule-size: clamp(4.25rem, 18vw, 5.5rem);
-			--capsule-travel-x: 26vw;
+			/* Release hole sits 22.6% into the compact artwork. */
+			--capsule-travel-x: calc(var(--gacha-width) * 0.274);
 			--capsule-travel-y: -2svh;
 			--capsule-zoom: 1.8;
 			aspect-ratio: 1179 / 1320;
 			/* Leave a dependable text-to-art gutter even when mobile browser chrome reduces the
 			   usable viewport. The lower part of this illustration is intentionally allowed to crop. */
-			transform: translateY(calc(18svh + var(--machine-exit) * var(--machine-exit-distance)));
+			transform: translateY(calc(var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.capsule {
 			left: 22.6%;
 			top: 80%;
 		}
-		.hero-caption {
-			top: clamp(5.5rem, 14svh, 7rem);
-			bottom: auto;
+		.machine-knob {
+			left: 74.55%;
+			top: 77.05%;
+			width: 19.51%;
+			height: 17.42%;
 		}
 		.about-shell {
 			gap: 0.75rem;
 			/* Keep the title-to-film group centred as one unit in the usable stage. */
-			--shell-shift: 0px;
 		}
 		.about-copy h2 {
 			font-size: 1.85rem;
@@ -2245,13 +2448,9 @@
 		.arrow.next {
 			right: 4%;
 		}
-		.faq-copy p {
-			font-size: 0.78rem;
-		}
 		.faq-shell {
 			--mobile-board-size: min(110vw, 34rem, calc((100svh - 10rem) * 0.7857));
 			--pad-width: var(--mobile-board-size);
-			--shell-shift: 0px;
 			gap: 0.55rem;
 		}
 		.join-shell {
@@ -2305,23 +2504,7 @@
 		}
 		.gacha-machine {
 			--gacha-width: min(90vw, 22rem);
-			transform: translateY(calc(10svh + var(--machine-exit) * var(--machine-exit-distance)));
-		}
-		.hero-caption {
-			top: 4rem;
-			bottom: auto;
-		}
-		.hero-caption span {
-			font-size: 0.56rem;
-		}
-		.hero-caption h1 {
-			font-size: 1.35rem;
-		}
-		.hero-caption p {
-			display: none;
-		}
-		.about-shell {
-			--shell-shift: 0px;
+			transform: translateY(calc(var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.faq-shell,
 		.join-shell {
@@ -2329,17 +2512,6 @@
 		}
 		.faq-shell {
 			--pad-width: var(--mobile-board-size);
-		}
-		.faq-copy .eyebrow {
-			display: none;
-		}
-		.faq-copy h2 {
-			margin-block: 0;
-			font-size: 1.2rem;
-			line-height: 1.08;
-		}
-		.faq-copy p {
-			display: none;
 		}
 		.join-board {
 			width: var(--mobile-board-size);
@@ -2360,9 +2532,6 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.story-scene {
-			transition: none;
-		}
 		.scroll-hint {
 			animation: none;
 		}

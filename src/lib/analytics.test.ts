@@ -23,7 +23,7 @@ describe('getPageViewPath', () => {
 describe('getJoinFormClickParams', () => {
 	it('records the recruitment destination, CTA source, and active locale', () => {
 		const linkUrl =
-			'https://docs.google.com/forms/d/e/1FAIpQLScCEb5rf9pGfClM68q6TjgpP_EAqatZo4MLwPoMTpqRfmq9Qg/viewform';
+			'https://docs.google.com/forms/d/e/1FAIpQLSfEOQ-o2sbD5PpPcW0k1lGrDjgu2b34TfkH46-G4oneMFNlBQ/viewform';
 
 		expect(getJoinFormClickParams('home_story', linkUrl, 'zh-tw')).toEqual({
 			link_url: linkUrl,
