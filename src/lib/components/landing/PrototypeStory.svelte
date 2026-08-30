@@ -773,7 +773,6 @@
 						onload={onAboutFilmLoad}
 						allowfullscreen
 					></iframe>
-					<span>{m.story_about_film()}</span>
 				</div>
 			</div>
 		</section>
@@ -1618,17 +1617,6 @@
 		border: 0;
 		object-fit: cover;
 		background: #0c47ef;
-	}
-	.team-film span {
-		position: absolute;
-		left: 1.4rem;
-		top: 1.1rem;
-		padding: 0.3rem 0.6rem;
-		border-radius: 999px;
-		background: rgba(12, 71, 239, 0.75);
-		font-size: 0.68rem;
-		letter-spacing: 0.13em;
-		pointer-events: none;
 	}
 	.product-shell {
 		grid-template-columns: minmax(22rem, 0.9fr) minmax(27rem, 1.1fr);
