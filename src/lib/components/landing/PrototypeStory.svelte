@@ -500,8 +500,18 @@
 			onclick={() => {
 				history.replaceState(null, '', '#about');
 				goToChapter('about');
-			}}>{m.story_skip()} ↓</button
+			}}
 		>
+			<img class="skip-face skip-face-default" src="{base}/ui/skip-default.svg" alt="" />
+			<img class="skip-face skip-face-hover" src="{base}/ui/skip-hover.svg" alt="" />
+			<img class="skip-face skip-face-pressed" src="{base}/ui/skip-pressed.svg" alt="" />
+			<span class="skip-label">{m.story_skip()}</span>
+			<svg class="skip-icon" viewBox="0 0 40 28" aria-hidden="true">
+				<polygon points="3,3 3,25 14,14" />
+				<polygon points="19,3 19,25 30,14" />
+				<line x1="36" y1="3" x2="36" y2="25" />
+			</svg>
+		</button>
 
 		<section id="hero" class="story-scene hero-scene" class:scene-active={sceneVisible[0]}>
 			<div class="hero-orbit" aria-hidden="true"></div>
@@ -1153,41 +1163,86 @@
 		transform: translateY(-50%) translateX(-0.6rem);
 		pointer-events: none;
 	}
+	/* The designer's cloud pill (static/ui/skip-*.svg). All three faces are stacked and kept
+	   loaded so hover/press swaps never flicker; the label stays live text for i18n. */
 	.skip-story {
 		position: absolute;
 		z-index: 40;
-		top: 1.1rem;
+		top: 1rem;
 		right: 1.3rem;
-		padding: 0.6rem 1.1rem;
-		border: 1px solid #d5deef;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.88);
-		color: #4b5563;
-		font-size: 0.74rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		width: 9.25rem;
+		height: 3.5rem;
+		padding: 0 0.75rem;
+		border: 0;
+		background: none;
+		color: #1b2030;
+		font-size: 0.86rem;
 		font-weight: 650;
-		letter-spacing: 0.08em;
+		letter-spacing: 0.05em;
 		cursor: pointer;
-		backdrop-filter: blur(6px);
-		box-shadow: 0 0.5rem 1.5rem rgba(26, 55, 103, 0.08);
 		transition:
 			opacity 0.3s ease,
-			visibility 0.3s,
-			transform 0.2s ease;
+			visibility 0.3s;
+	}
+	.skip-face {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		opacity: 0;
+		pointer-events: none;
+	}
+	/* The hover face carries a soft halo beyond the pill, so it renders oversized to keep the
+	   pill itself the same size as the other faces. */
+	.skip-face-hover {
+		width: 104%;
+		height: 120%;
+		inset: -10% 0 auto -2%;
+	}
+	.skip-face-default {
+		opacity: 1;
 	}
 	.skip-story:hover {
-		transform: translateY(-1px);
-		color: #2462ff;
-		border-color: #ccdbff;
+		color: #36f;
+	}
+	.skip-story:hover .skip-face-default {
+		opacity: 0;
+	}
+	.skip-story:hover .skip-face-hover {
+		opacity: 1;
+	}
+	.skip-story:active {
+		color: #fff;
+	}
+	.skip-story:active .skip-face-hover,
+	.skip-story:active .skip-face-default {
+		opacity: 0;
+	}
+	.skip-story:active .skip-face-pressed {
+		opacity: 1;
+	}
+	.skip-label {
+		position: relative;
+	}
+	.skip-icon {
+		position: relative;
+		width: 1.05rem;
+		height: auto;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 3.2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
 	}
 	:global(.prototype-story:not([data-story-step='0'])) .skip-story {
 		opacity: 0;
 		visibility: hidden;
 		pointer-events: none;
-	}
-	:global(:root[data-theme='dark']) .skip-story {
-		border-color: #36517c;
-		background: rgba(19, 33, 58, 0.82);
-		color: #c8d4e5;
 	}
 	.chapter-nav a {
 		display: flex;

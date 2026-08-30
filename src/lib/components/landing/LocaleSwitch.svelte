@@ -1,12 +1,25 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { getTextDirection } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import { localeState } from '$lib/i18n.svelte';
 
-	let { tone = 'glass', compact = false }: { tone?: 'glass' | 'menu'; compact?: boolean } =
-		$props();
-
 	let current = $derived(localeState.current);
+	let hovered: 'zh-tw' | 'en' | null = $state(null);
+
+	/* The designer's paired speech bubbles (static/ui/locale-*.svg): the active language fills
+	   blue; hovering the other language previews it in light blue. All four faces stay mounted
+	   so swaps never flicker. */
+	let face = $derived(
+		hovered === 'zh-tw' && current !== 'zh-tw'
+			? 'locale-zh-hover'
+			: hovered === 'en' && current !== 'en'
+				? 'locale-en-hover'
+				: current === 'zh-tw'
+					? 'locale-zh'
+					: 'locale-en'
+	);
+	const faces = ['locale-zh', 'locale-zh-hover', 'locale-en', 'locale-en-hover'] as const;
 	const options = [
 		{ code: 'zh-tw' as const, short: m.nav_locale_zh },
 		{ code: 'en' as const, short: m.nav_locale_en }
@@ -19,76 +32,80 @@
 	});
 </script>
 
-<div class="locale" class:menu={tone === 'menu'} role="group" aria-label={m.nav_locale()}>
-	{#if compact}
+<div class="locale" role="group" aria-label={m.nav_locale()}>
+	{#each faces as name (name)}
+		<img class="locale-face" class:active={face === name} src="{base}/ui/{name}.svg" alt="" />
+	{/each}
+	{#each options as option (option.code)}
 		<button
 			type="button"
-			class="locale-btn locale-compact"
-			aria-label={m.nav_locale()}
+			class="locale-hit"
+			class:hit-zh={option.code === 'zh-tw'}
+			class:hit-en={option.code === 'en'}
+			aria-pressed={option.code === current}
 			onclick={() => {
-				localeState.set(current === 'zh-tw' ? 'en' : 'zh-tw');
+				localeState.set(option.code);
 			}}
+			onmouseenter={() => (hovered = option.code)}
+			onmouseleave={() => (hovered = null)}
+			onfocus={() => (hovered = option.code)}
+			onblur={() => (hovered = null)}
 		>
-			文A
+			<span class="sr-only">{option.short()}</span>
 		</button>
-	{:else}
-		{#each options as option (option.code)}
-			<button
-				type="button"
-				class="locale-btn"
-				class:active={option.code === current}
-				aria-pressed={option.code === current}
-				onclick={() => {
-					localeState.set(option.code);
-				}}
-			>
-				{option.short()}
-			</button>
-		{/each}
-	{/if}
+	{/each}
 </div>
 
 <style>
 	.locale {
-		display: inline-flex;
-		gap: 0.15rem;
-		padding: 0.2rem;
-		border-radius: 999px;
-		border: 1px solid var(--line);
-		background: var(--glass);
-		backdrop-filter: var(--blur-soft);
-		-webkit-backdrop-filter: var(--blur-soft);
+		position: relative;
+		width: 4.6rem;
+		height: 2.75rem;
+		flex: 0 0 auto;
 	}
-	.locale.menu {
-		border-color: rgba(255, 255, 255, 0.22);
-		background: rgba(255, 255, 255, 0.08);
+	.locale-face {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		opacity: 0;
+		pointer-events: none;
 	}
-	.locale-btn {
-		min-width: 2rem;
-		border-radius: 999px;
-		padding: 0.3rem 0.6rem;
-		font-size: 0.8rem;
-		font-weight: 700;
-		color: var(--muted);
-		cursor: pointer;
-		transition:
-			background-color 0.2s ease,
-			color 0.2s ease;
+	.locale-face.active {
+		opacity: 1;
 	}
-	.locale.menu .locale-btn {
-		color: rgba(255, 255, 255, 0.7);
-	}
-	.locale-btn.active {
-		background: var(--accent-grad);
-		color: #fff;
-	}
-	.locale-compact {
-		width: 2.5rem;
-		height: 2.5rem;
+	.locale-hit {
+		position: absolute;
+		top: 0;
+		height: 100%;
 		padding: 0;
-		border-radius: 50%;
-		background: var(--surface);
-		color: var(--ink);
-		font-size: 0.85rem;
+		border: 0;
+		background: none;
+		cursor: pointer;
+	}
+	.locale-hit.hit-zh {
+		left: 0;
+		width: 52%;
+	}
+	.locale-hit.hit-en {
+		right: 0;
+		width: 48%;
+	}
+	.locale-hit:focus-visible {
+		outline: 2px solid #36f;
+		outline-offset: 2px;
+		border-radius: 999px;
+	}
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		border: 0;
+		clip-path: inset(50%);
+		overflow: hidden;
+		white-space: nowrap;
 	}
 </style>
