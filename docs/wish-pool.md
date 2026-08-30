@@ -49,6 +49,14 @@ The admin endpoints are intentionally not linked from the public site. Retrieve
 the admin token through the cluster's normal secret-access process, then use it
 only over HTTPS.
 
+The same API has an unlisted browser workspace at `/wishpool/admin/`. An
+operator pastes `WISH_ADMIN_TOKEN` into the connection form, then can review
+pending, published, and hidden wishes and change their visibility. The token is
+kept only in the mounted page component's memory: it is not written to a URL,
+`localStorage`, or `sessionStorage`, and reloading, closing, or disconnecting
+clears it. The route's `noindex` directive is for discoverability only; the API
+token remains the actual authorization boundary.
+
 ```sh
 curl -H "Authorization: Bearer $WISH_ADMIN_TOKEN" \
   'https://landing.dev.nycu.one/api/wishes/admin?visibility=pending'
