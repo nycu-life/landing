@@ -29,7 +29,7 @@
 	const lastStepIndex = storySteps.length - 1;
 	const heroReturnDuration = 1100;
 	const aboutFilmEmbedUrl =
-		'https://www.youtube-nocookie.com/embed/RrwKfb4BUaU?autoplay=0&mute=1&loop=1&playlist=RrwKfb4BUaU&playsinline=1&rel=0&enablejsapi=1';
+		'https://www.youtube-nocookie.com/embed/WbndciSLhD8?autoplay=0&mute=1&loop=1&playlist=WbndciSLhD8&playsinline=1&rel=0&enablejsapi=1';
 
 	let storyEl: HTMLElement;
 	let aboutFilmFrame: HTMLIFrameElement;
