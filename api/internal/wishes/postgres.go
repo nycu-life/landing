@@ -32,8 +32,8 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 
 func (s *PostgresStore) List(ctx context.Context, actorHash []byte, limit int) ([]Wish, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT w.id::text, w.title, w.detail, w.category, w.status, w.visibility,
-		       w.team_response, w.created_at, w.updated_at,
+		SELECT w.id::text, w.title, w.detail, w.category, w.visibility,
+		       w.created_at, w.updated_at,
 		       (SELECT count(*) FROM wish_supports s WHERE s.wish_id = w.id)::int,
 		       EXISTS(SELECT 1 FROM wish_supports s WHERE s.wish_id = w.id AND s.actor_hash = $1)
 		FROM wishes w
@@ -69,12 +69,12 @@ func (s *PostgresStore) Create(ctx context.Context, input CreateInput) (Wish, er
 	err = tx.QueryRow(ctx, `
 		INSERT INTO wishes (id, title, detail, category, visibility, actor_hash)
 		VALUES ($1::uuid, $2, $3, $4, $5, $6)
-		RETURNING id::text, title, detail, category, status, visibility,
-		          team_response, created_at, updated_at`,
+		RETURNING id::text, title, detail, category, visibility,
+		          created_at, updated_at`,
 		input.ID, input.Title, input.Detail, input.Category, input.Visibility, input.ActorHash,
 	).Scan(
-		&wish.ID, &wish.Title, &wish.Detail, &wish.Category, &wish.Status, &wish.Visibility,
-		&wish.TeamResponse, &wish.CreatedAt, &wish.UpdatedAt,
+		&wish.ID, &wish.Title, &wish.Detail, &wish.Category, &wish.Visibility,
+		&wish.CreatedAt, &wish.UpdatedAt,
 	)
 	if err != nil {
 		return Wish{}, err
@@ -137,45 +137,10 @@ func (s *PostgresStore) ToggleSupport(ctx context.Context, id string, actorHash 
 	return result, nil
 }
 
-func (s *PostgresStore) Report(ctx context.Context, id string, actorHash []byte, reason string) error {
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-
-	command, err := tx.Exec(ctx, `
-		INSERT INTO wish_reports (wish_id, actor_hash, reason)
-		SELECT id, $2, $3 FROM wishes WHERE id = $1::uuid AND visibility = 'published'
-		ON CONFLICT (wish_id, actor_hash) DO NOTHING`, id, actorHash, reason)
-	if err != nil {
-		return err
-	}
-	if command.RowsAffected() == 0 {
-		var exists bool
-		if err := tx.QueryRow(ctx,
-			`SELECT EXISTS(SELECT 1 FROM wishes WHERE id = $1::uuid AND visibility = 'published')`, id,
-		).Scan(&exists); err != nil {
-			return err
-		}
-		if !exists {
-			return ErrNotFound
-		}
-	}
-	if _, err := tx.Exec(ctx, `
-		UPDATE wishes SET visibility = 'hidden', updated_at = now()
-		WHERE id = $1::uuid AND (
-			SELECT count(*) FROM wish_reports WHERE wish_id = $1::uuid
-		) >= 3`, id); err != nil {
-		return err
-	}
-	return tx.Commit(ctx)
-}
-
 func (s *PostgresStore) AdminList(ctx context.Context, visibility Visibility, limit int) ([]Wish, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT w.id::text, w.title, w.detail, w.category, w.status, w.visibility,
-		       w.team_response, w.created_at, w.updated_at,
+		SELECT w.id::text, w.title, w.detail, w.category, w.visibility,
+		       w.created_at, w.updated_at,
 		       (SELECT count(*) FROM wish_supports s WHERE s.wish_id = w.id)::int,
 		       false
 		FROM wishes w
@@ -190,33 +155,22 @@ func (s *PostgresStore) AdminList(ctx context.Context, visibility Visibility, li
 }
 
 func (s *PostgresStore) AdminUpdate(ctx context.Context, id string, input UpdateInput) (Wish, error) {
-	var status any
-	if input.Status != nil {
-		status = *input.Status
-	}
 	var visibility any
 	if input.Visibility != nil {
 		visibility = *input.Visibility
 	}
-	var teamResponse any
-	if input.TeamResponse != nil {
-		teamResponse = *input.TeamResponse
-	}
-
 	var wish Wish
 	err := s.pool.QueryRow(ctx, `
 		UPDATE wishes SET
-			status = COALESCE($2::text, status),
-			visibility = COALESCE($3::text, visibility),
-			team_response = COALESCE($4::text, team_response),
+			visibility = COALESCE($2::text, visibility),
 			updated_at = now()
 		WHERE id = $1::uuid
-		RETURNING id::text, title, detail, category, status, visibility,
-		          team_response, created_at, updated_at,
+		RETURNING id::text, title, detail, category, visibility,
+		          created_at, updated_at,
 		          (SELECT count(*) FROM wish_supports s WHERE s.wish_id = wishes.id)::int,
-		          false`, id, status, visibility, teamResponse).Scan(
-		&wish.ID, &wish.Title, &wish.Detail, &wish.Category, &wish.Status, &wish.Visibility,
-		&wish.TeamResponse, &wish.CreatedAt, &wish.UpdatedAt, &wish.SupportCount, &wish.SupportedByMe,
+		          false`, id, visibility).Scan(
+		&wish.ID, &wish.Title, &wish.Detail, &wish.Category, &wish.Visibility,
+		&wish.CreatedAt, &wish.UpdatedAt, &wish.SupportCount, &wish.SupportedByMe,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Wish{}, ErrNotFound
@@ -237,8 +191,8 @@ type rowsScanner interface {
 func scanWish(row rowScanner) (Wish, error) {
 	var wish Wish
 	err := row.Scan(
-		&wish.ID, &wish.Title, &wish.Detail, &wish.Category, &wish.Status, &wish.Visibility,
-		&wish.TeamResponse, &wish.CreatedAt, &wish.UpdatedAt, &wish.SupportCount, &wish.SupportedByMe,
+		&wish.ID, &wish.Title, &wish.Detail, &wish.Category, &wish.Visibility,
+		&wish.CreatedAt, &wish.UpdatedAt, &wish.SupportCount, &wish.SupportedByMe,
 	)
 	return wish, err
 }

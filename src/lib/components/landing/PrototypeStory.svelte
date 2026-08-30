@@ -62,13 +62,15 @@
 	const touchThreshold = 28;
 	const productStepMs = 460;
 	const aboutFilmEmbedUrl =
-		'https://www.youtube-nocookie.com/embed/RrwKfb4BUaU?autoplay=0&mute=0&loop=1&playlist=RrwKfb4BUaU&playsinline=1&rel=0&enablejsapi=1';
+		'https://www.youtube-nocookie.com/embed/WbndciSLhD8?autoplay=0&mute=1&loop=1&playlist=WbndciSLhD8&playsinline=1&rel=0&enablejsapi=1';
 
 	let storyEl: HTMLElement;
 	let stageEl: HTMLElement;
 	let aboutFilmFrame: HTMLIFrameElement;
 	let aboutFilmLoaded = false;
-	let aboutFilmShouldPlay = false;
+	let aboutFilmShouldPlay = $state(false);
+	let aboutFilmAudioUnlocked = false;
+	let aboutFilmRetryTimers: ReturnType<typeof setTimeout>[] = [];
 	let progressValue = 0;
 	let chapterIndex = $state(0);
 	let sceneVisible = $state([true, false, false, false, false]);
@@ -157,12 +159,35 @@
 			'https://www.youtube-nocookie.com'
 		);
 	};
-	const syncAboutFilmPlayback = () => {
-		if (!aboutFilmLoaded) return;
-		if (aboutFilmShouldPlay) {
+	const clearAboutFilmRetries = () => {
+		for (const timer of aboutFilmRetryTimers) clearTimeout(timer);
+		aboutFilmRetryTimers = [];
+	};
+	const playAboutFilm = () => {
+		if (aboutFilmAudioUnlocked) {
 			sendAboutFilmCommand('unMute');
 			sendAboutFilmCommand('setVolume', [100]);
-			sendAboutFilmCommand('playVideo');
+		} else sendAboutFilmCommand('mute');
+		sendAboutFilmCommand('playVideo');
+	};
+	const unlockAboutFilmAudio = () => {
+		aboutFilmAudioUnlocked = true;
+		if (aboutFilmShouldPlay) playAboutFilm();
+	};
+	const syncAboutFilmPlayback = () => {
+		clearAboutFilmRetries();
+		if (!aboutFilmLoaded) return;
+		if (aboutFilmShouldPlay) {
+			for (const delay of [0, 120, 350, 700, 1200, 2000, 3500, 5000]) {
+				if (delay === 0) playAboutFilm();
+				else {
+					aboutFilmRetryTimers.push(
+						setTimeout(() => {
+							if (aboutFilmShouldPlay) playAboutFilm();
+						}, delay)
+					);
+				}
+			}
 			return;
 		}
 		sendAboutFilmCommand('pauseVideo');
@@ -403,6 +428,9 @@
 		window.addEventListener('touchcancel', onTouchEnd, { passive: true });
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('hashchange', onHashChange);
+		window.addEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
+		window.addEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
+		window.addEventListener('keydown', unlockAboutFilmAudio, { capture: true });
 		motionQuery.addEventListener('change', updateMotionPreference);
 		if (window.location.hash) onHashChange();
 		else onScroll();
@@ -418,6 +446,10 @@
 			window.removeEventListener('touchcancel', onTouchEnd);
 			window.removeEventListener('keydown', onKeyDown);
 			window.removeEventListener('hashchange', onHashChange);
+			window.removeEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
+			window.removeEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
+			window.removeEventListener('keydown', unlockAboutFilmAudio, { capture: true });
+			clearAboutFilmRetries();
 			motionQuery.removeEventListener('change', updateMotionPreference);
 			if (wheelResetTimer) clearTimeout(wheelResetTimer);
 			if (stepTimer) clearTimeout(stepTimer);
@@ -434,6 +466,7 @@
 	data-story-step-name={chapters[chapterIndex].id}
 	data-story-animating={productStepping}
 	data-story-ready={storyReady ? 'true' : 'false'}
+	data-about-film-should-play={aboutFilmShouldPlay ? 'true' : 'false'}
 	data-reduced-motion={reducedMotion ? 'true' : 'false'}
 >
 	<div class="story-stage" bind:this={stageEl}>

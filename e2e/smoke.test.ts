@@ -133,198 +133,36 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(page.locator('a[href="https://www.youtube.com/@NYCU_LIFE"]').first()).toHaveText(
 		'YouTube'
 	);
+	await expect(page.locator('#wishes').getByRole('link')).toHaveAttribute('href', '/wishpool/');
+	await expect(page.locator('.footer-contact a[href="/wishpool/"]')).toBeAttached();
+	const wishPoolNavigation = page.locator('.topbar-nav a[href="/wishpool/"]');
+	await expect(wishPoolNavigation).toBeVisible();
+	await expect(wishPoolNavigation).toHaveText('許願池');
 });
 
-test('wish pool publishes, filters, opens progress, supports, and reports wishes', async ({
-	page
-}) => {
-	const seedWish = {
-		id: 'wish-gym',
-		title: '想知道健身房現在有多少人',
-		detail: '出發前就能判斷要不要換個時段。',
-		category: 'life',
-		status: 'picked',
-		teamResponse: '正在確認場館是否有可使用的人流資料。',
-		supportCount: 42,
-		supportedByMe: false,
-		createdAt: '2026-08-29T10:00:00Z'
-	};
-	let supportCount = seedWish.supportCount;
-	let reportReceived = false;
+test('phone header provides a direct wish pool button', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/');
+	const button = page.locator('.mobile-wish-link');
+	await expect(button).toBeVisible();
+	await expect(button).toHaveText(/許願池/);
+	await expect(button).toHaveAttribute('href', '/wishpool/');
+	const headerOverflow = await page
+		.locator('.topbar')
+		.evaluate((element) => element.scrollWidth - element.clientWidth);
+	expect(headerOverflow).toBe(0);
+});
 
-	await page.route('**/api/wishes**', async (route) => {
-		const request = route.request();
-		const url = new URL(request.url());
-		if (request.method() === 'GET' && url.pathname === '/api/wishes') {
-			await route.fulfill({ json: { data: [seedWish] } });
-			return;
-		}
-		if (request.method() === 'POST' && url.pathname === '/api/wishes') {
-			await route.fulfill({
-				status: 201,
-				json: {
-					data: {
-						...seedWish,
-						id: 'wish-new',
-						title: '希望圖書館座位更好找',
-						category: 'learning',
-						status: 'new',
-						teamResponse: '',
-						supportCount: 1,
-						supportedByMe: true
-					},
-					meta: { pending: false }
-				}
-			});
-			return;
-		}
-		if (url.pathname.endsWith('/support')) {
-			supportCount += 1;
-			await route.fulfill({ json: { data: { supported: true, supportCount } } });
-			return;
-		}
-		if (url.pathname.endsWith('/report')) {
-			reportReceived = true;
-			await route.fulfill({ json: { data: { reported: true } } });
-			return;
-		}
-		await route.abort();
+test('English desktop header uses the compact FAQ label', async ({ page }) => {
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await page.goto('/');
+	await page.evaluate(() => {
+		document.cookie = 'PARAGLIDE_LOCALE=en; path=/';
 	});
-
-	await page.goto('/#wishes');
-	const pool = page.locator('#wishes');
-	await expect(pool.getByText(seedWish.title)).toBeVisible();
-
-	await pool.getByPlaceholder('例如：想知道健身房現在有多少人').fill('希望圖書館座位更好找');
-	await pool.locator('select').selectOption('learning');
-	await pool.getByRole('button', { name: /投進池裡/ }).click();
-	await expect(pool.getByText('願望已經落進池裡')).toBeVisible();
-	await expect(pool.getByText('希望圖書館座位更好找')).toBeVisible();
-
-	await pool.getByRole('button', { name: '生活' }).click();
-	await expect(pool.getByText('希望圖書館座位更好找')).toHaveCount(0);
-	await pool.getByText(seedWish.title).click();
-	const dialog = page.getByRole('dialog');
-	await expect(dialog).toBeVisible();
-	await expect(dialog).toContainText(seedWish.teamResponse);
-	await dialog.getByRole('button', { name: /我也想要/ }).click();
-	await expect(dialog.getByRole('button', { name: /我也想要/ })).toContainText('43');
-	await dialog.getByRole('button', { name: '回報不適當內容' }).click();
-	await dialog.getByRole('button', { name: '垃圾或重複內容' }).click();
-	await expect.poll(() => reportReceived).toBe(true);
-	await expect(dialog).toBeHidden();
-});
-
-test('wish pool stays readable in the 12 locale, appearance, and viewport states', async ({
-	page
-}) => {
-	test.slow();
-	const wishes = [
-		{
-			id: 'visual-gym',
-			title: '想知道健身房現在有多少人',
-			detail: '出發前就能判斷要不要換個時段。',
-			category: 'life',
-			status: 'picked',
-			teamResponse: '正在確認場館是否有可使用的人流資料。',
-			supportCount: 42,
-			supportedByMe: false,
-			createdAt: '2026-08-29T10:00:00Z'
-		},
-		{
-			id: 'visual-bus',
-			title: '希望校車能顯示即時擁擠度',
-			detail: '',
-			category: 'transport',
-			status: 'new',
-			teamResponse: '',
-			supportCount: 31,
-			supportedByMe: false,
-			createdAt: '2026-08-28T08:30:00Z'
-		},
-		{
-			id: 'visual-study',
-			title: '想找有插座的自習空間',
-			detail: '希望地圖上也能標示開放時間。',
-			category: 'learning',
-			status: 'building',
-			teamResponse: '校園地圖團隊已開始整理空間資料。',
-			supportCount: 18,
-			supportedByMe: false,
-			createdAt: '2026-08-27T15:20:00Z'
-		},
-		{
-			id: 'visual-lost',
-			title: '希望失物招領資訊可以整合',
-			detail: '',
-			category: 'life',
-			status: 'fulfilled',
-			teamResponse: '第一版已經上線。',
-			supportCount: 55,
-			supportedByMe: true,
-			createdAt: '2026-08-24T03:40:00Z'
-		}
-	];
-	await page.route('**/api/wishes**', (route) => route.fulfill({ json: { data: wishes } }));
-
-	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
-	for (const viewport of [
-		{ name: 'desktop', width: 1440, height: 900 },
-		{ name: 'tablet', width: 768, height: 1024 },
-		{ name: 'phone', width: 390, height: 844 }
-	]) {
-		await page.setViewportSize(viewport);
-		for (const locale of ['zh-tw', 'en'] as const) {
-			for (const theme of ['light', 'dark'] as const) {
-				await page.goto('/#wishes');
-				await page.evaluate(
-					({ locale, theme }) => {
-						document.cookie = `PARAGLIDE_LOCALE=${locale}; path=/`;
-						localStorage.setItem('nycu-life-theme', theme);
-					},
-					{ locale, theme }
-				);
-				await page.reload();
-				const pool = page.locator('#wishes');
-				await pool.evaluate((element) => element.scrollIntoView({ block: 'start' }));
-				await expect(pool.getByText(wishes[0].title)).toBeVisible();
-				const result = await pool.evaluate((element) => {
-					const bounds = element.getBoundingClientRect();
-					const heading = element.querySelector('h2')?.getBoundingClientRect();
-					const banner = document.querySelector('header')?.getBoundingClientRect();
-					const outside = Array.from(
-						element.querySelectorAll<HTMLElement>('.wish-heading, .wish-composer, .wish-water')
-					).filter((child) => {
-						const rect = child.getBoundingClientRect();
-						return rect.left < bounds.left - 2 || rect.right > bounds.right + 2;
-					}).length;
-					const clippedCards = Array.from(
-						element.querySelectorAll<HTMLElement>('.wish-card')
-					).filter(
-						(card) =>
-							card.scrollWidth > card.clientWidth + 2 || card.scrollHeight > card.clientHeight + 2
-					).length;
-					return {
-						outside,
-						clippedCards,
-						headingObscured: Boolean(heading && banner && heading.top < banner.bottom - 2),
-						overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
-					};
-				});
-				const label = `${viewport.name}/${locale}/${theme}`;
-				expect.soft(result.outside, `${label}: section bounds`).toBe(0);
-				expect.soft(result.clippedCards, `${label}: clipped cards`).toBe(0);
-				expect.soft(result.headingObscured, `${label}: sticky header overlap`).toBe(false);
-				expect.soft(result.overflow, `${label}: horizontal overflow`).toBe(0);
-				if (screenshotDirectory) {
-					await pool.screenshot({
-						path: `${screenshotDirectory}/wish-pool-${viewport.name}-${locale}-${theme}.png`,
-						animations: 'disabled'
-					});
-				}
-			}
-		}
-	}
+	await page.reload();
+	const faqLink = page.locator('.topbar-nav a[href="/#faq"]');
+	await expect(faqLink).toBeVisible();
+	await expect(faqLink).toHaveText('FAQ');
 });
 
 test('FAQ introduces NYCU LIFE without framing it as an official university system', async ({
@@ -346,13 +184,13 @@ test('FAQ introduces NYCU LIFE without framing it as an official university syst
 	await expect(page.locator('.faq-item button').first()).toContainText('What is NYCU LIFE?');
 });
 
-test('about keeps and resumes the unmuted published YouTube player', async ({ page }) => {
+test('about keeps and resumes the published YouTube player', async ({ page }) => {
 	await page.goto('/?motion=on#hero');
 	const player = page.locator('.team-film iframe');
 	await expect(player).toHaveCount(1);
 	await expect(player).toHaveAttribute(
 		'src',
-		/^https:\/\/www\.youtube-nocookie\.com\/embed\/RrwKfb4BUaU\?.*autoplay=0.*mute=0/
+		/^https:\/\/www\.youtube-nocookie\.com\/embed\/WbndciSLhD8\?.*autoplay=0.*mute=1/
 	);
 	await expect(player).toHaveAttribute('allow', /autoplay/);
 	await expect(page.locator('.team-film video')).toHaveCount(0);
@@ -377,6 +215,17 @@ test('about keeps and resumes the unmuted published YouTube player', async ({ pa
 			(iframe) => (window as Window & { __aboutFilmFrame?: Element }).__aboutFilmFrame === iframe
 		)
 	).toBe(true);
+});
+
+
+test('about film playback follows the scrubbed reveal window', async ({ page }) => {
+	await page.goto('/?motion=on');
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'false');
+	await scrollToProgress(page, 0.41);
+	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'true');
+	await scrollToProgress(page, 0.54);
+	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'false');
 });
 
 test('hero uses the designer art direction for desktop, phone, and tablet', async ({ page }) => {
@@ -548,8 +397,7 @@ test('the product stepper locks the page and steps one product per flick', async
 	await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(lockedY);
 });
 
-test('the story hands off to normal page scrolling after the final chapter', async ({ page }) => {
-	await page.goto('/?motion=on#join');
+test('the story hands off to normal page scrolling after the final chapter', async ({ page }) => {	await page.goto('/?motion=on#join');
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
 	await page.mouse.move(640, 400);
 	for (let i = 0; i < 20; i += 1) await page.mouse.wheel(0, 400);
@@ -863,6 +711,7 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 				await page.reload();
 				await expect(page.locator('html')).toHaveAttribute('lang', locale);
 				await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+				await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
 
 				for (const chapter of chapters) {
 					await page.evaluate((nextChapter) => {

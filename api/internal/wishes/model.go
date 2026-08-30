@@ -21,25 +21,6 @@ func (c Category) Valid() bool {
 	}
 }
 
-type Status string
-
-const (
-	StatusNew       Status = "new"
-	StatusPicked    Status = "picked"
-	StatusBuilding  Status = "building"
-	StatusFulfilled Status = "fulfilled"
-	StatusDeclined  Status = "declined"
-)
-
-func (s Status) Valid() bool {
-	switch s {
-	case StatusNew, StatusPicked, StatusBuilding, StatusFulfilled, StatusDeclined:
-		return true
-	default:
-		return false
-	}
-}
-
 type Visibility string
 
 const (
@@ -62,9 +43,7 @@ type Wish struct {
 	Title         string     `json:"title"`
 	Detail        string     `json:"detail"`
 	Category      Category   `json:"category"`
-	Status        Status     `json:"status"`
 	Visibility    Visibility `json:"-"`
-	TeamResponse  string     `json:"teamResponse"`
 	SupportCount  int        `json:"supportCount"`
 	SupportedByMe bool       `json:"supportedByMe"`
 	CreatedAt     time.Time  `json:"createdAt"`
@@ -81,9 +60,7 @@ type CreateInput struct {
 }
 
 type UpdateInput struct {
-	Status       *Status     `json:"status"`
-	Visibility   *Visibility `json:"visibility"`
-	TeamResponse *string     `json:"teamResponse"`
+	Visibility *Visibility `json:"visibility"`
 }
 
 type SupportResult struct {
@@ -97,9 +74,7 @@ var MigrationStatements = []string{
 		title text NOT NULL,
 		detail text NOT NULL DEFAULT '',
 		category text NOT NULL CHECK (category IN ('life','transport','learning','space','other')),
-		status text NOT NULL DEFAULT 'new' CHECK (status IN ('new','picked','building','fulfilled','declined')),
 		visibility text NOT NULL DEFAULT 'published' CHECK (visibility IN ('published','pending','hidden')),
-		team_response text NOT NULL DEFAULT '',
 		actor_hash bytea NOT NULL,
 		created_at timestamptz NOT NULL DEFAULT now(),
 		updated_at timestamptz NOT NULL DEFAULT now()
@@ -109,13 +84,6 @@ var MigrationStatements = []string{
 	`CREATE TABLE IF NOT EXISTS wish_supports (
 		wish_id uuid NOT NULL REFERENCES wishes(id) ON DELETE CASCADE,
 		actor_hash bytea NOT NULL,
-		created_at timestamptz NOT NULL DEFAULT now(),
-		PRIMARY KEY (wish_id, actor_hash)
-	)`,
-	`CREATE TABLE IF NOT EXISTS wish_reports (
-		wish_id uuid NOT NULL REFERENCES wishes(id) ON DELETE CASCADE,
-		actor_hash bytea NOT NULL,
-		reason text NOT NULL CHECK (reason IN ('personal_data','abuse','spam')),
 		created_at timestamptz NOT NULL DEFAULT now(),
 		PRIMARY KEY (wish_id, actor_hash)
 	)`,
