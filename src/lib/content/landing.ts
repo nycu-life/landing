@@ -283,6 +283,8 @@ export const products: Product[] = [
 		status: 'dev',
 		glyph: 'map',
 		latin: 'Campus map',
+		/* Captured from the maps.dev preview; still no public href while the product is in dev. */
+		screens: [{ src: '/products/map-phone-1.png', darkSrc: '/products/map-phone-1-dark.png' }],
 		name: m.product_map_name,
 		summary: m.product_map_summary,
 		features: [m.product_map_feature_1, m.product_map_feature_2, m.product_map_feature_3]
