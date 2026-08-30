@@ -6,6 +6,17 @@ export type AdminWish = Wish;
 
 type AdminWishListResponse = { data: AdminWish[] };
 type AdminWishResponse = { data: AdminWish };
+type AdminSessionResponse = {
+	data: {
+		authenticated: boolean;
+		user?: AdminSessionUser;
+	};
+};
+
+export type AdminSessionUser = {
+	subject: string;
+	name: string;
+};
 
 export class WishAdminRequestError extends Error {
 	constructor(
@@ -17,12 +28,12 @@ export class WishAdminRequestError extends Error {
 	}
 }
 
-async function request<T>(path: string, token: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	const response = await fetch(path, {
 		...init,
+		credentials: 'same-origin',
 		headers: {
 			Accept: 'application/json',
-			Authorization: `Bearer ${token}`,
 			...(init?.body ? { 'Content-Type': 'application/json' } : {}),
 			...init?.headers
 		}
@@ -41,31 +52,33 @@ async function request<T>(path: string, token: string, init?: RequestInit): Prom
 	return payload as T;
 }
 
+export async function getAdminSession(signal?: AbortSignal): Promise<AdminSessionUser | null> {
+	const response = await request<AdminSessionResponse>('/api/wishes/auth/me', { signal });
+	return response.data.authenticated && response.data.user ? response.data.user : null;
+}
+
+export async function logoutAdmin(): Promise<void> {
+	await request<AdminSessionResponse>('/api/wishes/auth/logout', { method: 'POST' });
+}
+
 export async function listAdminWishes(
-	token: string,
 	visibility: WishVisibility,
 	signal?: AbortSignal
 ): Promise<AdminWish[]> {
 	const response = await request<AdminWishListResponse>(
 		`/api/wishes/admin?visibility=${encodeURIComponent(visibility)}`,
-		token,
 		{ signal }
 	);
 	return response.data;
 }
 
 export async function updateAdminWishVisibility(
-	token: string,
 	id: string,
 	visibility: WishVisibility
 ): Promise<AdminWish> {
-	const response = await request<AdminWishResponse>(
-		`/api/wishes/admin/${encodeURIComponent(id)}`,
-		token,
-		{
-			method: 'PATCH',
-			body: JSON.stringify({ visibility })
-		}
-	);
+	const response = await request<AdminWishResponse>(`/api/wishes/admin/${encodeURIComponent(id)}`, {
+		method: 'PATCH',
+		body: JSON.stringify({ visibility })
+	});
 	return response.data;
 }

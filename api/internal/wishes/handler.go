@@ -5,7 +5,6 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -37,12 +36,18 @@ type Handler struct {
 	store        Store
 	cookieSecret []byte
 	adminToken   string
+	adminAuth    AdminAuthenticator
 	logger       *slog.Logger
 	now          func() time.Time
 	changes      *changeBroker
 }
 
-func NewHandler(store Store, cookieSecret, adminToken string, logger *slog.Logger) (*Handler, error) {
+func NewHandler(
+	store Store,
+	cookieSecret, adminToken string,
+	adminAuth AdminAuthenticator,
+	logger *slog.Logger,
+) (*Handler, error) {
 	if store == nil {
 		return nil, errors.New("wish store is required")
 	}
@@ -56,6 +61,7 @@ func NewHandler(store Store, cookieSecret, adminToken string, logger *slog.Logge
 		store:        store,
 		cookieSecret: []byte(cookieSecret),
 		adminToken:   adminToken,
+		adminAuth:    adminAuth,
 		logger:       logger,
 		now:          time.Now,
 		changes:      newChangeBroker(),
@@ -69,6 +75,10 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("GET /api/wishes/events", h.events)
 	mux.HandleFunc("POST /api/wishes", h.create)
 	mux.HandleFunc("POST /api/wishes/{id}/support", h.support)
+	mux.HandleFunc("GET /api/wishes/auth/login", h.authLogin)
+	mux.HandleFunc("GET /api/wishes/auth/callback", h.authCallback)
+	mux.HandleFunc("GET /api/wishes/auth/me", h.authMe)
+	mux.HandleFunc("POST /api/wishes/auth/logout", h.authLogout)
 	mux.HandleFunc("GET /api/wishes/admin", h.adminList)
 	mux.HandleFunc("PATCH /api/wishes/admin/{id}", h.adminUpdate)
 	return h.securityHeaders(h.recoverPanics(mux))
@@ -212,7 +222,7 @@ func (h *Handler) support(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) adminList(w http.ResponseWriter, r *http.Request) {
-	if !h.authorizeAdmin(r) {
+	if _, ok := h.adminIdentity(r); !ok {
 		writeError(w, http.StatusUnauthorized, "admin authorization required")
 		return
 	}
@@ -233,8 +243,13 @@ func (h *Handler) adminList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) adminUpdate(w http.ResponseWriter, r *http.Request) {
-	if !h.authorizeAdmin(r) {
+	identity, ok := h.adminIdentity(r)
+	if !ok {
 		writeError(w, http.StatusUnauthorized, "admin authorization required")
+		return
+	}
+	if identity.Method == "oidc" && !sameOrigin(r) {
+		writeError(w, http.StatusForbidden, "cross-origin writes are not allowed")
 		return
 	}
 	id := r.PathValue("id")
@@ -261,6 +276,12 @@ func (h *Handler) adminUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"data": wish})
+	h.logger.Info(
+		"wish admin visibility changed",
+		"subject", identity.Subject,
+		"wish_id", wish.ID,
+		"visibility", wish.Visibility,
+	)
 	h.changes.publish()
 }
 
@@ -309,17 +330,6 @@ func (h *Handler) validSignature(payload, signature string) bool {
 	}
 	got, err := base64.RawURLEncoding.DecodeString(signature)
 	return err == nil && hmac.Equal(got, want)
-}
-
-func (h *Handler) authorizeAdmin(r *http.Request) bool {
-	if h.adminToken == "" {
-		return false
-	}
-	provided := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-	if len(provided) != len(h.adminToken) {
-		return false
-	}
-	return subtle.ConstantTimeCompare([]byte(provided), []byte(h.adminToken)) == 1
 }
 
 func (h *Handler) internalError(w http.ResponseWriter, r *http.Request, err error) {

@@ -49,10 +49,22 @@ func main() {
 		return
 	}
 
+	adminAuth, err := wishes.NewOIDCAuthenticator(wishes.OIDCConfig{
+		Issuer:       os.Getenv("WISH_OIDC_ISSUER"),
+		ClientID:     os.Getenv("WISH_OIDC_CLIENT_ID"),
+		ClientSecret: os.Getenv("WISH_OIDC_CLIENT_SECRET"),
+		RedirectURL:  os.Getenv("WISH_OIDC_REDIRECT_URL"),
+	})
+	if err != nil {
+		logger.Error("configure Wish Pool OIDC", "error", err)
+		os.Exit(1)
+	}
+
 	handler, err := wishes.NewHandler(
 		wishes.NewPostgresStore(pool),
 		os.Getenv("WISH_COOKIE_SECRET"),
 		os.Getenv("WISH_ADMIN_TOKEN"),
+		adminAuth,
 		logger,
 	)
 	if err != nil {

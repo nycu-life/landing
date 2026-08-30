@@ -1,27 +1,33 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import { m } from '$lib/paraglide/messages';
 	import { localeState } from '$lib/i18n.svelte';
 	import {
 		WishAdminRequestError,
+		getAdminSession,
 		listAdminWishes,
+		logoutAdmin,
 		updateAdminWishVisibility,
+		type AdminSessionUser,
 		type AdminWish,
 		type WishVisibility
 	} from '$lib/wish-admin';
 	import type { WishCategory } from '$lib/wishes';
 
-	let tokenInput = $state('');
-	let credential = $state('');
+	let identity = $state<AdminSessionUser | null>(null);
 	let visibility = $state<WishVisibility>('pending');
 	let wishes = $state<AdminWish[]>([]);
 	let query = $state('');
+	let checkingSession = $state(true);
 	let loading = $state(false);
+	let loggingOut = $state(false);
 	let updatingId = $state('');
 	let error = $state('');
 	let notice = $state('');
 	let requestVersion = 0;
 
-	const connected = $derived(credential.length > 0);
+	const connected = $derived(identity !== null);
 	const filteredWishes = $derived.by(() => {
 		const needle = query.trim().toLocaleLowerCase();
 		if (!needle) return wishes;
@@ -57,29 +63,48 @@
 
 	function errorMessage(caught: unknown) {
 		if (caught instanceof WishAdminRequestError && caught.status === 401) {
-			return m.wish_admin_error_unauthorized();
+			return m.wish_admin_error_session_expired();
 		}
 		return m.wish_admin_error_load();
 	}
 
-	async function load(nextVisibility: WishVisibility, candidateToken = credential) {
+	function authCallbackMessage(code: string | null) {
+		if (code === 'denied') return m.wish_admin_error_denied();
+		if (code === 'unavailable') return m.wish_admin_error_auth_unavailable();
+		if (code === 'oauth_error' || code === 'invalid_callback') {
+			return m.wish_admin_error_auth_callback();
+		}
+		return '';
+	}
+
+	function clearIdentity(message = '') {
+		requestVersion += 1;
+		identity = null;
+		wishes = [];
+		query = '';
+		notice = '';
+		loading = false;
+		updatingId = '';
+		error = message;
+	}
+
+	async function load(nextVisibility: WishVisibility) {
+		if (!identity) return;
 		const version = ++requestVersion;
 		loading = true;
 		error = '';
 		notice = '';
 		try {
-			const items = await listAdminWishes(candidateToken, nextVisibility);
+			const items = await listAdminWishes(nextVisibility);
 			if (version !== requestVersion) return;
-			credential = candidateToken;
-			tokenInput = '';
 			visibility = nextVisibility;
 			wishes = items;
 			query = '';
 		} catch (caught) {
 			if (version !== requestVersion) return;
 			if (caught instanceof WishAdminRequestError && caught.status === 401) {
-				credential = '';
-				wishes = [];
+				clearIdentity(m.wish_admin_error_session_expired());
+				return;
 			}
 			error = errorMessage(caught);
 		} finally {
@@ -87,35 +112,52 @@
 		}
 	}
 
-	async function connect(event: SubmitEvent) {
-		event.preventDefault();
-		const candidate = tokenInput.trim();
-		if (!candidate) {
-			error = m.wish_admin_error_token_required();
-			return;
+	async function initialize() {
+		const params = new SvelteURLSearchParams(window.location.search);
+		const callbackError = authCallbackMessage(params.get('auth'));
+		if (params.has('auth')) {
+			params.delete('auth');
+			const queryString = params.toString();
+			window.history.replaceState(
+				{},
+				'',
+				`${window.location.pathname}${queryString ? `?${queryString}` : ''}${window.location.hash}`
+			);
 		}
-		await load('pending', candidate);
+		try {
+			identity = await getAdminSession();
+			if (identity) {
+				await load('pending');
+			} else {
+				error = callbackError;
+			}
+		} catch {
+			error = callbackError || m.wish_admin_error_auth_unavailable();
+		} finally {
+			checkingSession = false;
+		}
 	}
 
-	function disconnect() {
-		requestVersion += 1;
-		credential = '';
-		tokenInput = '';
-		wishes = [];
-		query = '';
-		error = '';
-		notice = '';
-		loading = false;
-		updatingId = '';
+	async function disconnect() {
+		if (loggingOut) return;
+		loggingOut = true;
+		try {
+			await logoutAdmin();
+			clearIdentity();
+		} catch {
+			clearIdentity(m.wish_admin_error_load());
+		} finally {
+			loggingOut = false;
+		}
 	}
 
 	async function updateVisibility(wish: AdminWish, nextVisibility: WishVisibility) {
-		if (!credential || updatingId) return;
+		if (!identity || updatingId) return;
 		updatingId = wish.id;
 		error = '';
 		notice = '';
 		try {
-			await updateAdminWishVisibility(credential, wish.id, nextVisibility);
+			await updateAdminWishVisibility(wish.id, nextVisibility);
 			wishes = wishes.filter((item) => item.id !== wish.id);
 			notice =
 				nextVisibility === 'hidden'
@@ -123,8 +165,7 @@
 					: m.wish_admin_notice_published();
 		} catch (caught) {
 			if (caught instanceof WishAdminRequestError && caught.status === 401) {
-				disconnect();
-				error = m.wish_admin_error_unauthorized();
+				clearIdentity(m.wish_admin_error_session_expired());
 			} else {
 				error = m.wish_admin_error_update();
 			}
@@ -132,42 +173,42 @@
 			updatingId = '';
 		}
 	}
+
+	onMount(() => {
+		void initialize();
+	});
 </script>
 
 <section class="wish-admin" aria-label={m.wish_admin_title()}>
-	{#if !connected}
-		<form class="admin-auth glass glass-strong" onsubmit={connect}>
+	{#if checkingSession}
+		<div class="admin-auth glass glass-strong" aria-live="polite">
+			<div class="auth-copy">
+				<span class="admin-kicker">NYCU LIFE · WISH POOL</span>
+				<h2>{m.wish_admin_checking()}</h2>
+				<p>{m.wish_admin_checking_body()}</p>
+			</div>
+			<span class="auth-spinner" aria-hidden="true"></span>
+		</div>
+	{:else if !connected}
+		<div class="admin-auth glass glass-strong">
 			<div class="auth-copy">
 				<span class="admin-kicker">NYCU LIFE · WISH POOL</span>
 				<h2>{m.wish_admin_login_title()}</h2>
 				<p>{m.wish_admin_login_body()}</p>
 			</div>
-			<label>
-				<span>{m.wish_admin_token_label()}</span>
-				<input
-					bind:value={tokenInput}
-					type="password"
-					name="wish-admin-token"
-					autocomplete="off"
-					autocapitalize="none"
-					spellcheck="false"
-					placeholder={m.wish_admin_token_placeholder()}
-					disabled={loading}
-				/>
-			</label>
-			<button class="landing-button landing-button-primary" type="submit" disabled={loading}>
-				{loading ? m.wish_admin_connecting() : m.wish_admin_connect()}
-			</button>
-			<p class="token-note">{m.wish_admin_token_note()}</p>
+			<a class="landing-button landing-button-primary" href="/api/wishes/auth/login"
+				>{m.wish_admin_sign_in()}</a
+			>
+			<p class="auth-note">{m.wish_admin_auth_note()}</p>
 			{#if error}<p class="admin-message error" role="alert">{error}</p>{/if}
-		</form>
+		</div>
 	{:else}
 		<div class="admin-toolbar glass glass-strong">
 			<div class="connection-status">
 				<span class="status-dot" aria-hidden="true"></span>
 				<div>
 					<strong>{m.wish_admin_connected()}</strong>
-					<span>{m.wish_admin_connected_body()}</span>
+					<span>{identity?.name} · {m.wish_admin_connected_body()}</span>
 				</div>
 			</div>
 			<div class="toolbar-actions">
@@ -177,8 +218,12 @@
 					disabled={loading}
 					onclick={() => load(visibility)}>{m.wish_admin_refresh()}</button
 				>
-				<button class="toolbar-button danger" type="button" onclick={disconnect}
-					>{m.wish_admin_disconnect()}</button
+				<button
+					class="toolbar-button danger"
+					type="button"
+					disabled={loggingOut}
+					onclick={disconnect}
+					>{loggingOut ? m.wish_admin_signing_out() : m.wish_admin_sign_out()}</button
 				>
 			</div>
 		</div>
@@ -296,8 +341,8 @@
 	}
 	.admin-auth {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(15rem, 22rem) auto;
-		align-items: end;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
 		gap: 1.25rem;
 		padding: clamp(1.4rem, 3vw, 2rem);
 		border-radius: 1.5rem;
@@ -321,18 +366,10 @@
 		line-height: 1.15;
 	}
 	.auth-copy p,
-	.token-note {
+	.auth-note {
 		color: var(--ink-soft);
 		line-height: 1.6;
 	}
-	.admin-auth label {
-		display: grid;
-		gap: 0.5rem;
-		font-size: 0.84rem;
-		font-weight: 700;
-		color: var(--ink-soft);
-	}
-	.admin-auth input,
 	.admin-search input {
 		width: 100%;
 		border: 1px solid var(--line-strong);
@@ -340,21 +377,27 @@
 		color: var(--ink);
 		outline: 0;
 	}
-	.admin-auth input {
-		min-height: 3rem;
-		padding: 0.75rem 0.9rem;
-		border-radius: 0.8rem;
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-	}
-	.admin-auth input:focus,
 	.admin-search input:focus {
 		border-color: var(--brand);
 		box-shadow: 0 0 0 3px var(--brand-soft);
 	}
-	.token-note {
-		grid-column: 2 / -1;
-		margin: -0.45rem 0 0;
+	.auth-note {
+		grid-column: 1 / -1;
+		margin: -0.25rem 0 0;
 		font-size: 0.78rem;
+	}
+	.auth-spinner {
+		width: 1.7rem;
+		height: 1.7rem;
+		border: 0.18rem solid var(--line-strong);
+		border-top-color: var(--brand);
+		border-radius: 50%;
+		animation: auth-spin 0.8s linear infinite;
+	}
+	@keyframes auth-spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 	.admin-toolbar {
 		display: flex;
@@ -655,7 +698,7 @@
 			grid-template-columns: 1fr;
 			align-items: stretch;
 		}
-		.token-note,
+		.auth-note,
 		.admin-auth .admin-message {
 			grid-column: auto;
 		}
@@ -690,6 +733,9 @@
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
+		.auth-spinner {
+			animation-duration: 1.8s;
+		}
 		.toolbar-button,
 		.visibility-tabs button,
 		.action-button {

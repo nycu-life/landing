@@ -1,57 +1,98 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { WishAdminRequestError, listAdminWishes, updateAdminWishVisibility } from './wish-admin';
+import {
+	WishAdminRequestError,
+	getAdminSession,
+	listAdminWishes,
+	logoutAdmin,
+	updateAdminWishVisibility
+} from './wish-admin';
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe('wish admin API', () => {
-	it('lists a selected visibility with the bearer token in the header', async () => {
+	it('reads the HttpOnly-backed admin session without an authorization header', async () => {
 		const fetchMock = vi.fn().mockResolvedValue(
 			new Response(
 				JSON.stringify({
-					data: [
-						{
-							id: 'wish-1',
-							title: '待審願望',
-							detail: '',
-							category: 'other',
-							supportCount: 1,
-							supportedByMe: false,
-							createdAt: '2026-08-31T00:00:00Z'
-						}
-					]
+					data: {
+						authenticated: true,
+						user: { subject: 'authentik-user-id', name: '管理員' }
+					}
 				}),
 				{ status: 200, headers: { 'Content-Type': 'application/json' } }
 			)
 		);
 		vi.stubGlobal('fetch', fetchMock);
 
-		await expect(listAdminWishes('secret-token', 'pending')).resolves.toHaveLength(1);
+		await expect(getAdminSession()).resolves.toEqual({
+			subject: 'authentik-user-id',
+			name: '管理員'
+		});
 		expect(fetchMock).toHaveBeenCalledWith(
-			'/api/wishes/admin?visibility=pending',
-			expect.objectContaining({
-				headers: expect.objectContaining({ Authorization: 'Bearer secret-token' })
-			})
+			'/api/wishes/auth/me',
+			expect.objectContaining({ credentials: 'same-origin' })
 		);
+		expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty('Authorization');
 	});
 
-	it('updates visibility without putting the token in the URL or body', async () => {
+	it('lists and updates wishes using only the same-origin session cookie', async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						data: [
+							{
+								id: 'wish-1',
+								title: '待審願望',
+								detail: '',
+								category: 'other',
+								supportCount: 1,
+								supportedByMe: false,
+								createdAt: '2026-08-31T00:00:00Z'
+							}
+						]
+					}),
+					{ status: 200, headers: { 'Content-Type': 'application/json' } }
+				)
+			)
+			.mockResolvedValueOnce(
+				new Response(JSON.stringify({ data: { id: 'wish-1' } }), {
+					status: 200,
+					headers: { 'Content-Type': 'application/json' }
+				})
+			);
+		vi.stubGlobal('fetch', fetchMock);
+
+		await expect(listAdminWishes('pending')).resolves.toHaveLength(1);
+		await updateAdminWishVisibility('wish-1', 'hidden');
+
+		for (const [, init] of fetchMock.mock.calls as Array<[string, RequestInit]>) {
+			expect(init.credentials).toBe('same-origin');
+			expect(init.headers).not.toHaveProperty('Authorization');
+		}
+		const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+		expect(url).toBe('/api/wishes/admin/wish-1');
+		expect(init.body).toBe('{"visibility":"hidden"}');
+	});
+
+	it('logs out through a same-origin POST', async () => {
 		const fetchMock = vi.fn().mockResolvedValue(
-			new Response(JSON.stringify({ data: { id: 'wish-1' } }), {
+			new Response(JSON.stringify({ data: { authenticated: false } }), {
 				status: 200,
 				headers: { 'Content-Type': 'application/json' }
 			})
 		);
 		vi.stubGlobal('fetch', fetchMock);
 
-		await updateAdminWishVisibility('secret-token', 'wish-1', 'hidden');
-		const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-		expect(url).toBe('/api/wishes/admin/wish-1');
-		expect(url).not.toContain('secret-token');
-		expect(init.body).toBe('{"visibility":"hidden"}');
-		expect(init.body).not.toContain('secret-token');
+		await logoutAdmin();
+		expect(fetchMock).toHaveBeenCalledWith(
+			'/api/wishes/auth/logout',
+			expect.objectContaining({ method: 'POST', credentials: 'same-origin' })
+		);
 	});
 
-	it('preserves the response status for invalid-token handling', async () => {
+	it('preserves the response status for expired-session handling', async () => {
 		vi.stubGlobal(
 			'fetch',
 			vi.fn().mockResolvedValue(
@@ -62,7 +103,7 @@ describe('wish admin API', () => {
 			)
 		);
 
-		await expect(listAdminWishes('wrong-token', 'pending')).rejects.toEqual(
+		await expect(listAdminWishes('pending')).rejects.toEqual(
 			expect.objectContaining<Partial<WishAdminRequestError>>({ status: 401 })
 		);
 	});

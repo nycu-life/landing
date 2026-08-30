@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 )
@@ -20,6 +21,36 @@ type fakeStore struct {
 	createErr     error
 	supportResult SupportResult
 	updated       UpdateInput
+}
+
+type fakeAdminAuthenticator struct {
+	state       string
+	nonce       string
+	verifier    string
+	code        string
+	identity    AdminIdentity
+	exchangeErr error
+}
+
+func (f *fakeAdminAuthenticator) AuthorizationURL(
+	_ context.Context,
+	state, nonce, verifier string,
+) (string, error) {
+	f.state = state
+	f.nonce = nonce
+	f.verifier = verifier
+	return "https://auth.nycu.one/application/o/authorize/?state=" + url.QueryEscape(state), nil
+}
+
+func (f *fakeAdminAuthenticator) Exchange(
+	_ context.Context,
+	code, verifier, nonce string,
+) (AdminIdentity, error) {
+	f.code = code
+	if verifier != f.verifier || nonce != f.nonce {
+		return AdminIdentity{}, errors.New("OAuth callback did not preserve PKCE verifier and nonce")
+	}
+	return f.identity, f.exchangeErr
 }
 
 func (f *fakeStore) Ping(context.Context) error { return nil }
@@ -55,10 +86,16 @@ func (f *fakeStore) AdminUpdate(_ context.Context, _ string, input UpdateInput) 
 
 func testHandler(t *testing.T, store *fakeStore) http.Handler {
 	t.Helper()
+	return testHandlerWithAuth(t, store, nil)
+}
+
+func testHandlerWithAuth(t *testing.T, store *fakeStore, auth AdminAuthenticator) http.Handler {
+	t.Helper()
 	handler, err := NewHandler(
 		store,
 		"0123456789abcdef0123456789abcdef",
 		"admin-token-for-tests",
+		auth,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)
 	if err != nil {
@@ -66,6 +103,17 @@ func testHandler(t *testing.T, store *fakeStore) http.Handler {
 	}
 	handler.now = func() time.Time { return time.Unix(1_700_000_000, 0).UTC() }
 	return handler.Routes()
+}
+
+func responseCookie(t *testing.T, recorder *httptest.ResponseRecorder, name string) *http.Cookie {
+	t.Helper()
+	for _, cookie := range recorder.Result().Cookies() {
+		if cookie.Name == name {
+			return cookie
+		}
+	}
+	t.Fatalf("response did not set %s cookie", name)
+	return nil
 }
 
 func requestJSON(t *testing.T, handler http.Handler, method, target, body string) *httptest.ResponseRecorder {
@@ -190,6 +238,158 @@ func TestSupportAndAdminUpdate(t *testing.T) {
 	handler.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK || store.updated.Visibility == nil || *store.updated.Visibility != VisibilityPublished {
 		t.Fatalf("admin update returned %d: %s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestAdminOIDCSessionFlowAndSameOriginProtection(t *testing.T) {
+	store := &fakeStore{items: []Wish{{
+		ID:         "00000000-0000-4000-8000-000000000001",
+		Title:      "希望圖書館座位更好找",
+		Visibility: VisibilityPending,
+	}}}
+	auth := &fakeAdminAuthenticator{identity: AdminIdentity{
+		Subject: "authentik-user-id",
+		Name:    "管理員",
+		Method:  "oidc",
+	}}
+	handler := testHandlerWithAuth(t, store, auth)
+
+	loginRequest := httptest.NewRequest(http.MethodGet, "/api/wishes/auth/login", nil)
+	loginRequest.Host = "nycu.life"
+	loginRequest.Header.Set("X-Forwarded-Proto", "https")
+	login := httptest.NewRecorder()
+	handler.ServeHTTP(login, loginRequest)
+	if login.Code != http.StatusFound || auth.state == "" || auth.nonce == "" || auth.verifier == "" {
+		t.Fatalf("login returned %d with redirect %q", login.Code, login.Header().Get("Location"))
+	}
+	stateCookie := responseCookie(t, login, oauthStateCookie)
+	if !stateCookie.HttpOnly || !stateCookie.Secure || stateCookie.SameSite != http.SameSiteLaxMode {
+		t.Fatalf("OAuth state cookie is not hardened: %#v", stateCookie)
+	}
+
+	callbackRequest := httptest.NewRequest(
+		http.MethodGet,
+		"/api/wishes/auth/callback?state="+url.QueryEscape(auth.state)+"&code=authorization-code",
+		nil,
+	)
+	callbackRequest.Host = "nycu.life"
+	callbackRequest.Header.Set("X-Forwarded-Proto", "https")
+	callbackRequest.AddCookie(stateCookie)
+	callback := httptest.NewRecorder()
+	handler.ServeHTTP(callback, callbackRequest)
+	if callback.Code != http.StatusFound || callback.Header().Get("Location") != adminReturnPath {
+		t.Fatalf("callback returned %d with redirect %q", callback.Code, callback.Header().Get("Location"))
+	}
+	if auth.code != "authorization-code" {
+		t.Fatalf("callback exchanged code %q", auth.code)
+	}
+	sessionCookie := responseCookie(t, callback, adminSessionCookie)
+	if !sessionCookie.HttpOnly || !sessionCookie.Secure || sessionCookie.SameSite != http.SameSiteLaxMode {
+		t.Fatalf("admin session cookie is not hardened: %#v", sessionCookie)
+	}
+
+	meRequest := httptest.NewRequest(http.MethodGet, "/api/wishes/auth/me", nil)
+	meRequest.AddCookie(sessionCookie)
+	me := httptest.NewRecorder()
+	handler.ServeHTTP(me, meRequest)
+	if me.Code != http.StatusOK ||
+		!bytes.Contains(me.Body.Bytes(), []byte(`"authenticated":true`)) ||
+		!bytes.Contains(me.Body.Bytes(), []byte(`"subject":"authentik-user-id"`)) {
+		t.Fatalf("session lookup returned %d: %s", me.Code, me.Body.String())
+	}
+
+	listRequest := httptest.NewRequest(http.MethodGet, "/api/wishes/admin?visibility=pending", nil)
+	listRequest.AddCookie(sessionCookie)
+	list := httptest.NewRecorder()
+	handler.ServeHTTP(list, listRequest)
+	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte("圖書館")) {
+		t.Fatalf("session admin list returned %d: %s", list.Code, list.Body.String())
+	}
+
+	id := "00000000-0000-4000-8000-000000000001"
+	attack := httptest.NewRequest(
+		http.MethodPatch,
+		"/api/wishes/admin/"+id,
+		bytes.NewBufferString(`{"visibility":"published"}`),
+	)
+	attack.Host = "nycu.life"
+	attack.Header.Set("Origin", "https://attacker.example")
+	attack.Header.Set("Content-Type", "application/json")
+	attack.AddCookie(sessionCookie)
+	attackResponse := httptest.NewRecorder()
+	handler.ServeHTTP(attackResponse, attack)
+	if attackResponse.Code != http.StatusForbidden {
+		t.Fatalf("cross-origin session update returned %d", attackResponse.Code)
+	}
+
+	update := httptest.NewRequest(
+		http.MethodPatch,
+		"/api/wishes/admin/"+id,
+		bytes.NewBufferString(`{"visibility":"published"}`),
+	)
+	update.Host = "nycu.life"
+	update.Header.Set("Origin", "https://nycu.life")
+	update.Header.Set("Content-Type", "application/json")
+	update.AddCookie(sessionCookie)
+	updated := httptest.NewRecorder()
+	handler.ServeHTTP(updated, update)
+	if updated.Code != http.StatusOK || store.updated.Visibility == nil || *store.updated.Visibility != VisibilityPublished {
+		t.Fatalf("same-origin session update returned %d: %s", updated.Code, updated.Body.String())
+	}
+
+	logout := httptest.NewRequest(http.MethodPost, "/api/wishes/auth/logout", nil)
+	logout.Host = "nycu.life"
+	logout.Header.Set("Origin", "https://nycu.life")
+	logout.AddCookie(sessionCookie)
+	loggedOut := httptest.NewRecorder()
+	handler.ServeHTTP(loggedOut, logout)
+	if loggedOut.Code != http.StatusOK || responseCookie(t, loggedOut, adminSessionCookie).MaxAge != -1 {
+		t.Fatalf("logout returned %d: %s", loggedOut.Code, loggedOut.Body.String())
+	}
+}
+
+func TestAdminOIDCRejectsInvalidStateAndExchangeFailure(t *testing.T) {
+	auth := &fakeAdminAuthenticator{exchangeErr: errors.New("provider unavailable")}
+	handler := testHandlerWithAuth(t, &fakeStore{}, auth)
+
+	loginRequest := httptest.NewRequest(http.MethodGet, "/api/wishes/auth/login", nil)
+	login := httptest.NewRecorder()
+	handler.ServeHTTP(login, loginRequest)
+	stateCookie := responseCookie(t, login, oauthStateCookie)
+
+	invalidRequest := httptest.NewRequest(
+		http.MethodGet,
+		"/api/wishes/auth/callback?state=wrong&code=authorization-code",
+		nil,
+	)
+	invalidRequest.AddCookie(stateCookie)
+	invalid := httptest.NewRecorder()
+	handler.ServeHTTP(invalid, invalidRequest)
+	if invalid.Code != http.StatusFound || invalid.Header().Get("Location") != adminReturnPath+"?auth=invalid_callback" {
+		t.Fatalf("invalid state returned %d with redirect %q", invalid.Code, invalid.Header().Get("Location"))
+	}
+	if auth.code != "" {
+		t.Fatal("invalid state must not exchange an authorization code")
+	}
+
+	login = httptest.NewRecorder()
+	handler.ServeHTTP(login, httptest.NewRequest(http.MethodGet, "/api/wishes/auth/login", nil))
+	stateCookie = responseCookie(t, login, oauthStateCookie)
+	deniedRequest := httptest.NewRequest(
+		http.MethodGet,
+		"/api/wishes/auth/callback?state="+url.QueryEscape(auth.state)+"&code=authorization-code",
+		nil,
+	)
+	deniedRequest.AddCookie(stateCookie)
+	denied := httptest.NewRecorder()
+	handler.ServeHTTP(denied, deniedRequest)
+	if denied.Code != http.StatusFound || denied.Header().Get("Location") != adminReturnPath+"?auth=invalid_callback" {
+		t.Fatalf("exchange failure returned %d with redirect %q", denied.Code, denied.Header().Get("Location"))
+	}
+	for _, cookie := range denied.Result().Cookies() {
+		if cookie.Name == adminSessionCookie && cookie.MaxAge >= 0 {
+			t.Fatal("failed exchange must not receive an admin session")
+		}
 	}
 }
 
