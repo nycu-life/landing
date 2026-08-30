@@ -397,6 +397,9 @@
 		const onHashChange = () => {
 			const hash = window.location.hash.slice(1);
 			if (chapters.some((chapter) => chapter.id === hash)) goToChapter(hash);
+			// Anchors past the story (e.g. #wishes): the browser's own jump lands short because the
+			// tall story runway settles its height only after layout, so re-aim at the element.
+			else if (hash) document.getElementById(hash)?.scrollIntoView({ behavior: 'instant' });
 		};
 		const prepareFirstScene = async () => {
 			const images = Array.from(storyEl.querySelectorAll<HTMLImageElement>('.gacha-machine img'));
@@ -415,6 +418,11 @@
 			if (disposed) return;
 			storyReady = true;
 			dismissBootSplash();
+			// Image decoding can change the page height; realign any deep link once it settles.
+			if (window.location.hash) {
+				measure();
+				onHashChange();
+			}
 		};
 
 		updateMotionPreference();
