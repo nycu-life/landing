@@ -38,8 +38,9 @@ export const GITHUB_URL = 'https://github.com/nycu-life';
 export const WEBSITE_URL = 'https://nycu.one';
 export const EVENTS_URL = 'https://events.life.nycu.edu.tw/';
 export const CONTACT_EMAIL = 'life@nycu.edu.tw';
+/* 2026 recruitment form (engineering + design combined), aka https://forms.gle/QdkDrnu9LjCjk8yK8 */
 export const JOIN_FORM_URL =
-	'https://docs.google.com/forms/d/e/1FAIpQLScCEb5rf9pGfClM68q6TjgpP_EAqatZo4MLwPoMTpqRfmq9Qg/viewform';
+	'https://docs.google.com/forms/d/e/1FAIpQLSfEOQ-o2sbD5PpPcW0k1lGrDjgu2b34TfkH46-G4oneMFNlBQ/viewform';
 
 /** A section that can be reached from the header navigation. */
 export type SectionId = 'products' | 'courses' | 'devlog' | 'team';
