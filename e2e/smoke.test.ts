@@ -217,7 +217,6 @@ test('about keeps and resumes the published YouTube player', async ({ page }) =>
 	).toBe(true);
 });
 
-
 test('about film playback follows the scrubbed reveal window', async ({ page }) => {
 	await page.goto('/?motion=on');
 	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
@@ -397,7 +396,8 @@ test('the product stepper locks the page and steps one product per flick', async
 	await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(lockedY);
 });
 
-test('the story hands off to normal page scrolling after the final chapter', async ({ page }) => {	await page.goto('/?motion=on#join');
+test('the story hands off to normal page scrolling after the final chapter', async ({ page }) => {
+	await page.goto('/?motion=on#join');
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
 	await page.mouse.move(640, 400);
 	for (let i = 0; i < 20; i += 1) await page.mouse.wheel(0, 400);
