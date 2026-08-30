@@ -1770,8 +1770,8 @@
 		z-index: 4;
 		/* The supplied hand leaves a hairline of screen between its thumb/palm join and the
 		   phone's lower-right edge. -1.15% closed that seam;
-		   the extra +0.9% sits the thumb a touch further right per design feedback. */
-		transform: translateX(-0.25%);
+		   the extra +0.85% sits the thumb a touch further right per design feedback. */
+		transform: translateX(-0.3%);
 	}
 	/* The thumb mimes the swipe that switches products (#49). */
 	.device-card > .device-hand-front.swipe-up {
@@ -1782,12 +1782,12 @@
 	}
 	@keyframes thumb-swipe-up {
 		40% {
-			transform: translateX(-0.25%) translateY(-1.6%) rotate(-0.6deg);
+			transform: translateX(-0.3%) translateY(-1.6%) rotate(-0.6deg);
 		}
 	}
 	@keyframes thumb-swipe-down {
 		40% {
-			transform: translateX(-0.25%) translateY(1.6%) rotate(0.6deg);
+			transform: translateX(-0.3%) translateY(1.6%) rotate(0.6deg);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
