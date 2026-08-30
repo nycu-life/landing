@@ -2119,9 +2119,12 @@
 		.scroll-hint {
 			display: none;
 		}
+		/* Top-left on the hero: the skip pill owns the top-right corner. */
 		.story-count.hero-count {
 			top: 0.75rem;
 			bottom: auto;
+			right: auto;
+			left: 1.3rem;
 		}
 		.gacha-machine {
 			--gacha-width: min(94vw, 44rem);
@@ -2135,7 +2138,7 @@
 			aspect-ratio: 1179 / 1050;
 			--machine-exit-distance: -110vh;
 			--capsule-drift: calc(var(--story-progress) * -70vh);
-			transform: translateY(calc(6svh + var(--machine-exit) * var(--machine-exit-distance)));
+			transform: translateY(calc(var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.gacha-device-art {
 			position: absolute;
@@ -2364,7 +2367,7 @@
 			aspect-ratio: 1179 / 1320;
 			/* Leave a dependable text-to-art gutter even when mobile browser chrome reduces the
 			   usable viewport. The lower part of this illustration is intentionally allowed to crop. */
-			transform: translateY(calc(9svh + var(--machine-exit) * var(--machine-exit-distance)));
+			transform: translateY(calc(var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.capsule {
 			left: 22.6%;
@@ -2463,7 +2466,7 @@
 		}
 		.gacha-machine {
 			--gacha-width: min(90vw, 22rem);
-			transform: translateY(calc(5svh + var(--machine-exit) * var(--machine-exit-distance)));
+			transform: translateY(calc(var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.faq-shell,
 		.join-shell {
