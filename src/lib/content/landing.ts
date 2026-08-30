@@ -252,7 +252,7 @@ export const products: Product[] = [
 		status: 'live',
 		glyph: 'coz',
 		latin: 'Course explorer',
-		screens: [{ src: '/products/coz-mobile.png' }],
+		screens: [{ src: '/products/coz-phone-1.png', darkSrc: '/products/coz-phone-1-dark.png' }],
 		href: 'https://coz.nycu.one',
 		name: m.product_coz_name,
 		summary: m.product_coz_summary,
@@ -265,7 +265,9 @@ export const products: Product[] = [
 		glyph: 'activity',
 		latin: 'Campus events',
 		// The source is currently desktop-only; bias the phone crop toward the search and cards.
-		screens: [{ src: '/products/activity.png', position: '37% top' }],
+		screens: [
+			{ src: '/products/activity-phone-1.png', darkSrc: '/products/activity-phone-1-dark.png' }
+		],
 		href: EVENTS_URL,
 		name: m.product_activity_name,
 		summary: m.product_activity_summary,
