@@ -72,7 +72,7 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await page.goto('/');
 	await expect(page.getByRole('heading', { level: 1, name: /NYCU LIFE/i })).toHaveCount(1);
 	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
-	await expect(page.locator('.gacha-machine img')).toHaveCount(14);
+	await expect(page.locator('.gacha-machine img')).toHaveCount(15);
 	await expect
 		.poll(() =>
 			page
@@ -90,8 +90,7 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	});
 	expect(assetRatios.base).toBeGreaterThan(1.8);
 	expect(assetRatios.base).toBeLessThan(1.9);
-	await expect(page.locator('.machine-knob-group')).toHaveCount(0);
-	await expect(page.locator('img[src$="/knob.svg"]')).toHaveCount(0);
+	await expect(page.locator('.machine-knob img')).toBeVisible();
 	// The hero offers a skip control (#45) that disappears once the story moves on.
 	await expect(page.locator('.skip-story')).toBeVisible();
 	await expect(page.locator('.gacha-machine > .capsule .capsule-shell')).toHaveCount(2);

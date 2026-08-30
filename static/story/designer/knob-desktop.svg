@@ -1,0 +1,302 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="1553.0 834.0 177.0 176.0"><defs><style>
+      .cls-1 {
+        opacity: .06;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5, .cls-6, .cls-7, .cls-8, .cls-9 {
+        fill: #586685;
+      }
+
+      .cls-2, .cls-10, .cls-11 {
+        opacity: .76;
+      }
+
+      .cls-12 {
+        opacity: .81;
+      }
+
+      .cls-13 {
+        opacity: .53;
+      }
+
+      .cls-13, .cls-14, .cls-11, .cls-15 {
+        fill: #33f;
+      }
+
+      .cls-16 {
+        fill: #231815;
+      }
+
+      .cls-17 {
+        fill: #99f;
+      }
+
+      .cls-18 {
+        stroke: #15305f;
+      }
+
+      .cls-18, .cls-19, .cls-20, .cls-21, .cls-22, .cls-23, .cls-24, .cls-25, .cls-26, .cls-27, .cls-28, .cls-29, .cls-30 {
+        fill: #fff;
+      }
+
+      .cls-18, .cls-21, .cls-22, .cls-23, .cls-24, .cls-31, .cls-27, .cls-28, .cls-32, .cls-30, .cls-33 {
+        stroke-miterlimit: 10;
+      }
+
+      .cls-18, .cls-30 {
+        stroke-width: 1.4px;
+      }
+
+      .cls-19 {
+        stroke-width: 22px;
+      }
+
+      .cls-19, .cls-34 {
+        stroke-miterlimit: 4;
+      }
+
+      .cls-19, .cls-29 {
+        stroke: #fff;
+      }
+
+      .cls-35, .cls-36, .cls-37, .cls-32 {
+        opacity: .78;
+      }
+
+      .cls-35, .cls-38 {
+        fill: #d6d2db;
+      }
+
+      .cls-39 {
+        fill: #66c;
+      }
+
+      .cls-39, .cls-40, .cls-41, .cls-42, .cls-33 {
+        opacity: .32;
+      }
+
+      .cls-43 {
+        fill: #596586;
+      }
+
+      .cls-43, .cls-4, .cls-44 {
+        opacity: .16;
+      }
+
+      .cls-10, .cls-45, .cls-46, .cls-42 {
+        fill: #66f;
+      }
+
+      .cls-3 {
+        opacity: .09;
+      }
+
+      .cls-47 {
+        font-size: 38.77px;
+      }
+
+      .cls-47, .cls-48 {
+        fill: #34333a;
+      }
+
+      .cls-47, .cls-48, .cls-25 {
+        font-family: Arial-Black, Arial;
+        font-weight: 800;
+        isolation: isolate;
+      }
+
+      .cls-21 {
+        opacity: .84;
+      }
+
+      .cls-21, .cls-22, .cls-23, .cls-27, .cls-33 {
+        stroke: #231815;
+      }
+
+      .cls-14 {
+        opacity: .85;
+      }
+
+      .cls-49, .cls-37, .cls-44 {
+        fill: #ccf;
+      }
+
+      .cls-48 {
+        font-size: 33.98px;
+      }
+
+      .cls-50 {
+        opacity: .63;
+      }
+
+      .cls-23 {
+        opacity: .91;
+      }
+
+      .cls-51 {
+        opacity: .72;
+      }
+
+      .cls-51, .cls-52 {
+        fill: #bb2e31;
+      }
+
+      .cls-5 {
+        opacity: .36;
+      }
+
+      .cls-53 {
+        fill: #c00;
+      }
+
+      .cls-54 {
+        fill: #3530e8;
+        stroke: #336;
+      }
+
+      .cls-54, .cls-55 {
+        stroke-width: 4px;
+      }
+
+      .cls-54, .cls-55, .cls-29 {
+        stroke-miterlimit: 4;
+      }
+
+      .cls-6 {
+        opacity: .94;
+      }
+
+      .cls-7 {
+        opacity: .51;
+      }
+
+      .cls-55 {
+        fill: #d8d9e0;
+      }
+
+      .cls-55, .cls-34 {
+        stroke: #34333a;
+      }
+
+      .cls-24 {
+        opacity: .9;
+      }
+
+      .cls-24, .cls-32 {
+        stroke: #bb2e31;
+        stroke-width: 2px;
+      }
+
+      .cls-56 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-57 {
+        fill: #464b56;
+        opacity: .35;
+      }
+
+      .cls-34 {
+        fill: #f5f5f8;
+        stroke-width: 3px;
+      }
+
+      .cls-8 {
+        opacity: .11;
+      }
+
+      .cls-25 {
+        font-size: 38.18px;
+      }
+
+      .cls-31, .cls-28 {
+        stroke: #3e5474;
+      }
+
+      .cls-31, .cls-32 {
+        fill: none;
+      }
+
+      .cls-45 {
+        opacity: .15;
+      }
+
+      .cls-26 {
+        opacity: .75;
+      }
+
+      .cls-27 {
+        opacity: .74;
+      }
+
+      .cls-58 {
+        fill: #efe9d1;
+      }
+
+      .cls-59 {
+        fill: #c1bdc5;
+      }
+
+      .cls-60 {
+        letter-spacing: 0em;
+      }
+
+      .cls-61 {
+        fill: #33c;
+      }
+
+      .cls-62 {
+        fill: #36f;
+      }
+
+      .cls-40, .cls-63 {
+        fill: #99c;
+      }
+
+      .cls-64 {
+        fill: #ccc;
+      }
+
+      .cls-65 {
+        opacity: .86;
+      }
+
+      .cls-66 {
+        letter-spacing: .02em;
+      }
+
+      .cls-67 {
+        fill: #00c;
+        opacity: .58;
+      }
+
+      .cls-68 {
+        opacity: .96;
+      }
+
+      .cls-29 {
+        stroke-width: 22px;
+      }
+
+      .cls-30 {
+        stroke: #2a4365;
+      }
+
+      .cls-33 {
+        fill: #576382;
+      }
+
+      .cls-9 {
+        opacity: .45;
+      }
+
+      .cls-69 {
+        letter-spacing: 0em;
+      }
+    </style></defs><g id="_旋鈕本體" data-name="旋鈕本體">
+      <circle class="cls-22" cx="1641.29" cy="921.95" r="85.48"/>
+      <path class="cls-4" d="M1573.77,921.95c0,12.22,3.26,23.67,8.94,33.56,23.4-24.07,46.62-48.37,70.56-72.07-4.47-10.42-10.36-20.18-17.47-28.77-34.72,2.8-62.03,31.84-62.03,67.28Z"/>
+      <path class="cls-5" d="M1641.29,854.44c-1.85,0-3.68.1-5.49.24,7.11,8.59,13,18.34,17.47,28.77,6.93-6.86,13.91-13.67,20.98-20.41-9.75-5.47-20.99-8.59-32.96-8.59Z"/>
+      <path class="cls-4" d="M1661.58,911.99c-21.35,20.33-41.79,41.62-62.16,62.91,11.51,9.12,26.05,14.57,41.87,14.57,1.53,0,3.04-.07,4.54-.17,8.21-13.74,14.05-28.7,16.29-44.8,1.45-10.74,1.19-21.73-.55-32.52Z"/>
+      <path class="cls-5" d="M1708.81,921.95c0-15.17-5.01-29.16-13.46-40.43-11.58,9.81-22.8,20.01-33.78,30.47,1.74,10.79,2,21.78.55,32.52-2.25,16.1-8.08,31.05-16.29,44.8,35.17-2.34,62.98-31.59,62.98-67.35Z"/>
+    </g></svg>

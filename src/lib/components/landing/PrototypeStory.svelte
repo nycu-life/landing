@@ -521,6 +521,13 @@
 					<source media="(max-width: 900px)" srcset="{base}/story/designer/gacha-tablet.svg" />
 					<img src="{base}/story/designer/gacha-desktop.svg" alt="" />
 				</picture>
+				<!-- The dial cut from each artwork's 旋鈕本體 layer, sitting exactly over its baked
+				     twin so it can spin as the capsule dispenses. -->
+				<picture class="machine-knob" aria-hidden="true">
+					<source media="(max-width: 430px)" srcset="{base}/story/designer/knob-mobile.svg" />
+					<source media="(max-width: 900px)" srcset="{base}/story/designer/knob-tablet.svg" />
+					<img src="{base}/story/designer/knob-desktop.svg" alt="" />
+				</picture>
 				<img class="machine-base" src="{base}/story/designer/gacha-machine.svg" alt="" />
 				<img class="machine-glass" src="{base}/story/designer/gacha-glass.svg" alt="" />
 				<div class="gacha-contents" aria-hidden="true">
@@ -1335,6 +1342,23 @@
 		width: 100%;
 		height: 100%;
 		object-fit: contain;
+	}
+	/* Anchors below are the 旋鈕本體 bbox within each artwork's viewBox; the dial makes one
+	   decisive turn while the capsule is dispensed (progress 0 → 0.025). */
+	.machine-knob {
+		position: absolute;
+		left: 80.89%;
+		top: 77.22%;
+		width: 9.22%;
+		height: 16.3%;
+		will-change: transform;
+		transform: translateY(var(--hero-art-shift))
+			rotate(calc(clamp(0, calc(var(--story-progress) * 40), 1) * 160deg));
+	}
+	.machine-knob img {
+		display: block;
+		width: 100%;
+		height: 100%;
 	}
 	.gacha-machine > .machine-base,
 	.gacha-machine > .machine-glass,
@@ -2161,6 +2185,12 @@
 			left: 18.5%;
 			top: 80%;
 		}
+		.machine-knob {
+			left: 78.54%;
+			top: 77.71%;
+			width: 15.01%;
+			height: 16.86%;
+		}
 		.about-shell {
 			grid-template-columns: 1fr;
 			grid-template-rows: auto auto;
@@ -2300,7 +2330,9 @@
 		/* The landscape insets (top 16 / right 11 / bottom 12 / left 18) rotated with the art. */
 		.faq-list {
 			/* Align copy to the actual front sheet, not the transparent/decorative SVG canvas. */
-			inset: 21% 14% 6% 15%;
+			/* Match the phone insets: the looser 14/15% margins let long answers and the +/-
+			   toggles spill past the sheet's grid squares on mid-size tablets (e.g. 853×1280). */
+			inset: 21.5% 18.1% 4% 20%;
 		}
 		/* Type scales with the pad, so a bigger board means bigger text. */
 		.faq-list > strong {
@@ -2372,6 +2404,12 @@
 		.capsule {
 			left: 22.6%;
 			top: 80%;
+		}
+		.machine-knob {
+			left: 74.55%;
+			top: 77.05%;
+			width: 19.51%;
+			height: 17.42%;
 		}
 		.about-shell {
 			gap: 0.75rem;
