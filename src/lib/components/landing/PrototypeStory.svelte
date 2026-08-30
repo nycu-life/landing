@@ -1196,7 +1196,9 @@
 	.gacha-machine {
 		--gacha-width: min(64vw, 145svh, 112rem);
 		--capsule-size: clamp(4.5rem, 8vw, 8rem);
-		--capsule-travel-x: 0vw;
+		/* The roll carries the capsule from the machine's release hole (17.3% into the artwork)
+		   to the horizontal centre of the viewport: 0.5 − 0.173 of the machine width. */
+		--capsule-travel-x: calc(var(--gacha-width) * 0.327);
 		--capsule-travel-y: -9vh;
 		--capsule-zoom: 1.7;
 		--hero-art-shift: 0px;
@@ -1417,11 +1419,14 @@
 			scale(calc(0.1 + sin(var(--capsule-open) * 3.1416) * 0.85));
 	}
 	.scroll-hint {
+		/* Gone by the time the capsule emerges: fades and drifts upward over the first 4%. */
+		--hint-out: clamp(0, calc(var(--story-progress) * 25), 1);
 		position: absolute;
 		z-index: 10;
-		bottom: clamp(2.75rem, 5vh, 4rem);
+		bottom: calc(clamp(2.75rem, 5vh, 4rem) + var(--hint-out) * 8vh);
 		left: 50%;
 		transform: translateX(-50%);
+		opacity: calc(1 - var(--hint-out));
 		color: #9ca3af;
 		font-size: 0.65rem;
 		letter-spacing: 0.16em;
@@ -2036,7 +2041,8 @@
 		.gacha-machine {
 			--gacha-width: min(94vw, 44rem);
 			--capsule-size: clamp(4.5rem, 14vw, 6.5rem);
-			--capsule-travel-x: 30vw;
+			/* Release hole sits 18.5% into the mobile artwork. */
+			--capsule-travel-x: calc(var(--gacha-width) * 0.315);
 			--capsule-travel-y: -4svh;
 			--capsule-zoom: 1.65;
 			--hero-art-shift: 0px;
@@ -2266,7 +2272,8 @@
 		.gacha-machine {
 			--gacha-width: min(96vw, 26rem);
 			--capsule-size: clamp(4.25rem, 18vw, 5.5rem);
-			--capsule-travel-x: 26vw;
+			/* Release hole sits 22.6% into the compact artwork. */
+			--capsule-travel-x: calc(var(--gacha-width) * 0.274);
 			--capsule-travel-y: -2svh;
 			--capsule-zoom: 1.8;
 			aspect-ratio: 1179 / 1320;
