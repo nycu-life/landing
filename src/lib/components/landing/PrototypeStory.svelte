@@ -1695,8 +1695,7 @@
 		width: var(--device-card-width);
 		aspect-ratio: 1863.64 / 1631.53;
 		filter: drop-shadow(0 2rem 3rem rgba(36, 98, 255, 0.18));
-		/* Nudged right of the phone-centre anchor so the hand doesn't sit too far left. */
-		transform: translate(-15.2%, -28.4%);
+		transform: translate(-16.4%, -28.4%);
 	}
 	.device-card > img {
 		position: absolute;
@@ -1770,8 +1769,9 @@
 	.device-card > .device-hand-front {
 		z-index: 4;
 		/* The supplied hand leaves a hairline of screen between its thumb/palm join and the
-		   phone's lower-right edge. Pull the foreground hand under the bezel to close that seam. */
-		transform: translateX(-1.15%);
+		   phone's lower-right edge. -1.15% closed that seam;
+		   the extra +0.75% sits the thumb a touch further right per design feedback. */
+		transform: translateX(-0.4%);
 	}
 	/* The thumb mimes the swipe that switches products (#49). */
 	.device-card > .device-hand-front.swipe-up {
@@ -1782,12 +1782,12 @@
 	}
 	@keyframes thumb-swipe-up {
 		40% {
-			transform: translateX(-1.15%) translateY(-1.6%) rotate(-0.6deg);
+			transform: translateX(-0.4%) translateY(-1.6%) rotate(-0.6deg);
 		}
 	}
 	@keyframes thumb-swipe-down {
 		40% {
-			transform: translateX(-1.15%) translateY(1.6%) rotate(0.6deg);
+			transform: translateX(-0.4%) translateY(1.6%) rotate(0.6deg);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
@@ -2246,8 +2246,7 @@
 		}
 		.device-card {
 			top: 0;
-			/* Nudged right of the phone-centre anchor so the hand doesn't sit too far left. */
-			transform: translate(-15.2%, -0.06%);
+			transform: translate(-16.4%, -0.06%);
 		}
 		/* The phone may run off the stage on short phones: keep the indicator pinned to the
 		   stage bottom and the arrows within reach. */
