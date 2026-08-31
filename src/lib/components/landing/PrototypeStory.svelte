@@ -1891,15 +1891,13 @@
 		   the extra +0.85% sits the thumb a touch further right per design feedback. */
 		transform: translateX(-0.3%);
 	}
-	/* Only the thumb moves, like idly scrolling a feed (#61). The thumb layer now carries a
-	   stroke-less flesh extension tucked inside the palm (the cut-out-animation hidden
-	   overlap), so it can actually slide: anything it uncovers at the joint is palm-coloured.
-	   Keep total upward travel under ~1.5% of the box or the extension's top edge crosses
-	   the palm's contour ink line. */
+	/* Only the thumb moves, like idly scrolling a feed (#61). It slides STRICTLY along its
+	   own seam with the palm (direction (+0.475, −0.881) of the artwork box, no rotation),
+	   so the cut line glides over itself and the joint can never open along its length. Two
+	   tiny stroke-less patches in the palm layer cover the seam's end points. */
 	.device-card > .device-thumb {
 		z-index: 5;
 		transform: translateX(-0.3%);
-		transform-origin: 29.5% 37.2%;
 		animation: thumb-idle 3.6s ease-in-out infinite;
 	}
 	@keyframes thumb-idle {
@@ -1909,10 +1907,10 @@
 			transform: translateX(-0.3%);
 		}
 		12% {
-			transform: translate(-0.36%, -0.55%) rotate(0.6deg);
+			transform: translate(-0.07%, -0.49%);
 		}
 		32% {
-			transform: translate(-0.22%, 0.18%) rotate(-0.25deg);
+			transform: translate(-0.4%, 0.22%);
 		}
 		48% {
 			transform: translateX(-0.3%);
@@ -1927,12 +1925,12 @@
 	}
 	@keyframes thumb-swipe-up {
 		40% {
-			transform: translate(-0.38%, -1.15%) rotate(1.05deg);
+			transform: translate(0.26%, -1.19%);
 		}
 	}
 	@keyframes thumb-swipe-down {
 		40% {
-			transform: translate(-0.05%, 1.2%) rotate(-1.3deg);
+			transform: translate(-0.86%, 1.19%);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
