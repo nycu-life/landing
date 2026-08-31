@@ -232,6 +232,25 @@ test('about film playback follows the scrubbed reveal window', async ({ page }) 
 	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'false');
 });
 
+test('about film stops startup retries after YouTube reports a paused state', async ({ page }) => {
+	await page.goto('/?motion=on');
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+	await scrollToProgress(page, 0.41);
+	await expect(story(page)).toHaveAttribute('data-about-film-retrying', 'true');
+
+	await page.locator('.team-film iframe').evaluate((iframe) => {
+		window.dispatchEvent(
+			new MessageEvent('message', {
+				origin: 'https://www.youtube-nocookie.com',
+				source: (iframe as HTMLIFrameElement).contentWindow,
+				data: JSON.stringify({ event: 'onStateChange', info: 2 })
+			})
+		);
+	});
+
+	await expect(story(page)).toHaveAttribute('data-about-film-retrying', 'false');
+});
+
 test('hero uses the designer art direction for desktop, phone, and tablet', async ({ page }) => {
 	for (const viewport of [
 		{ width: 390, height: 844, asset: /gacha-mobile\.svg$/, minWidthRatio: 0.9 },
@@ -1015,8 +1034,12 @@ test('phone body copy uses the requested two-point type increase', async ({ page
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
 
 	const sizes = await page.evaluate(() => ({
-		product: Number.parseFloat(getComputedStyle(document.querySelector('.product-copy > p')!).fontSize),
-		feature: Number.parseFloat(getComputedStyle(document.querySelector('.feature-list span')!).fontSize)
+		product: Number.parseFloat(
+			getComputedStyle(document.querySelector('.product-copy > p')!).fontSize
+		),
+		feature: Number.parseFloat(
+			getComputedStyle(document.querySelector('.feature-list span')!).fontSize
+		)
 	}));
 	expect(sizes.product).toBeCloseTo(15.9472, 2);
 	expect(sizes.feature).toBeCloseTo(15.1472, 2);

@@ -86,6 +86,7 @@
 	let aboutFilmShouldPlay = $state(false);
 	let aboutFilmAudioUnlocked = false;
 	let aboutFilmRetryTimers: ReturnType<typeof setTimeout>[] = [];
+	let aboutFilmRetrying = $state(false);
 	let progressValue = 0;
 	let chapterIndex = $state(0);
 	let sceneVisible = $state([true, false, false, false, false]);
@@ -181,6 +182,41 @@
 	const clearAboutFilmRetries = () => {
 		for (const timer of aboutFilmRetryTimers) clearTimeout(timer);
 		aboutFilmRetryTimers = [];
+		aboutFilmRetrying = false;
+	};
+	const readAboutFilmPlayerState = (data: unknown) => {
+		let message = data;
+		if (typeof message === 'string') {
+			try {
+				message = JSON.parse(message);
+			} catch {
+				return null;
+			}
+		}
+		if (!message || typeof message !== 'object') return null;
+		const payload = message as { event?: unknown; info?: unknown };
+		if (payload.event === 'onStateChange' && typeof payload.info === 'number') {
+			return payload.info;
+		}
+		if (
+			payload.event === 'infoDelivery' &&
+			payload.info &&
+			typeof payload.info === 'object' &&
+			typeof (payload.info as { playerState?: unknown }).playerState === 'number'
+		) {
+			return (payload.info as { playerState: number }).playerState;
+		}
+		return null;
+	};
+	const onAboutFilmMessage = (event: MessageEvent) => {
+		if (
+			event.origin !== 'https://www.youtube-nocookie.com' ||
+			event.source !== aboutFilmFrame?.contentWindow
+		)
+			return;
+		// Once YouTube reports a real player state, it is ready. Continuing the startup
+		// retries after that point can immediately undo a viewer's tap on Pause (#78).
+		if (readAboutFilmPlayerState(event.data) !== null) clearAboutFilmRetries();
 	};
 	const playAboutFilm = () => {
 		if (aboutFilmAudioUnlocked) {
@@ -197,6 +233,7 @@
 		clearAboutFilmRetries();
 		if (!aboutFilmLoaded) return;
 		if (aboutFilmShouldPlay) {
+			aboutFilmRetrying = true;
 			for (const delay of [0, 120, 350, 700, 1200, 2000, 3500, 5000]) {
 				if (delay === 0) playAboutFilm();
 				else {
@@ -217,6 +254,7 @@
 	};
 	const onAboutFilmLoad = () => {
 		aboutFilmLoaded = true;
+		sendAboutFilmCommand('addEventListener', ['onStateChange']);
 		syncAboutFilmPlayback();
 	};
 	/* Product stepper state. While the lock is engaged the page holds still and one scroll
@@ -455,6 +493,7 @@
 		window.addEventListener('touchcancel', onTouchEnd, { passive: true });
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('hashchange', onHashChange);
+		window.addEventListener('message', onAboutFilmMessage);
 		window.addEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
 		window.addEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
 		window.addEventListener('keydown', unlockAboutFilmAudio, { capture: true });
@@ -473,6 +512,7 @@
 			window.removeEventListener('touchcancel', onTouchEnd);
 			window.removeEventListener('keydown', onKeyDown);
 			window.removeEventListener('hashchange', onHashChange);
+			window.removeEventListener('message', onAboutFilmMessage);
 			window.removeEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
 			window.removeEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
 			window.removeEventListener('keydown', unlockAboutFilmAudio, { capture: true });
@@ -494,6 +534,7 @@
 	data-story-animating={productStepping}
 	data-story-ready={storyReady ? 'true' : 'false'}
 	data-about-film-should-play={aboutFilmShouldPlay ? 'true' : 'false'}
+	data-about-film-retrying={aboutFilmRetrying ? 'true' : 'false'}
 	data-reduced-motion={reducedMotion ? 'true' : 'false'}
 >
 	<div class="story-stage" bind:this={stageEl}>
