@@ -79,6 +79,7 @@
 	let switchDir = $state(1);
 	let productStepping = $state(false);
 	let aboutTextIn = $state(false);
+	let aboutFilmIn = $state(false);
 	let storyReady = $state(false);
 	let reducedMotion = $state(false);
 	let activeProductData = $derived(products[activeProduct]);
@@ -149,6 +150,9 @@
 		sceneVisible = SCENE_SPANS.map(([from, to]) => progressValue >= from && progressValue <= to);
 		if (progressValue >= 0.25) aboutTextIn = true;
 		else if (progressValue < 0.21) aboutTextIn = false;
+		// The copy's text realigns left partway through its slide toward the film (#59).
+		if (progressValue >= 0.345) aboutFilmIn = true;
+		else if (progressValue < 0.33) aboutFilmIn = false;
 		const filmShouldPlay = progressValue >= 0.36 && progressValue <= 0.47;
 		if (filmShouldPlay !== aboutFilmShouldPlay) setAboutFilmPlayback(filmShouldPlay);
 	};
@@ -761,7 +765,7 @@
 			aria-label={m.story_about_label()}
 		>
 			<div class="section-shell about-shell">
-				<article class="about-copy" class:landed={aboutTextIn}>
+				<article class="about-copy" class:landed={aboutTextIn} class:film-in={aboutFilmIn}>
 					<span class="eyebrow">{m.story_about_eyebrow()}</span>
 					<h2>{m.story_about_title_1()}<br />{m.story_about_title_2()}</h2>
 					<p>{m.story_about_body()}</p>
@@ -1551,8 +1555,12 @@
 		animation: bob 1.8s ease-in-out infinite;
 	}
 	.about-shell {
+		/* Shared by the copy's centring shift and the film's rise (#59). */
+		--film-in: clamp(0, calc((var(--story-progress) - 0.3) * 10), 1);
 		grid-template-columns: minmax(0, 0.9fr) minmax(25rem, 1.1fr);
 		gap: clamp(2rem, 6vw, 6rem);
+		/* Container so the copy can measure the shell (cqw) to centre itself in it. */
+		container-type: inline-size;
 	}
 	/* Two-stage entrance (#46): the copy drops in first and settles with two shrinking
 	   bounces; only after the reader keeps scrolling does the film rise into place. Before it
@@ -1560,6 +1568,16 @@
 	   scene's own below-viewport enter offset and leak the copy over the hero. */
 	.about-copy {
 		visibility: hidden;
+		/* The copy drops into the middle of the shell, centred; scrolling on slides it (via
+		   `translate`, composing with the drop animation's transform) into its grid column as
+		   the film rises (#59). 50cqw − 50% moves the element's centre onto the shell's. */
+		translate: calc((1 - var(--film-in)) * (50cqw - 50%)) 0;
+	}
+	.about-copy:not(.film-in) {
+		text-align: center;
+	}
+	.about-copy:not(.film-in) p {
+		margin-inline: auto;
 	}
 	.about-copy.landed {
 		visibility: visible;
@@ -1607,7 +1625,6 @@
 		box-shadow: 0 2rem 4rem rgba(36, 98, 255, 0.2);
 		overflow: hidden;
 		color: #fff;
-		--film-in: clamp(0, calc((var(--story-progress) - 0.3) * 10), 1);
 		transform: translateY(calc((1 - var(--film-in)) * 95svh));
 	}
 	.team-video {
@@ -2201,6 +2218,8 @@
 		}
 		.about-copy {
 			text-align: center;
+			/* Single column: the copy is already centred, no shift toward the film. */
+			translate: none;
 		}
 		.about-copy h2 {
 			font-size: clamp(1.9rem, 7vw, 2.7rem);
