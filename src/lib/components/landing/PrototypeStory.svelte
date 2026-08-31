@@ -7,12 +7,27 @@
 	import { m } from '$lib/paraglide/messages';
 	import { dismissBootSplash } from '$lib/boot-splash';
 
-	const faqs = [
+	type Faq = {
+		question: () => string;
+		answer: () => string;
+		/* When set, the answer renders as pre + in-page link + post instead of plain text. */
+		link?: { pre: () => string; label: () => string; post: () => string; href: string };
+	};
+	const faqs: Faq[] = [
 		{ question: m.story_faq_q1, answer: m.story_faq_a1 },
 		{ question: m.story_faq_q2, answer: m.story_faq_a2 },
 		{ question: m.story_faq_q3, answer: m.story_faq_a3 },
 		{ question: m.story_faq_q4, answer: m.story_faq_a4 },
-		{ question: m.story_faq_q5, answer: m.story_faq_a5 }
+		{
+			question: m.story_faq_q5,
+			answer: m.story_faq_a5,
+			link: {
+				pre: m.story_faq_a5_pre,
+				label: m.story_faq_a5_link,
+				post: m.story_faq_a5_post,
+				href: '/wishpool/'
+			}
+		}
 	];
 	/* The story is one continuous progress value (0 → 1) scrubbed by native page scrolling: the
 	   outer section is tall, the stage is sticky, and every scene choreographs itself off
@@ -970,7 +985,15 @@
 									></span></button
 								>
 								{#if activeFaq === index}
-									<p transition:slide={{ duration: 260 }}>{item.answer()}</p>
+									<p transition:slide={{ duration: 260 }}>
+										{#if item.link}
+											{item.link.pre()}<a class="faq-answer-link" href="{base}{item.link.href}"
+												>{item.link.label()}</a
+											>{item.link.post()}
+										{:else}
+											{item.answer()}
+										{/if}
+									</p>
 								{/if}
 							</div>
 						{/each}
@@ -2065,6 +2088,15 @@
 		color: #52647d;
 		font-size: 0.8rem;
 		line-height: 1.55;
+	}
+	.faq-answer-link {
+		color: #2462ff;
+		font-weight: 650;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+	.faq-answer-link:hover {
+		color: #36f;
 	}
 	/* ＋ / − built from two bars so the toggle morphs instead of swapping glyphs. */
 	.faq-icon {
