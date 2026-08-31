@@ -913,7 +913,7 @@
 						     translation would sever it. -->
 						<img
 							class="device-hand-front"
-							src="{base}/story/designer/hand/front-palm-v2.svg?v=3"
+							src="{base}/story/designer/hand/front-palm-v2.svg?v=4"
 							alt=""
 						/>
 						<img
@@ -1891,31 +1891,30 @@
 		   the extra +0.85% sits the thumb a touch further right per design feedback. */
 		transform: translateX(-0.3%);
 	}
-	/* Only the thumb moves, like idly scrolling a feed (#61). It slides STRICTLY along its
-	   own seam with the palm (direction (+0.475, −0.881) of the artwork box, no rotation),
-	   so the cut line glides over itself and the joint can never open along its length. Two
-	   tiny stroke-less patches in the palm layer cover the seam's end points. */
+	/* Only the thumb moves, like idly scrolling a feed (#61). Its base joint stays pinned to
+	   the palm while the fingertip traces a tiny arc, matching how a real thumb pivots. */
 	.device-card > .device-thumb {
 		z-index: 5;
+		transform-origin: 25.8% 39.4%;
 		transform: translateX(-0.3%);
 		animation: thumb-idle 3.6s ease-in-out infinite;
 	}
-	/* Deliberately minute (亭蓁/Sky: just a touch more than still) — the ink lines crossing
-	   the seam shear by the travel distance, so a few pixels is all the style can absorb. */
+	/* Deliberately minute (亭蓁/Sky: just a touch more than still): the joint does not travel;
+	   only the tip visibly turns. */
 	@keyframes thumb-idle {
 		0%,
 		58%,
 		100% {
-			transform: translateX(-0.3%);
+			transform: translateX(-0.3%) rotate(0deg);
 		}
 		12% {
-			transform: translate(-0.2%, -0.22%);
+			transform: translateX(-0.3%) rotate(-3deg);
 		}
 		32% {
-			transform: translate(-0.35%, 0.11%);
+			transform: translateX(-0.3%) rotate(1.6deg);
 		}
 		48% {
-			transform: translateX(-0.3%);
+			transform: translateX(-0.3%) rotate(0deg);
 		}
 	}
 	/* A firmer, longer flick while the product actually switches (#49). */
@@ -1927,12 +1926,12 @@
 	}
 	@keyframes thumb-swipe-up {
 		40% {
-			transform: translate(-0.1%, -0.43%);
+			transform: translateX(-0.3%) rotate(-5deg);
 		}
 	}
 	@keyframes thumb-swipe-down {
 		40% {
-			transform: translate(-0.5%, 0.43%);
+			transform: translateX(-0.3%) rotate(5deg);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
