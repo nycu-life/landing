@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_圖層_1" data-name="圖層 1" xmlns="http://www.w3.org/2000/svg" viewBox="38.61 40.30 319.86 177.20">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke: #69f;
+        stroke-width: 5px;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5 {
+        fill: none;
+        stroke-linecap: round;
+      }
+
+      .cls-1, .cls-6 {
+        stroke-linejoin: round;
+      }
+
+      .cls-7 {
+        opacity: .22;
+      }
+
+      .cls-7, .cls-8, .cls-3, .cls-4, .cls-5, .cls-9 {
+        isolation: isolate;
+      }
+
+      .cls-7, .cls-9 {
+        fill: #18346f;
+      }
+
+      .cls-10 {
+        fill: #bfcbff;
+      }
+
+      .cls-2, .cls-11, .cls-6, .cls-12 {
+        stroke: #18346f;
+      }
+
+      .cls-2, .cls-11, .cls-3, .cls-4, .cls-5, .cls-12 {
+        stroke-miterlimit: 4;
+      }
+
+      .cls-2, .cls-5 {
+        stroke-width: 3px;
+      }
+
+      .cls-13 {
+        fill: #fff;
+      }
+
+      .cls-11 {
+        fill: #fff8de;
+      }
+
+      .cls-11, .cls-6, .cls-12 {
+        stroke-width: 4px;
+      }
+
+      .cls-6 {
+        fill: #fff3c9;
+      }
+
+      .cls-3 {
+        stroke: #7890ff;
+        stroke-width: 8px;
+      }
+
+      .cls-3, .cls-5 {
+        opacity: .9;
+      }
+
+      .cls-4 {
+        opacity: .75;
+        stroke: #fff;
+        stroke-width: 6px;
+      }
+
+      .cls-5 {
+        stroke: #d5deff;
+        stroke-dasharray: 10 10;
+      }
+
+      .cls-9 {
+        opacity: .18;
+      }
+
+      .cls-12 {
+        fill: #9cf;
+      }
+    </style>
+  </defs>
+  <g id="button">
+    <rect id="shadow" class="cls-10" x="57.88" y="77.06" width="292" height="126" rx="24" ry="24" transform="translate(-9.27 14.56) rotate(-4)"/>
+    <rect id="button-body" class="cls-12" x="49.2" y="67.64" width="292" height="126" rx="24" ry="24" transform="translate(-8.64 13.93) rotate(-4)"/>
+    <path id="button-highlight" class="cls-3" d="M92.75,90.8l203.5-14.23"/>
+    <path id="stitch" class="cls-5" d="M72.21,92.13c-8.77,3.62-13.13,12.95-12.29,24.92l3,42.9c1.26,17.96,12,28.23,31.09,28.9l216.23-15.49"/>
+    <g id="tape-tab">
+      <path id="tab-shadow" class="cls-9" d="M136.1,59.59l91.78-6.42,8.71,38.49-103.75,7.25,3.26-39.32Z"/>
+      <path id="tab-body" class="cls-6" d="M131.76,54.88l91.78-6.42,8.71,38.49-103.75,7.25,3.26-39.32Z"/>
+      <path id="tab-highlight" class="cls-4" d="M144.64,67.02l65.84-4.6"/>
+      <path id="tab-detail" class="cls-2" d="M155.65,79.03l46.89-3.28"/>
+    </g>
+    
+    <g id="arrow-button">
+      <circle id="arrow-shadow" class="cls-7" cx="301.43" cy="130.23" r="27"/>
+      <circle id="arrow-disc" class="cls-11" cx="298.09" cy="125.45" r="27"/>
+      <path id="arrow-line" class="cls-1" d="M285.12,126.36l23.94-1.67M299.38,115.34l10.67,9.28-9.28,10.67"/>
+    </g>
+  </g>
+</svg>

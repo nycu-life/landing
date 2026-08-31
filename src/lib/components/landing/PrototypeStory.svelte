@@ -482,7 +482,9 @@
 	data-reduced-motion={reducedMotion ? 'true' : 'false'}
 >
 	<div class="story-stage" bind:this={stageEl}>
-		<div class="story-progress"></div>
+		<div class="story-progress" aria-hidden="true">
+			<img src="{base}/ui/progress-line.svg" alt="" />
+		</div>
 		<nav class="chapter-nav" class:on-hero={chapterIndex === 0} aria-label="Story chapters">
 			{#each chapters as chapter, index (chapter.id)}
 				<a
@@ -797,24 +799,31 @@
 						<article class="product-copy" in:fly={flyIn(switchDir)} out:fly={flyOut(switchDir)}>
 							<h2>{activeProductData.name()}</h2>
 							<p>{activeProductData.summary()}</p>
-							<div class="feature-list">
+							<div class="feature-list" style="--frame-url: url('{base}/ui/product-frame.svg')">
 								{#each activeProductData.features as feature, index (index)}
 									<div>
 										<strong>{String(index + 1).padStart(2, '0')}</strong><span>{feature()}</span>
 									</div>
 								{/each}
 							</div>
+							<!-- Designer's tag buttons (#64 assets): faces stay stacked so the swap never
+							     flickers, and the label is live text for i18n. -->
 							{#if activeProductData.href}
 								<a
 									class="product-cta"
 									href={activeProductData.href}
 									target="_blank"
-									rel="noreferrer">{m.products_visit()} →</a
+									rel="noreferrer"
 								>
+									<img class="cta-face cta-face-default" src="{base}/ui/visit-default.svg" alt="" />
+									<img class="cta-face cta-face-hover" src="{base}/ui/visit-hover.svg" alt="" />
+									<span class="cta-label">{m.products_visit()}</span>
+								</a>
 							{:else}
-								<span class="product-cta product-cta-soon"
-									>{productStatusLabel[activeProductData.status]()}</span
-								>
+								<span class="product-cta product-cta-soon">
+									<img class="cta-face cta-face-default" src="{base}/ui/soon-tag.svg" alt="" />
+									<span class="cta-label">{productStatusLabel[activeProductData.status]()}</span>
+								</span>
 							{/if}
 						</article>
 					{/key}
@@ -824,8 +833,12 @@
 						type="button"
 						class="arrow previous"
 						aria-label="上一個產品"
-						onclick={() => selectProduct(activeProduct - 1)}>←</button
+						onclick={() => selectProduct(activeProduct - 1)}
 					>
+						<img class="arrow-face arrow-face-default" src="{base}/ui/arrow-default-left.svg" alt="" />
+						<img class="arrow-face arrow-face-hover" src="{base}/ui/arrow-hover-left.svg" alt="" />
+						<img class="arrow-face arrow-face-pressed" src="{base}/ui/arrow-pressed-left.svg" alt="" />
+					</button>
 					<!-- Designer's layered hand, split from her composite so every layer shares the
 					     same 1863.64×1631.53 box: back fingers behind the phone, the screen inside
 					     the frame's cutout, then palm/wrist, little finger and the swiping thumb. -->
@@ -871,7 +884,11 @@
 						</div>
 						<img class="device-frame" src="{base}/story/designer/hand/phone-v2.svg" alt="" />
 						<!-- Palm and thumb are separate layers so only the thumb mimes the swipe (#61). -->
-						<img class="device-hand-front" src="{base}/story/designer/hand/front-palm-v2.svg" alt="" />
+						<img
+							class="device-hand-front"
+							src="{base}/story/designer/hand/front-palm-v2.svg"
+							alt=""
+						/>
 						<img
 							class="device-thumb"
 							class:swipe-up={productStepping && switchDir === 1}
@@ -886,8 +903,20 @@
 						type="button"
 						class="arrow next"
 						aria-label="下一個產品"
-						onclick={() => selectProduct(activeProduct + 1)}>→</button
+						onclick={() => selectProduct(activeProduct + 1)}
 					>
+						<img
+							class="arrow-face arrow-face-default"
+							src="{base}/ui/arrow-default-right.svg"
+							alt=""
+						/>
+						<img class="arrow-face arrow-face-hover" src="{base}/ui/arrow-hover-right.svg" alt="" />
+						<img
+							class="arrow-face arrow-face-pressed"
+							src="{base}/ui/arrow-pressed-right.svg"
+							alt=""
+						/>
+					</button>
 					<div class="product-dots" aria-label="選擇產品">
 						{#each products as product, index (product.id)}
 							<button
@@ -950,7 +979,7 @@
 				<div class="join-head">
 					<span class="eyebrow">{m.story_join_eyebrow()}</span>
 					<h2>{m.story_join_heading()}</h2>
-					<p>{m.story_join_title_1()}{m.story_join_title_2()}</p>
+					<p>{m.story_join_tagline()}</p>
 				</div>
 				<ul class="join-cards">
 					{#each joinRoles as role (role.id)}
@@ -1041,22 +1070,8 @@
 	:global(:root[data-theme='dark']) .hero-orbit::after {
 		border-color: rgba(185, 207, 238, 0.13);
 	}
-	:global(:root[data-theme='dark']) .feature-list div {
-		background: #18263d;
-		box-shadow: 0 0.7rem 2rem rgba(0, 0, 0, 0.2);
-	}
-	:global(:root[data-theme='dark']) .feature-list span {
-		color: #d2dbea;
-	}
-	:global(:root[data-theme='dark']) .product-cta-soon {
-		background: #24354f;
-		color: #b5c3d6;
-	}
-	:global(:root[data-theme='dark']) .arrow {
-		border-color: #36517c;
-		background: #18263d;
-		color: #8fb2ff;
-	}
+	/* The feature rows sit on the designer's white paper frame, so their ink colours hold in
+	   dark mode too (like the notebook and join cards). */
 	:global(:root[data-theme='dark']) .product-dots button {
 		background: #53657f;
 	}
@@ -1070,16 +1085,20 @@
 	:global(:root[data-theme='dark']) .join-head p {
 		color: #c8d4e5;
 	}
+	/* The designer's hand-drawn progress line: revealed left-to-right by clipping, so the
+	   stroke's wobble never stretches with progress. */
 	.story-progress {
 		position: absolute;
 		z-index: 30;
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 3px;
-		transform-origin: left;
-		transform: scaleX(var(--story-progress));
-		background: #2462ff;
+		clip-path: inset(0 calc(100% - var(--story-progress) * 100%) 0 0);
+	}
+	.story-progress img {
+		display: block;
+		width: 100%;
+		height: auto;
 	}
 	/* Chapters push each other vertically (#47/#50): during a transition the outgoing scene
 	   slides from 0 to -100% while the incoming one slides from 100% to 0, tiling exactly like
@@ -1666,14 +1685,14 @@
 		gap: 0.65rem;
 		margin-top: 1.35rem;
 	}
+	/* Each feature row sits in the designer's hand-drawn frame (框框/產品介紹), stretched to
+	   the row via preserveAspectRatio="none". */
 	.feature-list div {
 		display: flex;
 		align-items: center;
 		gap: 0.9rem;
-		padding: 0.85rem 1rem;
-		border-radius: 1rem;
-		background: #fff;
-		box-shadow: 0 0.7rem 2rem rgba(55, 65, 81, 0.1);
+		padding: 0.85rem 1.2rem;
+		background: var(--frame-url) center / 100% 100% no-repeat;
 	}
 	.feature-list strong {
 		color: #2462ff;
@@ -1683,25 +1702,62 @@
 		color: #4b5563;
 		font-size: 0.86rem;
 	}
+	/* Designer's 前往使用 tag: stacked default/hover faces with a live label over the tag's
+	   text area (left of the arrow disc), tilted to sit on the drawn baseline. */
 	.product-cta {
-		display: inline-flex;
-		align-items: center;
-		margin-top: 1.35rem;
-		padding: 0.8rem 1.35rem;
-		border-radius: 999px;
-		background: #2462ff;
+		position: relative;
+		display: inline-grid;
+		place-items: center;
+		margin-top: 1.1rem;
+		width: 11.5rem;
+		aspect-ratio: 338.17 / 178.42;
 		color: #fff;
-		font-size: 0.88rem;
+		font-size: 1.02rem;
 		font-weight: 700;
+		letter-spacing: 0.04em;
 		transition: transform 0.2s ease;
 	}
 	.product-cta:hover {
 		transform: translateY(-2px);
 	}
+	.cta-face {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.cta-face-default {
+		opacity: 1;
+	}
+	.product-cta:hover .cta-face-default {
+		opacity: 0;
+	}
+	.product-cta:hover .cta-face-hover {
+		opacity: 1;
+	}
+	.cta-label {
+		position: relative;
+		max-width: 62%;
+		text-align: center;
+		line-height: 1.1;
+		transform: translate(-17%, 8%) rotate(-4deg);
+	}
+	/* 開發中 paper tag: ink label, no link affordance. */
 	.product-cta-soon {
-		background: #e5e7eb;
-		color: #6b7280;
+		width: 9.75rem;
+		aspect-ratio: 267.77 / 175.59;
+		color: #1b2b56;
 		cursor: default;
+	}
+	.product-cta-soon:hover {
+		transform: none;
+	}
+	.product-cta-soon .cta-label {
+		max-width: 70%;
+		transform: translate(0%, 12%) rotate(-6deg);
 	}
 	.product-demo {
 		--device-card-width: min(146vh, 100rem);
@@ -1869,22 +1925,44 @@
 		border-top: 3px dashed #2462ff;
 		transform: rotate(-20deg);
 	}
+	/* Designer's sticker arrows: three faces per side (default/hover/pressed). */
 	.arrow {
 		position: absolute;
 		z-index: 4;
 		top: 50%;
-		width: 3.2rem;
+		width: 3.4rem;
 		aspect-ratio: 1;
-		border: 1px solid #ccdbff;
-		border-radius: 50%;
-		background: #fff;
-		color: #2462ff;
-		font-size: 1.3rem;
+		padding: 0;
+		border: 0;
+		background: none;
 		cursor: pointer;
-		box-shadow: 0 0.8rem 2rem rgba(55, 65, 81, 0.1);
 	}
 	.arrow:hover {
 		transform: scale(1.08);
+	}
+	.arrow-face {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.arrow-face-default {
+		opacity: 1;
+	}
+	.arrow:hover .arrow-face-default {
+		opacity: 0;
+	}
+	.arrow:hover .arrow-face-hover {
+		opacity: 1;
+	}
+	.arrow:active .arrow-face-default,
+	.arrow:active .arrow-face-hover {
+		opacity: 0;
+	}
+	.arrow:active .arrow-face-pressed {
+		opacity: 1;
 	}
 	.arrow.previous {
 		left: 0;
@@ -2415,9 +2493,12 @@
 			font-size: 0.78rem;
 		}
 		.product-cta {
-			margin-top: 0.7rem;
-			padding: 0.55rem 1.1rem;
-			font-size: 0.8rem;
+			margin-top: 0.45rem;
+			width: 9.5rem;
+			font-size: 0.88rem;
+		}
+		.product-cta-soon {
+			width: 8.25rem;
 		}
 		.product-demo {
 			min-height: 0;

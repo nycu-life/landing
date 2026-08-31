@@ -16,9 +16,14 @@
 	<section id="wishes" class="wish-invite" aria-labelledby="wish-invite-title">
 		<h2 id="wish-invite-title">{m.wish_title()}</h2>
 		<p class="wish-invite-lede">{m.wish_lede()}</p>
-		<a class="landing-button landing-button-primary" href="{base}/wishpool/"
-			>{m.wish_cta()} <span aria-hidden="true">→</span></a
-		>
+		<!-- Designer's 去許願 blob button: stacked faces, live label for i18n. The hover
+		     face carries a sparkle beyond the blob, so it renders oversized, anchored to the
+		     blob's shared bottom-left corner. -->
+		<a class="wish-cta" href="{base}/wishpool/">
+			<img class="wish-face wish-face-default" src="{base}/ui/wish-default.svg" alt="" />
+			<img class="wish-face wish-face-hover" src="{base}/ui/wish-hover.svg" alt="" />
+			<span class="wish-cta-label">{m.wish_cta()} <span aria-hidden="true">→</span></span>
+		</a>
 	</section>
 
 	<SiteFooter />
@@ -53,7 +58,49 @@
 		color: var(--ink-soft);
 		line-height: 1.8;
 	}
-	.wish-invite a {
+	.wish-cta {
+		position: relative;
+		display: inline-grid;
+		place-items: center;
 		margin-top: 0.5rem;
+		width: 12rem;
+		aspect-ratio: 360.24 / 136.87;
+		color: #fff;
+		font-size: 1.05rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		transition: transform 0.2s ease;
+	}
+	.wish-cta:hover {
+		transform: translateY(-2px);
+		color: #172235;
+	}
+	.wish-face {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.wish-face-default {
+		opacity: 1;
+	}
+	/* Hover blob + sparkle bounds vs the default blob: 105.6% × 115.4%, bottom-left aligned. */
+	.wish-face-hover {
+		inset: auto auto 0 0;
+		width: 105.6%;
+		height: 115.4%;
+	}
+	.wish-cta:hover .wish-face-default {
+		opacity: 0;
+	}
+	.wish-cta:hover .wish-face-hover {
+		opacity: 1;
+	}
+	.wish-cta-label {
+		position: relative;
+		transform: translateY(-4%);
 	}
 </style>

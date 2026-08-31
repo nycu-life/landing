@@ -95,6 +95,7 @@
 	"story_join_cta_lead": "Build NYCU LIFE with us｜",
 	"story_join_cta": "填寫加入表單 →",
 	"story_join_heading": "加入我們",
+	"story_join_tagline": "下一個解法，也許由你開始。",
 	"story_join_card_cta": "填寫表單 →",
 	"story_join_group_ux": "UX 組",
 	"story_join_group_marketing": "行銷組",
@@ -288,7 +289,7 @@
 
 	"wish_title": "一起改造 NYCU 的 LIFE",
 	"wish_lede": "許下一個願望，也來看看大家敲碗的功能！",
-	"wish_cta": "前往許願池",
+	"wish_cta": "去許願",
 	"wish_input_label": "一句話說出你的願望",
 	"wish_input_placeholder": "例如：想知道健身房現在有多少人",
 	"wish_category_label": "願望分類",

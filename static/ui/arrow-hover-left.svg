@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_圖層_1" data-name="圖層 1" xmlns="http://www.w3.org/2000/svg" viewBox="306.05 29.71 108.80 105.98">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #f7f7fc;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        stroke: #1b2030;
+      }
+
+      .cls-1, .cls-3, .cls-4 {
+        stroke-width: 3px;
+      }
+
+      .cls-5 {
+        stroke-width: 1.62px;
+      }
+
+      .cls-5, .cls-6 {
+        stroke: #4968ff;
+      }
+
+      .cls-5, .cls-2, .cls-7, .cls-8, .cls-9 {
+        fill: none;
+      }
+
+      .cls-5, .cls-7 {
+        stroke-miterlimit: 4.32;
+      }
+
+      .cls-6 {
+        fill: #bfcbff;
+        stroke-width: 2px;
+      }
+
+      .cls-2 {
+        stroke-width: 4px;
+      }
+
+      .cls-2, .cls-8, .cls-9 {
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .cls-3 {
+        fill: #d6d3ff;
+      }
+
+      .cls-4 {
+        fill: #334cff;
+      }
+
+      .cls-7 {
+        stroke-width: 2.16px;
+      }
+
+      .cls-7, .cls-8 {
+        stroke: #334cff;
+      }
+
+      .cls-8, .cls-9 {
+        stroke-width: 4.5px;
+      }
+
+      .cls-9 {
+        stroke: #fff;
+      }
+    </style>
+  </defs>
+  
+  
+  <g id="hover-left">
+    <g id="hover-left-body">
+      <path id="sticker-shape-5" data-name="sticker-shape" class="cls-3" d="M360,40c13-3,22,5,32,12s15,18,12,30c4,13-2,23-12,31-9,10-19,15-32,12-12,4-23-1-31-11-11-7-16-18-12-30-4-13,1-24,12-32,9-9,19-15,31-12Z"/>
+    </g>
+    <g id="hover-left-accent">
+      <path id="sticker-shape-6" data-name="sticker-shape" class="cls-7" d="M359.95,35.84c14.26-3.29,24.14,5.49,35.11,13.17s16.46,19.75,13.17,32.91c4.39,14.26-2.19,25.23-13.17,34.01-9.87,10.97-20.85,16.46-35.11,13.17-13.17,4.39-25.23-1.1-34.01-12.07-12.07-7.68-17.55-19.75-13.17-32.91-4.39-14.26,1.1-26.33,13.17-35.11,9.87-9.87,20.85-16.46,34.01-13.17Z"/>
+    </g>
+    <g id="hover-left-icon">
+      <path id="left-arrow-2" data-name="left-arrow" class="cls-8" d="M373.14,82.02h-24.38M357.9,71.86l-10.16,10.16,10.16,10.16"/>
+    </g>
+  </g>
+  
+  
+  
+</svg>

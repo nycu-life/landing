@@ -95,6 +95,7 @@
 	"story_join_cta_lead": "Build NYCU LIFE with us | ",
 	"story_join_cta": "Apply →",
 	"story_join_heading": "Join us",
+	"story_join_tagline": "The next solution might start with you.",
 	"story_join_card_cta": "Apply →",
 	"story_join_group_ux": "UX",
 	"story_join_group_marketing": "Marketing",
@@ -194,7 +195,7 @@
 	"products_status_live": "Live",
 	"products_status_soon": "Coming soon",
 	"products_status_dev": "In development",
-	"products_visit": "Open the app",
+	"products_visit": "Open app",
 
 	"product_bus_name": "NYCU BUS",
 	"product_bus_summary": "Make commuting a solved problem.",
@@ -288,7 +289,7 @@
 
 	"wish_title": "Reshape LIFE at NYCU together",
 	"wish_lede": "Make a wish, and see which features everyone is clamoring for!",
-	"wish_cta": "Open the wish pool",
+	"wish_cta": "Make a wish",
 	"wish_input_label": "Describe your wish in one sentence",
 	"wish_input_placeholder": "For example: gym crowd level now",
 	"wish_category_label": "Wish category",

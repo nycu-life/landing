@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_圖層_1" data-name="圖層 1" xmlns="http://www.w3.org/2000/svg" viewBox="-6.00 -6.00 279.77 187.59">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke: #afc0ff;
+        stroke-width: 6px;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        fill: none;
+        stroke-linecap: round;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5 {
+        stroke-miterlimit: 4;
+      }
+
+      .cls-6 {
+        fill: #bfcbff;
+      }
+
+      .cls-2, .cls-3 {
+        stroke-width: 3px;
+      }
+
+      .cls-2, .cls-3, .cls-7, .cls-5 {
+        stroke: #18346f;
+      }
+
+      .cls-8, .cls-9, .cls-4 {
+        isolation: isolate;
+      }
+
+      .cls-3 {
+        stroke-dasharray: 10 10;
+      }
+
+      .cls-10, .cls-9 {
+        fill: #18346f;
+      }
+
+      .cls-9 {
+        opacity: .18;
+      }
+
+      .cls-7 {
+        fill: #7590ff;
+        stroke-linejoin: round;
+      }
+
+      .cls-7, .cls-5 {
+        stroke-width: 4px;
+      }
+
+      .cls-4 {
+        opacity: .85;
+        stroke: #ffe8a7;
+        stroke-width: 7px;
+      }
+
+      .cls-5 {
+        fill: #fff8de;
+      }
+    </style>
+  </defs>
+  <g id="tag">
+    <rect id="shadow" class="cls-6" x="15.34" y="32.78" width="248" height="132" rx="18" ry="18" transform="translate(-9.56 15.11) rotate(-6)"/>
+    <rect id="paper" class="cls-5" x="6.44" y="24.66" width="248" height="132" rx="18" ry="18" transform="translate(-8.76 14.13) rotate(-6)"/>
+    <path id="stitch" class="cls-3" d="M21.33,61.35c-6.44,5.7-5.62,9.2-4.57,19.14l4.6,43.76c1.88,17.9,11.98,27.9,31.09,27.9l164.1-17.25c17.69-3.87,27.59-14.97,26.8-31.98l-4.91-46.74c-2.04-9.84-5.76-16.49-13.24-20.73"/>
+    <path class="cls-4" d="M24.3,56.08c2.72-4.46,6.62-6.83,12.19-7.83l170.31-17.9c5.05-.53,10.14.31,14.75,2.42l4.99,2.29"/>
+    <g id="tape">
+      <path id="tape-shadow" class="cls-9" d="M81.4,16.38l93.49-9.83,11.46,42.03-107.41,11.29,2.47-43.5Z"/>
+      <path id="tape-body" class="cls-7" d="M76.9,11.83L170.39,2l11.46,42.03-107.41,11.29,2.47-43.5Z"/>
+      <path id="tape-highlight" class="cls-1" d="M89.2,23.6l68.62-7.21"/>
+      <path id="tape-detail" class="cls-2" d="M93.86,39.2l53.7-5.64"/>
+    </g>
+    
+  </g>
+</svg>

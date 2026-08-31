@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_圖層_2" data-name="圖層 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="412.36 3.91 379.95 156.72">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#_未命名漸層-3);
+      }
+
+      .cls-2 {
+        fill: url(#_未命名漸層);
+      }
+
+      .cls-3 {
+        fill: blue;
+      }
+
+      .cls-4, .cls-5 {
+        fill: #ccf;
+      }
+
+      .cls-6 {
+        isolation: isolate;
+      }
+
+      .cls-5 {
+        stroke: #171b27;
+      }
+
+      .cls-5, .cls-7, .cls-8 {
+        stroke-width: 4px;
+      }
+
+      .cls-7 {
+        stroke: blue;
+      }
+
+      .cls-7, .cls-8 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .cls-9 {
+        fill: url(#_未命名漸層_21);
+        stroke-width: 2px;
+      }
+
+      .cls-9, .cls-8 {
+        stroke: #36f;
+      }
+
+      .cls-10 {
+        fill: url(#_未命名漸層-2);
+      }
+    </style>
+    <linearGradient id="_未命名漸層_21" data-name="未命名漸層 21" x1="417.46" y1="84.63" x2="766.92" y2="84.63" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#f2f3fa"/>
+    </linearGradient>
+    <linearGradient id="_未命名漸層" data-name="未命名漸層" x1="764.37" y1="127.55" x2="786.04" y2="127.55" gradientTransform="translate(0 164) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#f2f3fa"/>
+    </linearGradient>
+    <linearGradient id="_未命名漸層-2" data-name="未命名漸層" x1="748.81" y1="139.91" x2="757.45" y2="139.91" xlink:href="#_未命名漸層"/>
+    <linearGradient id="_未命名漸層-3" data-name="未命名漸層" x1="734.38" y1="144.54" x2="735" y2="144.54" xlink:href="#_未命名漸層"/>
+  </defs>
+  <g id="make_a_wish_hover" data-name="make a wish hover">
+    <path class="cls-4" d="M436.13,71.01c15.84-26.4,58.09-32.74,84.49-22.18,31.68-9.51,66.54-7.39,90.83,0,29.57-9.51,68.65-7.39,88.71,3.17,32.74-3.17,70.76,10.56,76.04,40.13,9.51,26.4-13.73,57.03-44.36,55.97-25.35,14.79-59.14,6.34-80.27,2.11-27.46,11.62-66.54,4.22-87.66,0-31.68,11.62-68.65,5.28-88.71-2.11-29.57,2.11-49.64-23.23-41.19-46.47-7.39-11.62-5.28-21.12,2.11-30.63h0Z"/>
+    <path class="cls-9" d="M424.16,53.04c15.87-29.22,58.18-36.23,84.62-24.55,31.73-10.52,66.64-8.18,90.97,0,29.62-10.52,68.75-8.18,88.85,3.51,32.79-3.51,70.87,11.69,76.16,44.42,9.52,29.22-13.75,63.12-44.42,61.95-25.39,16.36-59.23,7.01-80.39,2.34-27.5,12.86-66.64,4.68-87.79,0-31.73,12.86-68.75,5.84-88.85-2.34-29.62,2.34-49.71-25.72-41.25-51.43-7.4-12.86-5.29-23.38,2.12-33.9h-.02Z"/>
+    <path class="cls-5" d="M431.79,57.49c15-25,55-31,80-21,30-9,63-7,86,0,28-9,65-7,84,3,31-3,67,10,72,38,9,25-13,54-42,53-24,14-56,6-76,2-26,11-63,4-83,0-30,11-65,5-84-2-28,2-47-22-39-44-7-11-5-20,2-29h0Z"/>
+    
+    
+    <g id="surprise">
+      <g>
+        <polyline class="cls-2" points="786.04 34.5 775.16 36.18 764.37 38.4"/>
+        <polyline class="cls-8" points="786.04 34.5 775.16 36.18 764.37 38.4"/>
+      </g>
+      <g>
+        <polyline class="cls-10" points="757.45 15.42 752.89 23.96 748.81 32.75"/>
+        <polyline class="cls-8" points="757.45 15.42 752.89 23.96 748.81 32.75"/>
+      </g>
+      <g>
+        <polyline class="cls-1" points="735 10.62 734.42 19.45 734.38 28.3"/>
+        <polyline class="cls-8" points="735 10.62 734.42 19.45 734.38 28.3"/>
+      </g>
+    </g>
+  </g>
+</svg>
