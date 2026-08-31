@@ -1178,8 +1178,7 @@
 		height: auto;
 	}
 	/* Chapters push each other vertically (#47/#50): during a transition the outgoing scene
-	   slides from 0 to -100% while the incoming one slides from 100% to 0, tiling exactly like
-	   stacked pages driven by the scroll position. No fades. */
+	   slides upward while the incoming one rises from below, driven directly by scroll. */
 	.story-scene {
 		--scene-enter: 1;
 		--scene-exit: 0;
@@ -2766,6 +2765,15 @@
 	}
 
 	@media (max-width: 767px) {
+		/* Keep the products and FAQ compositions visually separate during their shared push.
+		   At 108% travel their edges retain an 8dvh breathing space instead of joining into
+		   one very tall page on mobile (#80). */
+		.product-scene {
+			transform: translateY(calc((1 - var(--scene-enter)) * 100% - var(--scene-exit) * 108%));
+		}
+		.faq-scene {
+			transform: translateY(calc((1 - var(--scene-enter)) * 108% - var(--scene-exit) * 100%));
+		}
 		.eyebrow {
 			font-size: 0.9267rem;
 		}

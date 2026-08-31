@@ -251,6 +251,30 @@ test('about film stops startup retries after YouTube reports a paused state', as
 	await expect(story(page)).toHaveAttribute('data-about-film-retrying', 'false');
 });
 
+test('mobile products and FAQ keep a visible gap during their push transition', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/?motion=on');
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+	await scrollToProgress(page, 0.62);
+
+	const result = await page.locator('.story-stage').evaluate((stage) => {
+		const product = stage.querySelector<HTMLElement>('.product-scene');
+		const faq = stage.querySelector<HTMLElement>('.faq-scene');
+		if (!product || !faq) throw new Error('Missing product or FAQ scene');
+		const stageRect = stage.getBoundingClientRect();
+		const productRect = product.getBoundingClientRect();
+		const faqRect = faq.getBoundingClientRect();
+		return {
+			gap: faqRect.top - productRect.bottom,
+			stageHeight: stageRect.height
+		};
+	});
+
+	expect(result.gap / result.stageHeight).toBeGreaterThanOrEqual(0.075);
+});
+
 test('hero uses the designer art direction for desktop, phone, and tablet', async ({ page }) => {
 	for (const viewport of [
 		{ width: 390, height: 844, asset: /gacha-mobile\.svg$/, minWidthRatio: 0.9 },
