@@ -59,12 +59,18 @@
 	<link rel="icon" href={favicon} />
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="NYCU LIFE" />
-	<meta property="og:image" content="https://nycu.life/og/nycu-life.png" />
+	<meta
+		property="og:image"
+		content="https://raw.githubusercontent.com/nycu-life/landing/main/static/og/nycu-life.png"
+	/>
 	<meta property="og:image:width" content="1800" />
 	<meta property="og:image:height" content="938" />
 	<meta property="og:image:alt" content="NYCU LIFE" />
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:image" content="https://nycu.life/og/nycu-life.png" />
+	<meta
+		name="twitter:image"
+		content="https://raw.githubusercontent.com/nycu-life/landing/main/static/og/nycu-life.png"
+	/>
 </svelte:head>
 
 <!--
