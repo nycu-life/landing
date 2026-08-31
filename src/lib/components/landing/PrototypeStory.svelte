@@ -1027,9 +1027,11 @@
 		--stage-height: max(calc(100svh - 4.75rem), 34rem);
 		position: relative;
 		/* Tall scroll runway for the sticky stage: 1 stage height on screen plus one per timeline
-		   unit (must equal 1 + the sum of SEGMENTS units in the script). */
+		   unit (must equal 1 + the sum of SEGMENTS units in the script). White like the stage:
+		   when mobile browser chrome retracts, the real viewport outgrows 100svh and the runway
+		   peeks below the stage — grey there read as a broken band. */
 		height: calc(var(--stage-height) * 10.75);
-		background: #f3f4f6;
+		background: #fff;
 		color: #333;
 	}
 	.story-stage {
