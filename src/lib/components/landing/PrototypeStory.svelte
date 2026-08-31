@@ -86,6 +86,7 @@
 	let aboutFilmShouldPlay = $state(false);
 	let aboutFilmAudioUnlocked = false;
 	let aboutFilmRetryTimers: ReturnType<typeof setTimeout>[] = [];
+	let aboutFilmRetrying = $state(false);
 	let progressValue = 0;
 	let chapterIndex = $state(0);
 	let sceneVisible = $state([true, false, false, false, false]);
@@ -181,6 +182,41 @@
 	const clearAboutFilmRetries = () => {
 		for (const timer of aboutFilmRetryTimers) clearTimeout(timer);
 		aboutFilmRetryTimers = [];
+		aboutFilmRetrying = false;
+	};
+	const readAboutFilmPlayerState = (data: unknown) => {
+		let message = data;
+		if (typeof message === 'string') {
+			try {
+				message = JSON.parse(message);
+			} catch {
+				return null;
+			}
+		}
+		if (!message || typeof message !== 'object') return null;
+		const payload = message as { event?: unknown; info?: unknown };
+		if (payload.event === 'onStateChange' && typeof payload.info === 'number') {
+			return payload.info;
+		}
+		if (
+			payload.event === 'infoDelivery' &&
+			payload.info &&
+			typeof payload.info === 'object' &&
+			typeof (payload.info as { playerState?: unknown }).playerState === 'number'
+		) {
+			return (payload.info as { playerState: number }).playerState;
+		}
+		return null;
+	};
+	const onAboutFilmMessage = (event: MessageEvent) => {
+		if (
+			event.origin !== 'https://www.youtube-nocookie.com' ||
+			event.source !== aboutFilmFrame?.contentWindow
+		)
+			return;
+		// Once YouTube reports a real player state, it is ready. Continuing the startup
+		// retries after that point can immediately undo a viewer's tap on Pause (#78).
+		if (readAboutFilmPlayerState(event.data) !== null) clearAboutFilmRetries();
 	};
 	const playAboutFilm = () => {
 		if (aboutFilmAudioUnlocked) {
@@ -197,6 +233,7 @@
 		clearAboutFilmRetries();
 		if (!aboutFilmLoaded) return;
 		if (aboutFilmShouldPlay) {
+			aboutFilmRetrying = true;
 			for (const delay of [0, 120, 350, 700, 1200, 2000, 3500, 5000]) {
 				if (delay === 0) playAboutFilm();
 				else {
@@ -217,6 +254,7 @@
 	};
 	const onAboutFilmLoad = () => {
 		aboutFilmLoaded = true;
+		sendAboutFilmCommand('addEventListener', ['onStateChange']);
 		syncAboutFilmPlayback();
 	};
 	/* Product stepper state. While the lock is engaged the page holds still and one scroll
@@ -455,6 +493,7 @@
 		window.addEventListener('touchcancel', onTouchEnd, { passive: true });
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('hashchange', onHashChange);
+		window.addEventListener('message', onAboutFilmMessage);
 		window.addEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
 		window.addEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
 		window.addEventListener('keydown', unlockAboutFilmAudio, { capture: true });
@@ -473,6 +512,7 @@
 			window.removeEventListener('touchcancel', onTouchEnd);
 			window.removeEventListener('keydown', onKeyDown);
 			window.removeEventListener('hashchange', onHashChange);
+			window.removeEventListener('message', onAboutFilmMessage);
 			window.removeEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
 			window.removeEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
 			window.removeEventListener('keydown', unlockAboutFilmAudio, { capture: true });
@@ -494,6 +534,7 @@
 	data-story-animating={productStepping}
 	data-story-ready={storyReady ? 'true' : 'false'}
 	data-about-film-should-play={aboutFilmShouldPlay ? 'true' : 'false'}
+	data-about-film-retrying={aboutFilmRetrying ? 'true' : 'false'}
 	data-reduced-motion={reducedMotion ? 'true' : 'false'}
 >
 	<div class="story-stage" bind:this={stageEl}>
@@ -1137,8 +1178,7 @@
 		height: auto;
 	}
 	/* Chapters push each other vertically (#47/#50): during a transition the outgoing scene
-	   slides from 0 to -100% while the incoming one slides from 100% to 0, tiling exactly like
-	   stacked pages driven by the scroll position. No fades. */
+	   slides upward while the incoming one rises from below, driven directly by scroll. */
 	.story-scene {
 		--scene-enter: 1;
 		--scene-exit: 0;
@@ -2545,30 +2585,31 @@
 			font-size: 0.78rem;
 		}
 		.product-cta {
-			margin-top: 0.45rem;
-			width: 9.5rem;
+			margin-top: 0.25rem;
+			width: 8.25rem;
 			font-size: 0.88rem;
 		}
 		.product-cta-soon {
-			width: 8.25rem;
+			width: 7.25rem;
 		}
 		.product-demo {
 			min-height: 0;
 			min-width: 0;
 			height: 100%;
+			container-type: size;
 			transform: none;
 		}
-		/* Phones: the phone hangs from the top of the demo area, as large as the viewport width
-		   allows (≈62vw), and may run off the bottom of the stage. */
+		/* The phone hangs from the top of the demo area. Its shell is 49.65% of the composite
+		   width, so the 195cqh cap keeps the entire phone inside the height left below the copy
+		   even when Chrome's dynamic toolbar makes that space shorter (#81). */
 		.product-demo {
-			--device-card-width: min(292vw, 116svh, 68rem);
+			--device-card-width: min(292vw, 116svh, 68rem, 195cqh);
 		}
 		.device-card {
 			top: 0;
 			transform: translate(-16.4%, -0.06%);
 		}
-		/* The phone may run off the stage on short phones: keep the indicator pinned to the
-		   stage bottom and the arrows within reach. */
+		/* Keep the indicator pinned to the stage bottom and the arrows within reach. */
 		.product-dots {
 			top: auto;
 			bottom: 0.6rem;
@@ -2676,10 +2717,10 @@
 			/* Keep the title-to-film group centred as one unit in the usable stage. */
 		}
 		.about-copy h2 {
-			font-size: 1.85rem;
+			font-size: 2.0167rem;
 		}
 		.about-copy p {
-			font-size: 0.78rem;
+			font-size: 0.9467rem;
 			line-height: 1.55;
 		}
 		.team-film {
@@ -2690,10 +2731,10 @@
 			padding-top: 0.5rem;
 		}
 		.product-copy h2 {
-			font-size: 1.65rem;
+			font-size: 1.8167rem;
 		}
 		.product-demo {
-			--device-card-width: min(292vw, 116svh, 68rem);
+			--device-card-width: min(292vw, 116svh, 68rem, 195cqh);
 		}
 		.arrow.previous {
 			left: 4%;
@@ -2712,28 +2753,98 @@
 			inset: 21.5% 18.1% 4% 20%;
 		}
 		.faq-list > strong {
-			font-size: calc(var(--pad-width) * 0.069);
+			font-size: calc(var(--pad-width) * 0.069 + 0.1667rem);
 		}
 		.faq-item button {
-			font-size: calc(var(--pad-width) * 0.0275);
+			font-size: calc(var(--pad-width) * 0.0275 + 0.1667rem);
 			line-height: 1.3;
 		}
 		.faq-item p {
-			font-size: calc(var(--pad-width) * 0.0245);
-			line-height: 1.48;
+			font-size: calc(var(--pad-width) * 0.0245 + 0.1667rem);
+			line-height: 1.34;
+		}
+	}
+
+	@media (max-width: 767px) {
+		/* Keep the products and FAQ compositions visually separate during their shared push.
+		   At 108% travel their edges retain an 8dvh breathing space instead of joining into
+		   one very tall page on mobile (#80). */
+		.product-scene {
+			transform: translateY(calc((1 - var(--scene-enter)) * 100% - var(--scene-exit) * 108%));
+		}
+		.faq-scene {
+			transform: translateY(calc((1 - var(--scene-enter)) * 108% - var(--scene-exit) * 100%));
+		}
+		.eyebrow {
+			font-size: 0.9267rem;
+		}
+		.product-copy > p {
+			font-size: 0.9967rem;
+		}
+		.feature-list strong {
+			font-size: 1.0167rem;
+		}
+		.feature-list span {
+			font-size: 0.9467rem;
+		}
+		.product-cta {
+			font-size: 1.0467rem;
+		}
+		.join-head p {
+			font-size: 1.0167rem;
+		}
+		.join-card-group {
+			font-size: 0.7867rem;
+		}
+		.join-card h3 {
+			font-size: 1.1667rem;
+		}
+		.join-card-en {
+			font-size: 0.7667rem;
+		}
+		.join-card p.join-card-hook,
+		.join-card > a {
+			font-size: 0.9467rem;
+		}
+		.join-card p.join-card-desc {
+			font-size: 0.8867rem;
 		}
 	}
 
 	@media (max-width: 430px) and (max-height: 700px) {
+		.product-shell {
+			gap: 0.35rem;
+		}
+		.product-copy h2 {
+			margin-block: 0.1rem;
+		}
+		.product-copy > p {
+			line-height: 1.35;
+		}
+		.feature-list {
+			gap: 0.15rem;
+			margin-top: 0.3rem;
+		}
+		.feature-list div {
+			gap: 0.4rem;
+			padding: 0.15rem 0.65rem;
+		}
+		.product-cta {
+			width: 7rem;
+			margin-top: 0.1rem;
+		}
+		.product-cta-soon {
+			width: 6.25rem;
+		}
 		.product-demo {
-			--device-card-width: min(274vw, 110svh, 64rem);
+			--device-card-width: min(274vw, 110svh, 64rem, 195cqh);
 		}
 		.gacha-machine {
 			--gacha-width: min(90vw, 22rem);
 			transform: translateY(calc(var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.faq-shell {
-			--mobile-board-size: min(104vw, 34rem, calc((100svh - 6rem) * 0.7857));
+			--mobile-board-size: min(110vw, 34rem, calc((100dvh - 1.5rem) * 0.7857));
 			--pad-width: var(--mobile-board-size);
 		}
 	}

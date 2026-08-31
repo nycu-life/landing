@@ -232,6 +232,49 @@ test('about film playback follows the scrubbed reveal window', async ({ page }) 
 	await expect(story(page)).toHaveAttribute('data-about-film-should-play', 'false');
 });
 
+test('about film stops startup retries after YouTube reports a paused state', async ({ page }) => {
+	await page.goto('/?motion=on');
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+	await scrollToProgress(page, 0.41);
+	await expect(story(page)).toHaveAttribute('data-about-film-retrying', 'true');
+
+	await page.locator('.team-film iframe').evaluate((iframe) => {
+		window.dispatchEvent(
+			new MessageEvent('message', {
+				origin: 'https://www.youtube-nocookie.com',
+				source: (iframe as HTMLIFrameElement).contentWindow,
+				data: JSON.stringify({ event: 'onStateChange', info: 2 })
+			})
+		);
+	});
+
+	await expect(story(page)).toHaveAttribute('data-about-film-retrying', 'false');
+});
+
+test('mobile products and FAQ keep a visible gap during their push transition', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/?motion=on');
+	await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+	await scrollToProgress(page, 0.62);
+
+	const result = await page.locator('.story-stage').evaluate((stage) => {
+		const product = stage.querySelector<HTMLElement>('.product-scene');
+		const faq = stage.querySelector<HTMLElement>('.faq-scene');
+		if (!product || !faq) throw new Error('Missing product or FAQ scene');
+		const stageRect = stage.getBoundingClientRect();
+		const productRect = product.getBoundingClientRect();
+		const faqRect = faq.getBoundingClientRect();
+		return {
+			gap: faqRect.top - productRect.bottom,
+			stageHeight: stageRect.height
+		};
+	});
+
+	expect(result.gap / result.stageHeight).toBeGreaterThanOrEqual(0.075);
+});
+
 test('hero uses the designer art direction for desktop, phone, and tablet', async ({ page }) => {
 	for (const viewport of [
 		{ width: 390, height: 844, asset: /gacha-mobile\.svg$/, minWidthRatio: 0.9 },
@@ -986,6 +1029,51 @@ test('phone chapters use the full stage without pushing their compositions down'
 	expect(visiblePhoneHeight / stageRect.height).toBeGreaterThan(0.58);
 });
 
+test('mobile product phone and CTA fit inside one dynamic viewport', async ({ page }) => {
+	for (const viewport of [
+		{ width: 430, height: 932 },
+		{ width: 390, height: 844 },
+		{ width: 412, height: 760 },
+		{ width: 320, height: 568 }
+	]) {
+		await page.setViewportSize(viewport);
+		for (const locale of ['zh-tw', 'en']) {
+			await page.goto('/?motion=on#products');
+			await page.evaluate((nextLocale) => {
+				document.cookie = `PARAGLIDE_LOCALE=${nextLocale}; path=/`;
+			}, locale);
+			await page.reload();
+			await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
+
+			const result = await page.locator('.product-shell').evaluate((shell) => {
+				const stage = shell.closest<HTMLElement>('.story-stage');
+				const demo = shell.querySelector<HTMLElement>('.product-demo');
+				const phone = shell.querySelector<HTMLElement>('.device-phone');
+				const cta = shell.querySelector<HTMLElement>('.product-cta');
+				if (!stage || !demo || !phone || !cta) throw new Error('Missing product composition');
+				return {
+					stage: stage.getBoundingClientRect().toJSON(),
+					demo: demo.getBoundingClientRect().toJSON(),
+					phone: phone.getBoundingClientRect().toJSON(),
+					cta: cta.getBoundingClientRect().toJSON()
+				};
+			});
+			const label = `${viewport.width}x${viewport.height}/${locale}`;
+			expect.soft(result.phone.y, `${label} phone top`).toBeGreaterThanOrEqual(result.demo.y - 1);
+			expect
+				.soft(result.phone.bottom, `${label} phone bottom`)
+				.toBeLessThanOrEqual(result.demo.bottom + 1);
+			expect
+				.soft(result.phone.bottom, `${label} viewport bottom`)
+				.toBeLessThanOrEqual(result.stage.bottom + 1);
+			expect
+				.soft(result.phone.height / result.stage.height, `${label} phone height`)
+				.toBeGreaterThanOrEqual(0.28);
+			expect.soft(result.cta.width, `${label} CTA width`).toBeLessThanOrEqual(132.5);
+		}
+	}
+});
+
 test('phone story stage follows Chrome dynamic viewport changes without exposing its runway', async ({
 	page
 }) => {
@@ -1007,6 +1095,23 @@ test('phone story stage follows Chrome dynamic viewport changes without exposing
 			})
 			.toBeLessThanOrEqual(1);
 	}
+});
+
+test('phone body copy uses the requested two-point type increase', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/?motion=on#products');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
+
+	const sizes = await page.evaluate(() => ({
+		product: Number.parseFloat(
+			getComputedStyle(document.querySelector('.product-copy > p')!).fontSize
+		),
+		feature: Number.parseFloat(
+			getComputedStyle(document.querySelector('.feature-list span')!).fontSize
+		)
+	}));
+	expect(sizes.product).toBeCloseTo(15.9472, 2);
+	expect(sizes.feature).toBeCloseTo(15.1472, 2);
 });
 
 test('theme persists and the burger menu is gone on phones', async ({ page }) => {
