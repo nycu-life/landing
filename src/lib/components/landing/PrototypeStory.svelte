@@ -913,14 +913,14 @@
 						     translation would sever it. -->
 						<img
 							class="device-hand-front"
-							src="{base}/story/designer/hand/front-palm-v2.svg"
+							src="{base}/story/designer/hand/front-palm-v2.svg?v=3"
 							alt=""
 						/>
 						<img
 							class="device-thumb"
 							class:swipe-up={productStepping && switchDir === 1}
 							class:swipe-down={productStepping && switchDir === -1}
-							src="{base}/story/designer/hand/thumb-v2.svg"
+							src="{base}/story/designer/hand/thumb-v2.svg?v=3"
 							alt=""
 						/>
 						<!-- The charging cable runs in front of the little finger. -->
@@ -968,7 +968,7 @@
 				<div class="notebook">
 					<img
 						class="notebook-art"
-						src="{base}/story/designer/faq-notebook.svg"
+						src="{base}/story/designer/faq-notebook.svg?v=2"
 						alt={m.story_faq_alt()}
 					/>
 					<div class="faq-list">
