@@ -1862,32 +1862,32 @@
 		   the extra +0.85% sits the thumb a touch further right per design feedback. */
 		transform: translateX(-0.3%);
 	}
-	/* Only the thumb moves, like idly scrolling a feed (#61): a quick flick up from its base
-	   joint, a slower settle back, then a beat of rest. Origin sits on the thumb's knuckle
-	   (≈29.5%, 37% of the shared artwork box) so it pivots instead of drifting. */
+	/* Only the thumb moves, like idly scrolling a feed (#61). Kept deliberately tiny — a few
+	   pixels of slide along the screen with barely-there tilt; anything bigger reads as the
+	   thumb waving at the visitor. */
 	.device-card > .device-thumb {
 		z-index: 5;
 		transform: translateX(-0.3%);
 		transform-origin: 29.5% 37%;
-		animation: thumb-idle 3.2s ease-in-out infinite;
+		animation: thumb-idle 3.6s ease-in-out infinite;
 	}
 	@keyframes thumb-idle {
 		0%,
-		56%,
+		58%,
 		100% {
 			transform: translateX(-0.3%);
 		}
-		10% {
-			transform: translateX(-0.3%) translateY(-1.3%) rotate(2.2deg);
+		12% {
+			transform: translate(-0.42%, -0.5%) rotate(0.45deg);
 		}
-		30% {
-			transform: translateX(-0.3%) translateY(0.4%) rotate(-0.8deg);
+		32% {
+			transform: translate(-0.24%, 0.14%) rotate(-0.2deg);
 		}
-		44% {
+		48% {
 			transform: translateX(-0.3%);
 		}
 	}
-	/* A firmer flick while the product actually switches (#49). */
+	/* A slightly firmer flick while the product actually switches (#49). */
 	.device-card > .device-thumb.swipe-up {
 		animation: thumb-swipe-up 0.46s ease;
 	}
@@ -1896,12 +1896,12 @@
 	}
 	@keyframes thumb-swipe-up {
 		40% {
-			transform: translateX(-0.3%) translateY(-2.1%) rotate(3.2deg);
+			transform: translate(-0.48%, -0.85%) rotate(0.7deg);
 		}
 	}
 	@keyframes thumb-swipe-down {
 		40% {
-			transform: translateX(-0.3%) translateY(2.1%) rotate(-3.2deg);
+			transform: translate(-0.12%, 0.85%) rotate(-0.7deg);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
