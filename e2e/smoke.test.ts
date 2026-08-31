@@ -986,6 +986,29 @@ test('phone chapters use the full stage without pushing their compositions down'
 	expect(visiblePhoneHeight / stageRect.height).toBeGreaterThan(0.58);
 });
 
+test('phone story stage follows Chrome dynamic viewport changes without exposing its runway', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 412, height: 760 });
+	await page.goto('/?motion=on#faq');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq');
+
+	const stageHeightToken = await story(page).evaluate((element) =>
+		getComputedStyle(element).getPropertyValue('--stage-height')
+	);
+	expect(stageHeightToken).toContain('100dvh');
+
+	for (const height of [760, 915, 760]) {
+		await page.setViewportSize({ width: 412, height });
+		await expect
+			.poll(async () => {
+				const rect = await page.locator('.story-stage').boundingBox();
+				return rect ? Math.abs(rect.y + rect.height - height) : Number.POSITIVE_INFINITY;
+			})
+			.toBeLessThanOrEqual(1);
+	}
+});
+
 test('theme persists and the burger menu is gone on phones', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');

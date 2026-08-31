@@ -1047,12 +1047,11 @@
 <style>
 	.prototype-story {
 		--story-progress: 0;
-		--stage-height: max(calc(100svh - 4.75rem), 34rem);
+		--stage-height: max(calc(100dvh - 4.75rem), 34rem);
 		position: relative;
 		/* Tall scroll runway for the sticky stage: 1 stage height on screen plus one per timeline
-		   unit (must equal 1 + the sum of SEGMENTS units in the script). White like the stage:
-		   when mobile browser chrome retracts, the real viewport outgrows 100svh and the runway
-		   peeks below the stage — grey there read as a broken band. */
+		   unit (must equal 1 + the sum of SEGMENTS units in the script). The stage follows the
+		   dynamic viewport so retracting Chrome UI cannot expose the runway below it. */
 		height: calc(var(--stage-height) * 10.75);
 		background: #fff;
 		color: #333;
@@ -2419,7 +2418,7 @@
 	}
 	@media (max-width: 900px) {
 		.prototype-story {
-			--stage-height: max(calc(100svh - 4.75rem), 35rem);
+			--stage-height: max(calc(100dvh - 4.75rem), 35rem);
 		}
 		.section-shell {
 			width: calc(100% - 2 * var(--stage-gutter));
@@ -2648,7 +2647,7 @@
 
 	@media (max-width: 430px) {
 		.prototype-story {
-			--stage-height: max(calc(100svh - 4.75rem), 31rem);
+			--stage-height: max(calc(100dvh - 4.75rem), 31rem);
 		}
 		.gacha-machine {
 			--gacha-width: min(96vw, 26rem);
