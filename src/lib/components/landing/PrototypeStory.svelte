@@ -866,11 +866,13 @@
 							</div>
 						</div>
 						<img class="device-frame" src="{base}/story/designer/hand/phone-v2.svg" alt="" />
+						<!-- Palm and thumb are separate layers so only the thumb mimes the swipe (#61). -->
+						<img class="device-hand-front" src="{base}/story/designer/hand/front-palm-v2.svg" alt="" />
 						<img
-							class="device-hand-front"
+							class="device-thumb"
 							class:swipe-up={productStepping && switchDir === 1}
 							class:swipe-down={productStepping && switchDir === -1}
-							src="{base}/story/designer/hand/front-hand-v2.svg"
+							src="{base}/story/designer/hand/thumb-v2.svg"
 							alt=""
 						/>
 						<!-- The charging cable runs in front of the little finger. -->
@@ -1772,30 +1774,55 @@
 		   the extra +0.85% sits the thumb a touch further right per design feedback. */
 		transform: translateX(-0.3%);
 	}
-	/* The thumb mimes the swipe that switches products (#49). */
-	.device-card > .device-hand-front.swipe-up {
+	/* Only the thumb moves, like idly scrolling a feed (#61): a quick flick up from its base
+	   joint, a slower settle back, then a beat of rest. Origin sits on the thumb's knuckle
+	   (≈29.5%, 37% of the shared artwork box) so it pivots instead of drifting. */
+	.device-card > .device-thumb {
+		z-index: 5;
+		transform: translateX(-0.3%);
+		transform-origin: 29.5% 37%;
+		animation: thumb-idle 3.2s ease-in-out infinite;
+	}
+	@keyframes thumb-idle {
+		0%,
+		56%,
+		100% {
+			transform: translateX(-0.3%);
+		}
+		10% {
+			transform: translateX(-0.3%) translateY(-1.3%) rotate(2.2deg);
+		}
+		30% {
+			transform: translateX(-0.3%) translateY(0.4%) rotate(-0.8deg);
+		}
+		44% {
+			transform: translateX(-0.3%);
+		}
+	}
+	/* A firmer flick while the product actually switches (#49). */
+	.device-card > .device-thumb.swipe-up {
 		animation: thumb-swipe-up 0.46s ease;
 	}
-	.device-card > .device-hand-front.swipe-down {
+	.device-card > .device-thumb.swipe-down {
 		animation: thumb-swipe-down 0.46s ease;
 	}
 	@keyframes thumb-swipe-up {
 		40% {
-			transform: translateX(-0.3%) translateY(-1.6%) rotate(-0.6deg);
+			transform: translateX(-0.3%) translateY(-2.1%) rotate(3.2deg);
 		}
 	}
 	@keyframes thumb-swipe-down {
 		40% {
-			transform: translateX(-0.3%) translateY(1.6%) rotate(0.6deg);
+			transform: translateX(-0.3%) translateY(2.1%) rotate(-3.2deg);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.device-card > .device-hand-front {
+		.device-card > .device-thumb {
 			animation: none;
 		}
 	}
 	.device-card > .device-cable {
-		z-index: 5;
+		z-index: 6;
 	}
 	.map-placeholder {
 		height: 100%;
