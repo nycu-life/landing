@@ -1900,6 +1900,8 @@
 		transform: translateX(-0.3%);
 		animation: thumb-idle 3.6s ease-in-out infinite;
 	}
+	/* Deliberately minute (亭蓁/Sky: just a touch more than still) — the ink lines crossing
+	   the seam shear by the travel distance, so a few pixels is all the style can absorb. */
 	@keyframes thumb-idle {
 		0%,
 		58%,
@@ -1907,10 +1909,10 @@
 			transform: translateX(-0.3%);
 		}
 		12% {
-			transform: translate(-0.07%, -0.49%);
+			transform: translate(-0.2%, -0.22%);
 		}
 		32% {
-			transform: translate(-0.4%, 0.22%);
+			transform: translate(-0.35%, 0.11%);
 		}
 		48% {
 			transform: translateX(-0.3%);
@@ -1925,12 +1927,12 @@
 	}
 	@keyframes thumb-swipe-up {
 		40% {
-			transform: translate(0.26%, -1.19%);
+			transform: translate(-0.1%, -0.43%);
 		}
 	}
 	@keyframes thumb-swipe-down {
 		40% {
-			transform: translate(-0.86%, 1.19%);
+			transform: translate(-0.5%, 0.43%);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
