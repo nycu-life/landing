@@ -45,9 +45,21 @@ through External Secrets and OpenBao. The database has a retain reclaim policy.
 
 ## Moderation API
 
-The admin endpoints are intentionally not linked from the public site. Retrieve
-the admin token through the cluster's normal secret-access process, then use it
-only over HTTPS.
+The API has an unlisted browser workspace at `/wishpool/admin/`. Operators sign
+in through the Authentik OIDC provider on `auth.nycu.one`; every identity
+successfully authenticated by that provider receives an eight-hour, signed,
+`HttpOnly`, `Secure`, `SameSite=Lax` session. The browser never receives an
+OAuth access token, client secret, or `WISH_ADMIN_TOKEN`. OIDC identity is keyed
+by the stable provider `sub` claim rather than email.
+
+The authorization-code flow uses PKCE S256, a nonce, and a signed ten-minute
+state cookie. Admin writes made with the browser session also require a
+same-origin request. The public Wish Pool remains available when Authentik is
+unavailable because OIDC discovery happens lazily only when an administrator
+starts login.
+
+`WISH_ADMIN_TOKEN` remains a CLI-only break-glass credential. Retrieve it
+through the cluster's normal secret-access process and use it only over HTTPS:
 
 ```sh
 curl -H "Authorization: Bearer $WISH_ADMIN_TOKEN" \
@@ -62,6 +74,22 @@ curl -X PATCH \
 
 Valid visibility values are `published`, `pending`, and `hidden`.
 
+OIDC requires the issuer, client ID, and redirect URL together; the API fails
+to start on a partial or insecure configuration:
+
+```text
+WISH_OIDC_ISSUER=https://auth.nycu.one/application/o/wishpool-admin/
+WISH_OIDC_CLIENT_ID=wishpool-admin
+WISH_OIDC_REDIRECT_URL=https://nycu.life/api/wishes/auth/callback
+```
+
+The provider must register the redirect URL exactly. Dev uses a separate
+`wishpool-admin-dev` provider/client
+and `https://landing.dev.nycu.one/api/wishes/auth/callback`. Both deployed
+clients are public OAuth clients secured with PKCE S256, so they do not use a
+client secret. `WISH_OIDC_CLIENT_SECRET` remains optional for a separately
+registered confidential client and must never be committed to Git.
+
 ## Local development
 
 Run PostgreSQL and the API on port 3001, then start the existing Vite dev
@@ -75,6 +103,10 @@ WISH_COOKIE_SECRET='at-least-32-characters-long' \
 WISH_ADMIN_TOKEN='local-admin-token' \
 go run ./cmd/wish-api
 ```
+
+For a local OIDC client, use a loopback callback such as
+`http://127.0.0.1:3001/api/wishes/auth/callback`; non-loopback HTTP callbacks
+are rejected.
 
 For frontend-only visual work, append `?wish-preview=1` while using the Vite
 development server. Preview mode never runs in a production build.
