@@ -892,14 +892,15 @@
 						</div>
 						<img class="device-frame" src="{base}/story/designer/hand/phone-v2.svg" alt="" />
 						<!-- Palm and thumb are separate layers so only the thumb mimes the swipe (#61).
-						     A static twin of the thumb sits underneath the animated one: whatever sliver
-						     the moving thumb uncovers shows thumb, not the screen — no severed joint. -->
+						     The thumb only ever rotates about its base joint — the joint itself stays
+						     pinned, so no gap can open there (cut-out animation rule: pivot at the
+						     overlap). The artwork has no hidden overlap painted at the joint, so any
+						     translation would sever it. -->
 						<img
 							class="device-hand-front"
 							src="{base}/story/designer/hand/front-palm-v2.svg"
 							alt=""
 						/>
-						<img class="device-thumb-under" src="{base}/story/designer/hand/thumb-v2.svg" alt="" />
 						<img
 							class="device-thumb"
 							class:swipe-up={productStepping && switchDir === 1}
@@ -1865,17 +1866,14 @@
 		   the extra +0.85% sits the thumb a touch further right per design feedback. */
 		transform: translateX(-0.3%);
 	}
-	/* Only the thumb moves, like idly scrolling a feed (#61). Kept deliberately tiny — a few
-	   pixels of slide along the screen with barely-there tilt; anything bigger reads as the
-	   thumb waving at the visitor. */
-	.device-card > .device-thumb-under {
-		z-index: 5;
-		transform: translateX(-0.3%);
-	}
+	/* Only the thumb moves, like idly scrolling a feed (#61). Rotation ONLY, pivoting on the
+	   base knuckle (≈29.5%, 37.2% of the shared artwork box): the joint itself never moves,
+	   so it can't sever, and there is exactly one thumb tip. Any translation would open the
+	   joint — the artwork has no hidden overlap painted there. */
 	.device-card > .device-thumb {
 		z-index: 5;
 		transform: translateX(-0.3%);
-		transform-origin: 29.5% 37%;
+		transform-origin: 29.5% 37.2%;
 		animation: thumb-idle 3.6s ease-in-out infinite;
 	}
 	@keyframes thumb-idle {
@@ -1885,10 +1883,10 @@
 			transform: translateX(-0.3%);
 		}
 		12% {
-			transform: translate(-0.42%, -0.5%) rotate(0.45deg);
+			transform: translateX(-0.3%) rotate(1.1deg);
 		}
 		32% {
-			transform: translate(-0.24%, 0.14%) rotate(-0.2deg);
+			transform: translateX(-0.3%) rotate(-0.35deg);
 		}
 		48% {
 			transform: translateX(-0.3%);
@@ -1903,12 +1901,12 @@
 	}
 	@keyframes thumb-swipe-up {
 		40% {
-			transform: translate(-0.48%, -0.85%) rotate(0.7deg);
+			transform: translateX(-0.3%) rotate(1.9deg);
 		}
 	}
 	@keyframes thumb-swipe-down {
 		40% {
-			transform: translate(-0.12%, 0.85%) rotate(-0.7deg);
+			transform: translateX(-0.3%) rotate(-1.9deg);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
