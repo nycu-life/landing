@@ -2585,30 +2585,31 @@
 			font-size: 0.78rem;
 		}
 		.product-cta {
-			margin-top: 0.45rem;
-			width: 9.5rem;
+			margin-top: 0.25rem;
+			width: 8.25rem;
 			font-size: 0.88rem;
 		}
 		.product-cta-soon {
-			width: 8.25rem;
+			width: 7.25rem;
 		}
 		.product-demo {
 			min-height: 0;
 			min-width: 0;
 			height: 100%;
+			container-type: size;
 			transform: none;
 		}
-		/* Phones: the phone hangs from the top of the demo area, as large as the viewport width
-		   allows (≈62vw), and may run off the bottom of the stage. */
+		/* The phone hangs from the top of the demo area. Its shell is 49.65% of the composite
+		   width, so the 195cqh cap keeps the entire phone inside the height left below the copy
+		   even when Chrome's dynamic toolbar makes that space shorter (#81). */
 		.product-demo {
-			--device-card-width: min(292vw, 116svh, 68rem);
+			--device-card-width: min(292vw, 116svh, 68rem, 195cqh);
 		}
 		.device-card {
 			top: 0;
 			transform: translate(-16.4%, -0.06%);
 		}
-		/* The phone may run off the stage on short phones: keep the indicator pinned to the
-		   stage bottom and the arrows within reach. */
+		/* Keep the indicator pinned to the stage bottom and the arrows within reach. */
 		.product-dots {
 			top: auto;
 			bottom: 0.6rem;
@@ -2733,7 +2734,7 @@
 			font-size: 1.8167rem;
 		}
 		.product-demo {
-			--device-card-width: min(292vw, 116svh, 68rem);
+			--device-card-width: min(292vw, 116svh, 68rem, 195cqh);
 		}
 		.arrow.previous {
 			left: 4%;
@@ -2811,8 +2812,32 @@
 	}
 
 	@media (max-width: 430px) and (max-height: 700px) {
+		.product-shell {
+			gap: 0.35rem;
+		}
+		.product-copy h2 {
+			margin-block: 0.1rem;
+		}
+		.product-copy > p {
+			line-height: 1.35;
+		}
+		.feature-list {
+			gap: 0.15rem;
+			margin-top: 0.3rem;
+		}
+		.feature-list div {
+			gap: 0.4rem;
+			padding: 0.15rem 0.65rem;
+		}
+		.product-cta {
+			width: 7rem;
+			margin-top: 0.1rem;
+		}
+		.product-cta-soon {
+			width: 6.25rem;
+		}
 		.product-demo {
-			--device-card-width: min(274vw, 110svh, 64rem);
+			--device-card-width: min(274vw, 110svh, 64rem, 195cqh);
 		}
 		.gacha-machine {
 			--gacha-width: min(90vw, 22rem);

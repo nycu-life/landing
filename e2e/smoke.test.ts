@@ -1029,6 +1029,51 @@ test('phone chapters use the full stage without pushing their compositions down'
 	expect(visiblePhoneHeight / stageRect.height).toBeGreaterThan(0.58);
 });
 
+test('mobile product phone and CTA fit inside one dynamic viewport', async ({ page }) => {
+	for (const viewport of [
+		{ width: 430, height: 932 },
+		{ width: 390, height: 844 },
+		{ width: 412, height: 760 },
+		{ width: 320, height: 568 }
+	]) {
+		await page.setViewportSize(viewport);
+		for (const locale of ['zh-tw', 'en']) {
+			await page.goto('/?motion=on#products');
+			await page.evaluate((nextLocale) => {
+				document.cookie = `PARAGLIDE_LOCALE=${nextLocale}; path=/`;
+			}, locale);
+			await page.reload();
+			await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
+
+			const result = await page.locator('.product-shell').evaluate((shell) => {
+				const stage = shell.closest<HTMLElement>('.story-stage');
+				const demo = shell.querySelector<HTMLElement>('.product-demo');
+				const phone = shell.querySelector<HTMLElement>('.device-phone');
+				const cta = shell.querySelector<HTMLElement>('.product-cta');
+				if (!stage || !demo || !phone || !cta) throw new Error('Missing product composition');
+				return {
+					stage: stage.getBoundingClientRect().toJSON(),
+					demo: demo.getBoundingClientRect().toJSON(),
+					phone: phone.getBoundingClientRect().toJSON(),
+					cta: cta.getBoundingClientRect().toJSON()
+				};
+			});
+			const label = `${viewport.width}x${viewport.height}/${locale}`;
+			expect.soft(result.phone.y, `${label} phone top`).toBeGreaterThanOrEqual(result.demo.y - 1);
+			expect
+				.soft(result.phone.bottom, `${label} phone bottom`)
+				.toBeLessThanOrEqual(result.demo.bottom + 1);
+			expect
+				.soft(result.phone.bottom, `${label} viewport bottom`)
+				.toBeLessThanOrEqual(result.stage.bottom + 1);
+			expect
+				.soft(result.phone.height / result.stage.height, `${label} phone height`)
+				.toBeGreaterThanOrEqual(0.28);
+			expect.soft(result.cta.width, `${label} CTA width`).toBeLessThanOrEqual(132.5);
+		}
+	}
+});
+
 test('phone story stage follows Chrome dynamic viewport changes without exposing its runway', async ({
 	page
 }) => {
