@@ -2676,10 +2676,10 @@
 			/* Keep the title-to-film group centred as one unit in the usable stage. */
 		}
 		.about-copy h2 {
-			font-size: 1.85rem;
+			font-size: 2.0167rem;
 		}
 		.about-copy p {
-			font-size: 0.78rem;
+			font-size: 0.9467rem;
 			line-height: 1.55;
 		}
 		.team-film {
@@ -2690,7 +2690,7 @@
 			padding-top: 0.5rem;
 		}
 		.product-copy h2 {
-			font-size: 1.65rem;
+			font-size: 1.8167rem;
 		}
 		.product-demo {
 			--device-card-width: min(292vw, 116svh, 68rem);
@@ -2712,15 +2712,52 @@
 			inset: 21.5% 18.1% 4% 20%;
 		}
 		.faq-list > strong {
-			font-size: calc(var(--pad-width) * 0.069);
+			font-size: calc(var(--pad-width) * 0.069 + 0.1667rem);
 		}
 		.faq-item button {
-			font-size: calc(var(--pad-width) * 0.0275);
+			font-size: calc(var(--pad-width) * 0.0275 + 0.1667rem);
 			line-height: 1.3;
 		}
 		.faq-item p {
-			font-size: calc(var(--pad-width) * 0.0245);
-			line-height: 1.48;
+			font-size: calc(var(--pad-width) * 0.0245 + 0.1667rem);
+			line-height: 1.34;
+		}
+	}
+
+	@media (max-width: 767px) {
+		.eyebrow {
+			font-size: 0.9267rem;
+		}
+		.product-copy > p {
+			font-size: 0.9967rem;
+		}
+		.feature-list strong {
+			font-size: 1.0167rem;
+		}
+		.feature-list span {
+			font-size: 0.9467rem;
+		}
+		.product-cta {
+			font-size: 1.0467rem;
+		}
+		.join-head p {
+			font-size: 1.0167rem;
+		}
+		.join-card-group {
+			font-size: 0.7867rem;
+		}
+		.join-card h3 {
+			font-size: 1.1667rem;
+		}
+		.join-card-en {
+			font-size: 0.7667rem;
+		}
+		.join-card p.join-card-hook,
+		.join-card > a {
+			font-size: 0.9467rem;
+		}
+		.join-card p.join-card-desc {
+			font-size: 0.8867rem;
 		}
 	}
 
@@ -2733,7 +2770,7 @@
 			transform: translateY(calc(var(--machine-exit) * var(--machine-exit-distance)));
 		}
 		.faq-shell {
-			--mobile-board-size: min(104vw, 34rem, calc((100svh - 6rem) * 0.7857));
+			--mobile-board-size: min(110vw, 34rem, calc((100dvh - 1.5rem) * 0.7857));
 			--pad-width: var(--mobile-board-size);
 		}
 	}

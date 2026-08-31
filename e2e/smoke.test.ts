@@ -1009,6 +1009,19 @@ test('phone story stage follows Chrome dynamic viewport changes without exposing
 	}
 });
 
+test('phone body copy uses the requested two-point type increase', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/?motion=on#products');
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
+
+	const sizes = await page.evaluate(() => ({
+		product: Number.parseFloat(getComputedStyle(document.querySelector('.product-copy > p')!).fontSize),
+		feature: Number.parseFloat(getComputedStyle(document.querySelector('.feature-list span')!).fontSize)
+	}));
+	expect(sizes.product).toBeCloseTo(15.9472, 2);
+	expect(sizes.feature).toBeCloseTo(15.1472, 2);
+});
+
 test('theme persists and the burger menu is gone on phones', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');
