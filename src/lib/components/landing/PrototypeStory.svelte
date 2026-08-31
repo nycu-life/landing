@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { fly, slide } from 'svelte/transition';
-	import { JOIN_FORM_URL, products, productStatusLabel } from '$lib/content/landing';
+	import { joinRoles, products, productStatusLabel } from '$lib/content/landing';
 	import { m } from '$lib/paraglide/messages';
 	import { dismissBootSplash } from '$lib/boot-splash';
 
@@ -945,22 +945,32 @@
 			aria-label={m.story_join_label()}
 		>
 			<div class="section-shell join-shell">
-				<article class="join-board">
-					<img src="{base}/story/designer/join-board.svg" alt="" />
-					<div class="join-board-content">
-						<span class="eyebrow">{m.story_join_eyebrow()}</span>
-						<h2>{m.story_join_title_1()}<br />{m.story_join_title_2()}</h2>
-						<p>{m.story_join_body()}</p>
-						<a
-							href={JOIN_FORM_URL}
-							target="_blank"
-							rel="noreferrer"
-							data-analytics-event="join_form_click"
-							data-analytics-source="home_story"
-							><span class="join-cta-lead">{m.story_join_cta_lead()}</span>{m.story_join_cta()}</a
-						>
-					</div>
-				</article>
+				<!-- One card per open role (#63): the heading sits top-centre, the six roles
+				     below it, each linking to its pipeline's recruitment form. -->
+				<div class="join-head">
+					<span class="eyebrow">{m.story_join_eyebrow()}</span>
+					<h2>{m.story_join_heading()}</h2>
+					<p>{m.story_join_title_1()}{m.story_join_title_2()}</p>
+				</div>
+				<ul class="join-cards">
+					{#each joinRoles as role (role.id)}
+						<li class="join-card" data-group={role.group}>
+							<span class="join-card-group">{role.groupLabel()}</span>
+							<h3>{role.title()}</h3>
+							<span class="join-card-en">{role.subtitle()}</span>
+							<p class="join-card-hook">{role.hook()}</p>
+							<p class="join-card-desc">{role.description()}</p>
+							<a
+								href={role.formUrl}
+								target="_blank"
+								rel="noreferrer"
+								data-analytics-event="join_form_click"
+								data-analytics-source="home_story"
+								data-analytics-role={role.id}>{m.story_join_card_cta()}</a
+							>
+						</li>
+					{/each}
+				</ul>
 			</div>
 		</section>
 
@@ -1057,11 +1067,8 @@
 	:global(:root[data-theme='dark']) .story-count {
 		color: #8c9db4;
 	}
-	:global(:root[data-theme='dark']) .join-board-content h2 {
-		color: #172235;
-	}
-	:global(:root[data-theme='dark']) .join-board-content p {
-		color: #66758a;
+	:global(:root[data-theme='dark']) .join-head p {
+		color: #c8d4e5;
 	}
 	.story-progress {
 		position: absolute;
@@ -2002,58 +2009,163 @@
 			transition: none;
 		}
 	}
+	/* One paper card per open role (#63), pinned like notes on a board: white sheets with the
+	   artwork's ink-blue stroke, a strip of tape on top and alternating tilts. */
 	.join-shell {
-		width: 100%;
+		grid-template-rows: auto auto;
 		place-items: center;
+		align-content: center;
+		gap: clamp(1rem, 2.8vh, 2rem);
 	}
-	.join-board {
-		position: relative;
-		width: min(64vh, 39rem, calc(100vw - 8rem));
-		aspect-ratio: 1;
+	.join-head {
+		text-align: center;
 	}
-	.join-board > img {
+	.join-head h2 {
+		margin: 0.55rem 0 0.4rem;
+	}
+	.join-head p {
+		margin: 0;
+		color: #66758a;
+		font-size: clamp(0.85rem, 1.7vh, 1rem);
+	}
+	.join-cards {
+		list-style: none;
 		width: 100%;
-		height: 100%;
-		display: block;
-		object-fit: contain;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: clamp(0.8rem, 1.9vh, 1.3rem);
 	}
-	.join-board-content {
-		position: absolute;
-		inset: 19% 10% 18% 27%;
+	.join-card {
+		position: relative;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		text-align: center;
+		padding: clamp(0.95rem, 2.1vh, 1.35rem) clamp(1rem, 1.5vw, 1.35rem);
+		border: 1.5px solid #4b6390;
+		border-radius: 0.45rem;
+		background: #fff;
+		box-shadow: 0 0.7rem 1.7rem rgba(55, 65, 81, 0.1);
 		color: #172235;
+		rotate: -0.7deg;
 	}
-	.join-board-content h2 {
-		width: 100%;
-		margin: clamp(0.65rem, 1.5vh, 1rem) 0 clamp(0.8rem, 1.8vh, 1.2rem);
-		color: #172235;
-		font-size: clamp(2rem, 4.2vh, 3.15rem);
-		line-height: 1.12;
+	.join-card:nth-child(even) {
+		rotate: 0.65deg;
 	}
-	.join-board-content p {
-		width: 88%;
-		margin: 0;
-		max-width: 100%;
-		color: #66758a;
-		font-size: clamp(0.82rem, 1.55vh, 1rem);
-		line-height: 1.65;
+	.join-card::before {
+		content: '';
+		position: absolute;
+		top: -0.55rem;
+		left: 50%;
+		width: 3.4rem;
+		height: 1.05rem;
+		border: 1px solid rgba(75, 99, 144, 0.35);
+		background: rgba(204, 219, 255, 0.72);
+		transform: translateX(-50%) rotate(-2deg);
 	}
-	.join-board-content a {
-		box-sizing: border-box;
-		max-width: 100%;
-		text-align: center;
-		text-wrap: balance;
-		margin-top: clamp(1rem, 2.3vh, 1.6rem);
-		padding: 0.85rem 1.35rem;
+	.join-card:nth-child(even)::before {
+		transform: translateX(-50%) rotate(1.6deg);
+	}
+	.join-card-group {
+		align-self: flex-start;
+		padding: 0.22rem 0.62rem;
 		border-radius: 999px;
-		background: #df725e;
-		color: #fff;
-		font-size: clamp(0.8rem, 1.55vh, 1rem);
+		background: #ccdbff;
+		color: #2455a8;
+		font-size: 0.62rem;
 		font-weight: 700;
+		letter-spacing: 0.08em;
+	}
+	.join-card[data-group='marketing'] .join-card-group {
+		background: #ffe5ad;
+		color: #6c4c08;
+	}
+	.join-card[data-group='dev'] .join-card-group {
+		background: #d5f1b1;
+		color: #44691d;
+	}
+	.join-card[data-group='ops'] .join-card-group {
+		background: #e5dbff;
+		color: #5b3fa8;
+	}
+	.join-card h3 {
+		margin: 0.5rem 0 0.1rem;
+		font-size: clamp(1rem, 2vh, 1.2rem);
+		font-weight: 650;
+		letter-spacing: -0.02em;
+	}
+	.join-card-en {
+		color: #8a97ab;
+		font-size: 0.6rem;
+		font-weight: 650;
+		letter-spacing: 0.07em;
+		text-transform: uppercase;
+	}
+	.join-card-hook {
+		margin: 0.45rem 0 0;
+		color: #172235;
+		font-size: 0.78rem;
+		font-weight: 650;
+		line-height: 1.45;
+	}
+	.join-card-desc {
+		margin: 0.3rem 0 0;
+		color: #52647d;
+		font-size: 0.72rem;
+		line-height: 1.55;
+	}
+	.join-card > a {
+		align-self: flex-start;
+		margin-top: auto;
+		padding-top: 0.55rem;
+		color: #df725e;
+		font-size: 0.78rem;
+		font-weight: 700;
+	}
+	.join-card > a:hover {
+		text-decoration: underline;
+	}
+	/* Short stages (e.g. 1024×768 laptops/landscape tablets): compact the cards so the
+	   heading and both rows stay inside the sticky stage. */
+	@media (min-width: 768px) and (max-height: 840px) {
+		.join-shell {
+			gap: 1rem;
+		}
+		.join-head h2 {
+			margin: 0.4rem 0 0.25rem;
+			font-size: 2.1rem;
+		}
+		.join-head p {
+			font-size: 0.8rem;
+		}
+		.join-cards {
+			gap: 0.8rem;
+		}
+		.join-card {
+			padding: 0.85rem 1rem;
+		}
+		.join-card h3 {
+			margin-top: 0.4rem;
+			font-size: 1rem;
+		}
+		.join-card-group {
+			font-size: 0.58rem;
+		}
+		.join-card-en {
+			font-size: 0.56rem;
+		}
+		.join-card-hook {
+			margin-top: 0.35rem;
+			font-size: 0.72rem;
+		}
+		.join-card-desc {
+			font-size: 0.68rem;
+			line-height: 1.5;
+		}
+		.join-card > a {
+			padding-top: 0.45rem;
+			font-size: 0.72rem;
+		}
 	}
 	.story-count {
 		position: absolute;
@@ -2109,11 +2221,13 @@
 		.faq-item p {
 			font-size: 1rem;
 		}
-		.join-board {
-			width: min(72vh, 52rem, calc(100vw - 10rem));
+		.join-card h3 {
+			font-size: 1.35rem;
 		}
-		.join-board-content h2 {
-			font-size: clamp(3rem, 4.2vh, 3.6rem);
+		.join-card-hook,
+		.join-card-desc,
+		.join-card > a {
+			font-size: 0.85rem;
 		}
 	}
 
@@ -2142,6 +2256,9 @@
 		.chapter-nav span {
 			display: none;
 		}
+		.join-cards {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
 	}
 	@media (max-width: 767px) {
 		.chapter-nav {
@@ -2149,6 +2266,24 @@
 		}
 		.story-stage {
 			--stage-gutter: 1.125rem;
+		}
+		/* Phones: the role cards become a horizontal snap strip bleeding to the stage edges. */
+		.join-cards {
+			display: flex;
+			overflow-x: auto;
+			scroll-snap-type: x mandatory;
+			gap: 0.8rem;
+			margin-inline: calc(-1 * var(--stage-gutter));
+			width: calc(100% + 2 * var(--stage-gutter));
+			padding: 0.7rem var(--stage-gutter) 1rem;
+			scrollbar-width: none;
+		}
+		.join-cards::-webkit-scrollbar {
+			display: none;
+		}
+		.join-card {
+			flex: 0 0 min(76vw, 19rem);
+			scroll-snap-align: center;
 		}
 	}
 	@media (max-width: 900px) {
@@ -2375,32 +2510,6 @@
 			width: calc(var(--pad-width) * 0.028);
 			height: calc(var(--pad-width) * 0.028);
 		}
-		.join-cta-lead {
-			display: none;
-		}
-		.join-shell {
-			width: 100%;
-		}
-		.join-board {
-			width: min(78svh, 88vw, 40rem);
-			transform: translate(-6%, 2svh);
-		}
-		.join-board-content {
-			inset: 17.5% 10% 16.5% 27%;
-		}
-		.join-board-content h2 {
-			margin: 0.45rem 0 0.6rem;
-			font-size: clamp(1.7rem, 6.2vw, 2.4rem);
-		}
-		.join-board-content p {
-			font-size: clamp(0.72rem, 2.1vw, 0.88rem);
-			line-height: 1.45;
-			text-wrap: pretty;
-		}
-		.join-board-content a {
-			margin-top: 0.8rem;
-			padding: 0.7rem 1.1rem;
-		}
 	}
 
 	@media (max-width: 430px) {
@@ -2464,9 +2573,6 @@
 			--pad-width: var(--mobile-board-size);
 			gap: 0.55rem;
 		}
-		.join-shell {
-			--mobile-board-size: min(110vw, 34rem, calc((100svh - 10rem) * 0.7857));
-		}
 		.faq-list {
 			/* Keep the board full-size. Only the text block moves down below the spiral; slightly
 			   smaller type prevents short orphan lines such as a standalone 「嗎？」. */
@@ -2483,30 +2589,6 @@
 			font-size: calc(var(--pad-width) * 0.0245);
 			line-height: 1.48;
 		}
-		.join-board {
-			width: var(--mobile-board-size, min(126vw, 34rem));
-			/* The SVG has extra paper on its left, so its main white board is right of canvas centre. */
-			transform: translate(-12%, 0);
-		}
-		.join-board-content {
-			inset: 14% 9% 12% 25%;
-		}
-		.join-board-content .eyebrow {
-			font-size: 0.7rem;
-		}
-		.join-board-content h2 {
-			margin-block: 0.55rem 0.7rem;
-			font-size: clamp(1.75rem, 7.6vw, 2.3rem);
-		}
-		.join-board-content p {
-			font-size: clamp(0.74rem, 3.1vw, 0.88rem);
-			line-height: 1.45;
-		}
-		.join-board-content a {
-			margin-top: 0.85rem;
-			padding: 0.75rem 1.15rem;
-			font-size: 0.82rem;
-		}
 	}
 
 	@media (max-width: 430px) and (max-height: 700px) {
@@ -2517,28 +2599,9 @@
 			--gacha-width: min(90vw, 22rem);
 			transform: translateY(calc(var(--machine-exit) * var(--machine-exit-distance)));
 		}
-		.faq-shell,
-		.join-shell {
-			--mobile-board-size: min(104vw, 34rem, calc((100svh - 6rem) * 0.7857));
-		}
 		.faq-shell {
+			--mobile-board-size: min(104vw, 34rem, calc((100svh - 6rem) * 0.7857));
 			--pad-width: var(--mobile-board-size);
-		}
-		.join-board {
-			width: var(--mobile-board-size);
-			transform: translate(-11%, 0);
-		}
-		.join-board-content p {
-			display: none;
-		}
-		.join-board-content h2 {
-			margin-block: 0.45rem 0.55rem;
-		}
-		.join-board-content a {
-			margin-top: 0.55rem;
-			padding: 0.6rem 0.8rem;
-			font-size: 0.68rem;
-			white-space: nowrap;
 		}
 	}
 
