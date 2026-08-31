@@ -1779,14 +1779,15 @@
 		font-size: 0.86rem;
 	}
 	/* Designer's 前往使用 tag: stacked default/hover faces with a live label over the tag's
-	   text area (left of the arrow disc), tilted to sit on the drawn baseline. */
+	   text area (left of the arrow disc). The source lettering is removed so the label stays
+	   localisable while the supplied paper, tape, arrow and hover artwork remain intact. */
 	.product-cta {
 		position: relative;
 		display: inline-grid;
 		place-items: center;
 		margin-top: 1.1rem;
-		width: 11.5rem;
-		aspect-ratio: 338.17 / 178.42;
+		width: 12.25rem;
+		aspect-ratio: 292 / 157;
 		color: #fff;
 		font-size: 1.02rem;
 		font-weight: 700;
@@ -1815,16 +1816,18 @@
 		opacity: 1;
 	}
 	.cta-label {
-		position: relative;
-		max-width: 62%;
+		position: absolute;
+		left: 39%;
+		top: 50%;
+		max-width: 58%;
 		text-align: center;
 		line-height: 1.1;
-		transform: translate(-17%, 8%) rotate(-4deg);
+		transform: translate(-50%, -50%) rotate(-2deg);
 	}
 	/* 開發中 paper tag: ink label, no link affordance. */
 	.product-cta-soon {
-		width: 9.75rem;
-		aspect-ratio: 267.77 / 175.59;
+		width: 10rem;
+		aspect-ratio: 252 / 165;
 		color: #1b2b56;
 		cursor: default;
 	}
@@ -1833,7 +1836,8 @@
 	}
 	.product-cta-soon .cta-label {
 		max-width: 70%;
-		transform: translate(0%, 12%) rotate(-6deg);
+		left: 50%;
+		transform: translate(-50%, -50%) rotate(-6deg);
 	}
 	.product-demo {
 		--device-card-width: min(146vh, 100rem);

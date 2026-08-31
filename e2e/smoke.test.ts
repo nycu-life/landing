@@ -9,7 +9,7 @@ const storyProgress = (page: Page) =>
 		);
 /** Scroll so the story sits at the given timeline progress (mirrors SEGMENTS in the component). */
 const scrollToProgress = (page: Page, progress: number) =>
-	page.evaluate((target) => {
+	page.evaluate(async (target) => {
 		const SEGMENTS = [
 			{ to: 0.2, units: 2 },
 			{ to: 0.25, units: 0.7 },
@@ -43,6 +43,9 @@ const scrollToProgress = (page: Page, progress: number) =>
 			top: top + fraction * (storyEl.offsetHeight - stageEl.offsetHeight),
 			behavior: 'instant'
 		});
+		await new Promise<void>((resolve) =>
+			requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+		);
 	}, progress);
 /** One trackpad-style flick: a burst of decaying wheel deltas. */
 const flick = async (page: Page, direction: 1 | -1) => {
@@ -138,7 +141,26 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(page.locator('a[href="https://www.youtube.com/@NYCU_LIFE"]').first()).toHaveText(
 		'YouTube'
 	);
-	await expect(page.locator('#wishes').getByRole('link')).toHaveAttribute('href', '/wishpool/');
+	const wishInvite = page.locator('#wishes');
+	await expect(wishInvite.getByRole('heading', { level: 2 })).toHaveText('許願池');
+	await expect(wishInvite.getByText('您的回饋是我們更新的重要方向。')).toBeVisible();
+	await expect(wishInvite.getByRole('link')).toHaveAttribute('href', '/wishpool/');
+	await expect(wishInvite.locator('.wish-machine')).toHaveAttribute(
+		'src',
+		'./story/designer/wishpool/machine.svg'
+	);
+	await expect(wishInvite.locator('.wish-sticker')).toHaveAttribute(
+		'src',
+		'./story/designer/wishpool/sticker.svg'
+	);
+	await expect(wishInvite.locator('.wish-hand')).toHaveAttribute(
+		'src',
+		'./story/designer/wishpool/hand-ball.svg'
+	);
+	await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+		'content',
+		'https://nycu.life/og/nycu-life.png'
+	);
 	await expect(page.locator('.footer-contact a[href="/wishpool/"]')).toBeAttached();
 	const wishPoolNavigation = page.locator('.topbar-nav a[href="/wishpool/"]');
 	await expect(wishPoolNavigation).toBeVisible();
@@ -877,6 +899,87 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 							animations: 'disabled'
 						});
 					}
+				}
+			}
+		}
+	}
+});
+
+test('wish pool entrance stays readable in the 12 locale, appearance, and viewport states', async ({
+	page
+}) => {
+	const viewports = [
+		{ name: 'desktop', width: 1440, height: 900 },
+		{ name: 'tablet', width: 768, height: 1024 },
+		{ name: 'phone', width: 390, height: 844 }
+	];
+	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
+
+	for (const viewport of viewports) {
+		await page.setViewportSize(viewport);
+		for (const locale of ['zh-tw', 'en'] as const) {
+			for (const theme of ['light', 'dark'] as const) {
+				await page.goto('/#wishes');
+				await page.evaluate(
+					({ locale, theme }) => {
+						document.cookie = `PARAGLIDE_LOCALE=${locale}; path=/`;
+						localStorage.setItem('nycu-life-theme', theme);
+					},
+					{ locale, theme }
+				);
+				await page.reload();
+				const wishInvite = page.locator('#wishes');
+				await expect(wishInvite).toBeAttached();
+				await wishInvite.evaluate((section) => {
+					const header = document.querySelector<HTMLElement>('.topbar');
+					window.scrollTo({
+						top: section.getBoundingClientRect().top + scrollY - (header?.offsetHeight ?? 0),
+						behavior: 'instant'
+					});
+				});
+				await expect(wishInvite.getByRole('heading', { level: 2 })).toBeVisible();
+				await expect(wishInvite.getByRole('link')).toBeVisible();
+				await expect
+					.poll(() =>
+						wishInvite
+							.locator('img')
+							.evaluateAll((images) =>
+								images.every((image) => (image as HTMLImageElement).naturalWidth > 0)
+							)
+					)
+					.toBe(true);
+
+				const result = await wishInvite.evaluate((section) => {
+					const copy = section.querySelector<HTMLElement>('.wish-copy');
+					const machine = section.querySelector<HTMLElement>('.wish-machine');
+					const sectionRect = section.getBoundingClientRect();
+					const copyRect = copy?.getBoundingClientRect();
+					const machineRect = machine?.getBoundingClientRect();
+					return {
+						copyInside:
+							!!copyRect &&
+							copyRect.left >= -2 &&
+							copyRect.right <= innerWidth + 2 &&
+							copyRect.top >= sectionRect.top - 2 &&
+							copyRect.bottom <= sectionRect.bottom + 2,
+						machineVisible:
+							!!machineRect &&
+							machineRect.right > 0 &&
+							machineRect.left < innerWidth &&
+							machineRect.bottom > sectionRect.top &&
+							machineRect.top < sectionRect.bottom,
+						overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+					};
+				});
+				const label = `${locale}/${theme}/${viewport.name}`;
+				expect.soft(result.copyInside, `${label}: copy stays in the section`).toBe(true);
+				expect.soft(result.machineVisible, `${label}: machine remains visible`).toBe(true);
+				expect.soft(result.overflow, `${label}: horizontal overflow`).toBe(0);
+				if (screenshotDirectory) {
+					await page.screenshot({
+						path: `${screenshotDirectory}/wish-entry-${viewport.name}-${locale}-${theme}.png`,
+						animations: 'disabled'
+					});
 				}
 			}
 		}
