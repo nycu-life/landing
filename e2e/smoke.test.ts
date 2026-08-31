@@ -159,7 +159,7 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	);
 	await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
 		'content',
-		'https://nycu.life/og/nycu-life.png'
+		'https://raw.githubusercontent.com/nycu-life/landing/main/static/og/nycu-life.png'
 	);
 	await expect(page.locator('.footer-contact a[href="/wishpool/"]')).toBeAttached();
 	const wishPoolNavigation = page.locator('.topbar-nav a[href="/wishpool/"]');
