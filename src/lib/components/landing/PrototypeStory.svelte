@@ -765,9 +765,6 @@
 					<span class="eyebrow">{m.story_about_eyebrow()}</span>
 					<h2>{m.story_about_title_1()}<br />{m.story_about_title_2()}</h2>
 					<p>{m.story_about_body()}</p>
-					<div class="fact-pills">
-						<span>STUDENT-BUILT</span><span>4 PRODUCTS</span><span>NYCU</span>
-					</div>
 				</article>
 				<div class="team-film">
 					<iframe
@@ -1599,28 +1596,6 @@
 	.about-copy p {
 		max-width: 34rem;
 	}
-	.fact-pills {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.55rem;
-		margin-top: 1.5rem;
-	}
-	.fact-pills span {
-		padding: 0.5rem 0.85rem;
-		border-radius: 999px;
-		background: #ccdbff;
-		color: #2455a8;
-		font-size: 0.72rem;
-		font-weight: 650;
-	}
-	.fact-pills span:nth-child(2) {
-		background: #d5f1b1;
-		color: #4b5563;
-	}
-	.fact-pills span:nth-child(3) {
-		background: #ffe5ad;
-		color: #6c4c08;
-	}
 	.team-film {
 		position: relative;
 		width: 100%;
@@ -2209,9 +2184,6 @@
 			font-size: 0.9rem;
 			text-wrap: pretty;
 		}
-		.fact-pills {
-			justify-content: center;
-		}
 		.team-film {
 			width: min(92%, 38rem);
 			justify-self: center;
@@ -2421,13 +2393,6 @@
 		.about-copy p {
 			font-size: 0.78rem;
 			line-height: 1.55;
-		}
-		.fact-pills {
-			margin-top: 0.7rem;
-		}
-		.fact-pills span {
-			padding: 0.35rem 0.6rem;
-			font-size: 0.58rem;
 		}
 		.team-film {
 			width: min(100%, 29rem);
