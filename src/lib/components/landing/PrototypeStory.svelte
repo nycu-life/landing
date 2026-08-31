@@ -1866,10 +1866,11 @@
 		   the extra +0.85% sits the thumb a touch further right per design feedback. */
 		transform: translateX(-0.3%);
 	}
-	/* Only the thumb moves, like idly scrolling a feed (#61). Rotation ONLY, pivoting on the
-	   base knuckle (≈29.5%, 37.2% of the shared artwork box): the joint itself never moves,
-	   so it can't sever, and there is exactly one thumb tip. Any translation would open the
-	   joint — the artwork has no hidden overlap painted there. */
+	/* Only the thumb moves, like idly scrolling a feed (#61). The thumb layer now carries a
+	   stroke-less flesh extension tucked inside the palm (the cut-out-animation hidden
+	   overlap), so it can actually slide: anything it uncovers at the joint is palm-coloured.
+	   Keep total upward travel under ~1.5% of the box or the extension's top edge crosses
+	   the palm's contour ink line. */
 	.device-card > .device-thumb {
 		z-index: 5;
 		transform: translateX(-0.3%);
@@ -1883,16 +1884,16 @@
 			transform: translateX(-0.3%);
 		}
 		12% {
-			transform: translateX(-0.3%) rotate(1.1deg);
+			transform: translate(-0.36%, -0.55%) rotate(0.6deg);
 		}
 		32% {
-			transform: translateX(-0.3%) rotate(-0.35deg);
+			transform: translate(-0.22%, 0.18%) rotate(-0.25deg);
 		}
 		48% {
 			transform: translateX(-0.3%);
 		}
 	}
-	/* A slightly firmer flick while the product actually switches (#49). */
+	/* A firmer, longer flick while the product actually switches (#49). */
 	.device-card > .device-thumb.swipe-up {
 		animation: thumb-swipe-up 0.46s ease;
 	}
@@ -1901,12 +1902,12 @@
 	}
 	@keyframes thumb-swipe-up {
 		40% {
-			transform: translateX(-0.3%) rotate(1.9deg);
+			transform: translate(-0.38%, -1.15%) rotate(1.05deg);
 		}
 	}
 	@keyframes thumb-swipe-down {
 		40% {
-			transform: translateX(-0.3%) rotate(-1.9deg);
+			transform: translate(-0.05%, 1.2%) rotate(-1.3deg);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
