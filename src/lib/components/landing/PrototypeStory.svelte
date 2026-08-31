@@ -835,9 +835,17 @@
 						aria-label="上一個產品"
 						onclick={() => selectProduct(activeProduct - 1)}
 					>
-						<img class="arrow-face arrow-face-default" src="{base}/ui/arrow-default-left.svg" alt="" />
+						<img
+							class="arrow-face arrow-face-default"
+							src="{base}/ui/arrow-default-left.svg"
+							alt=""
+						/>
 						<img class="arrow-face arrow-face-hover" src="{base}/ui/arrow-hover-left.svg" alt="" />
-						<img class="arrow-face arrow-face-pressed" src="{base}/ui/arrow-pressed-left.svg" alt="" />
+						<img
+							class="arrow-face arrow-face-pressed"
+							src="{base}/ui/arrow-pressed-left.svg"
+							alt=""
+						/>
 					</button>
 					<!-- Designer's layered hand, split from her composite so every layer shares the
 					     same 1863.64×1631.53 box: back fingers behind the phone, the screen inside
@@ -2179,18 +2187,22 @@
 		letter-spacing: 0.07em;
 		text-transform: uppercase;
 	}
-	.join-card-hook {
+	/* Beat `.section-shell p`'s class+type specificity so the card ink colours hold. */
+	.join-card p.join-card-hook {
 		margin: 0.45rem 0 0;
 		color: #172235;
 		font-size: 0.78rem;
 		font-weight: 650;
 		line-height: 1.45;
+		/* CJK closing punctuation would otherwise hang past the card edge on narrow cards. */
+		overflow-wrap: anywhere;
 	}
-	.join-card-desc {
+	.join-card p.join-card-desc {
 		margin: 0.3rem 0 0;
 		color: #52647d;
 		font-size: 0.72rem;
 		line-height: 1.55;
+		overflow-wrap: anywhere;
 	}
 	.join-card > a {
 		align-self: flex-start;
@@ -2203,9 +2215,11 @@
 	.join-card > a:hover {
 		text-decoration: underline;
 	}
-	/* Short stages (e.g. 1024×768 laptops/landscape tablets): compact the cards so the
-	   heading and both rows stay inside the sticky stage. */
-	@media (min-width: 768px) and (max-height: 840px) {
+	/* Tight stages — short laptops/landscape tablets (1024×768) and narrow portrait tablets
+	   (768×1024, where two columns make three tall rows): compact the cards so the heading
+	   and every row stay inside the sticky stage. */
+	@media (min-width: 768px) and (max-height: 840px),
+		(min-width: 768px) and (max-width: 1023px) and (max-height: 1040px) {
 		.join-shell {
 			gap: 1rem;
 		}
@@ -2232,11 +2246,11 @@
 		.join-card-en {
 			font-size: 0.56rem;
 		}
-		.join-card-hook {
+		.join-card p.join-card-hook {
 			margin-top: 0.35rem;
 			font-size: 0.72rem;
 		}
-		.join-card-desc {
+		.join-card p.join-card-desc {
 			font-size: 0.68rem;
 			line-height: 1.5;
 		}
@@ -2302,8 +2316,8 @@
 		.join-card h3 {
 			font-size: 1.35rem;
 		}
-		.join-card-hook,
-		.join-card-desc,
+		.join-card p.join-card-hook,
+		.join-card p.join-card-desc,
 		.join-card > a {
 			font-size: 0.85rem;
 		}
