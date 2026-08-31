@@ -891,12 +891,15 @@
 							</div>
 						</div>
 						<img class="device-frame" src="{base}/story/designer/hand/phone-v2.svg" alt="" />
-						<!-- Palm and thumb are separate layers so only the thumb mimes the swipe (#61). -->
+						<!-- Palm and thumb are separate layers so only the thumb mimes the swipe (#61).
+						     A static twin of the thumb sits underneath the animated one: whatever sliver
+						     the moving thumb uncovers shows thumb, not the screen — no severed joint. -->
 						<img
 							class="device-hand-front"
 							src="{base}/story/designer/hand/front-palm-v2.svg"
 							alt=""
 						/>
+						<img class="device-thumb-under" src="{base}/story/designer/hand/thumb-v2.svg" alt="" />
 						<img
 							class="device-thumb"
 							class:swipe-up={productStepping && switchDir === 1}
@@ -1865,6 +1868,10 @@
 	/* Only the thumb moves, like idly scrolling a feed (#61). Kept deliberately tiny — a few
 	   pixels of slide along the screen with barely-there tilt; anything bigger reads as the
 	   thumb waving at the visitor. */
+	.device-card > .device-thumb-under {
+		z-index: 5;
+		transform: translateX(-0.3%);
+	}
 	.device-card > .device-thumb {
 		z-index: 5;
 		transform: translateX(-0.3%);
