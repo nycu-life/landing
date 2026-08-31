@@ -120,13 +120,19 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(story(page)).toContainText('ABOUT US');
 	await expect(story(page)).toContainText('FAQ');
 	await expect(story(page)).toContainText('JOIN THE TEAM');
-	const joinLink = page.locator('#join a');
-	await expect(joinLink).toHaveAttribute(
+	// One card per role (#63): six links, split between the two pipeline forms.
+	const joinLinks = page.locator('#join .join-card > a');
+	await expect(joinLinks).toHaveCount(6);
+	await expect(joinLinks.first()).toHaveAttribute(
 		'href',
-		'https://docs.google.com/forms/d/e/1FAIpQLSfEOQ-o2sbD5PpPcW0k1lGrDjgu2b34TfkH46-G4oneMFNlBQ/viewform'
+		'https://docs.google.com/forms/d/e/1FAIpQLSeKWDex6cPWU10MvZgm2QkR4THKS9p8Inews70466WU-aFCCg/viewform'
 	);
-	await expect(joinLink).toHaveAttribute('data-analytics-event', 'join_form_click');
-	await expect(joinLink).toHaveAttribute('data-analytics-source', 'home_story');
+	await expect(joinLinks.last()).toHaveAttribute(
+		'href',
+		'https://docs.google.com/forms/d/e/1FAIpQLScCEb5rf9pGfClM68q6TjgpP_EAqatZo4MLwPoMTpqRfmq9Qg/viewform'
+	);
+	await expect(joinLinks.first()).toHaveAttribute('data-analytics-event', 'join_form_click');
+	await expect(joinLinks.first()).toHaveAttribute('data-analytics-source', 'home_story');
 	await expect(page.locator('#prototype-footer')).toBeAttached();
 	await expect(page.locator('a[href="mailto:life@nycu.edu.tw"]')).toHaveText('life@nycu.edu.tw');
 	await expect(page.locator('a[href="https://www.youtube.com/@NYCU_LIFE"]').first()).toHaveText(
@@ -672,8 +678,10 @@ test('FAQ and recruitment boards stay readable in dark mode', async ({ page }) =
 		location.hash = 'join';
 	});
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
-	await expect(page.locator('.join-board-content h2')).toHaveCSS('color', 'rgb(23, 34, 53)');
-	await expect(page.locator('.join-board-content p')).toHaveCSS('color', 'rgb(102, 117, 138)');
+	// The paper cards keep their ink-on-white palette in dark mode.
+	await expect(page.locator('.join-card h3').first()).toHaveCSS('color', 'rgb(23, 34, 53)');
+	await expect(page.locator('.join-card-desc').first()).toHaveCSS('color', 'rgb(82, 100, 125)');
+	await expect(page.locator('.join-head h2')).toHaveCSS('color', 'rgb(237, 244, 255)');
 });
 
 test('visual acceptance matrix has no broken images, clipped copy, or horizontal overflow', async ({
@@ -743,18 +751,43 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 								rect.height > 1
 							);
 						};
+						// Elements inside a horizontally scrollable strip (e.g. the phone join cards)
+						// legitimately extend past the stage's right edge; only vertical clipping and
+						// internal overflow count for them.
+						const inHorizontalScroller = (element: HTMLElement) => {
+							for (
+								let node = element.parentElement;
+								node && node !== scene;
+								node = node.parentElement
+							) {
+								const overflowX = getComputedStyle(node).overflowX;
+								if (overflowX === 'auto' || overflowX === 'scroll') return true;
+							}
+							return false;
+						};
 						const clippedCopy = Array.from(
 							scene.querySelectorAll<HTMLElement>('h1, h2, h3, p, a, button, .eyebrow')
 						)
 							.filter(isVisible)
 							.filter((element) => {
 								const rect = element.getBoundingClientRect();
+								const horizontallyClipped =
+									!inHorizontalScroller(element) &&
+									(rect.left < stageRect.left - 2 || rect.right > stageRect.right + 2);
+								// Chromium trims a trailing full-width punctuation glyph's advance at
+								// the line end but still reports the untrimmed width via scrollWidth,
+								// so lines ending in ！）。 etc. get half an em of slack.
+								const trailingFullwidth = /[）」』】〕〉》！？。，、：；]\s*$/.test(
+									element.textContent ?? ''
+								);
+								const widthSlack = trailingFullwidth
+									? Number.parseFloat(getComputedStyle(element).fontSize) * 0.5 + 2
+									: 2;
 								return (
-									rect.left < stageRect.left - 2 ||
-									rect.right > stageRect.right + 2 ||
+									horizontallyClipped ||
 									rect.top < stageRect.top - 2 ||
 									rect.bottom > stageRect.bottom + 2 ||
-									element.scrollWidth > element.clientWidth + 2 ||
+									element.scrollWidth > element.clientWidth + widthSlack ||
 									element.scrollHeight > element.clientHeight + 2
 								);
 							})
@@ -764,7 +797,7 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 							.map((image) => image.src);
 						const safeAreaOverflow = Array.from(
 							scene.querySelectorAll<HTMLElement>(
-								'.about-copy, .product-copy, .faq-list, .join-board-content'
+								'.about-copy, .product-copy, .faq-list, .join-head, .join-card'
 							)
 						).flatMap((container) => {
 							const containerRect = container.getBoundingClientRect();
@@ -909,28 +942,37 @@ test('phone chapters use the full stage without pushing their compositions down'
 	expect(aboutCenter).toBeGreaterThan(0.45);
 	expect(aboutCenter).toBeLessThan(0.55);
 
-	for (const chapter of ['faq', 'join'] as const) {
-		await page.evaluate((nextChapter) => {
-			location.hash = nextChapter;
-		}, chapter);
-		await expect(story(page)).toHaveAttribute('data-story-step-name', chapter);
-		const board = page.locator(chapter === 'faq' ? '.notebook' : '.join-board');
-		const boardRect = await board.boundingBox();
-		if (!boardRect) throw new Error(`Missing ${chapter} board`);
-		expect(boardRect.width / stageRect.width, `${chapter} board width`).toBeGreaterThanOrEqual(
-			1.05
-		);
-		expect(boardRect.width / stageRect.width, `${chapter} board width`).toBeLessThanOrEqual(1.15);
-		if (chapter === 'join') {
-			const contentRect = await page.locator('.join-board-content').boundingBox();
-			if (!contentRect) throw new Error('Missing join content');
-			const contentCenter = contentRect.x + contentRect.width / 2;
-			const stageCenter = stageRect.x + stageRect.width / 2;
-			expect(Math.abs(contentCenter - stageCenter), 'join content horizontal centre').toBeLessThan(
-				stageRect.width * 0.035
-			);
-		}
-	}
+	await page.evaluate(() => {
+		location.hash = 'faq';
+	});
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'faq');
+	const boardRect = await page.locator('.notebook').boundingBox();
+	if (!boardRect) throw new Error('Missing faq board');
+	expect(boardRect.width / stageRect.width, 'faq board width').toBeGreaterThanOrEqual(1.05);
+	expect(boardRect.width / stageRect.width, 'faq board width').toBeLessThanOrEqual(1.15);
+
+	// Join on phones (#63): centred heading over a horizontal snap strip whose first card
+	// sits fully inside the stage.
+	await page.evaluate(() => {
+		location.hash = 'join';
+	});
+	await expect(story(page)).toHaveAttribute('data-story-step-name', 'join');
+	const headRect = await page.locator('.join-head').boundingBox();
+	if (!headRect) throw new Error('Missing join heading');
+	const headCenter = headRect.x + headRect.width / 2;
+	const stageCenter = stageRect.x + stageRect.width / 2;
+	expect(Math.abs(headCenter - stageCenter), 'join heading horizontal centre').toBeLessThan(
+		stageRect.width * 0.035
+	);
+	const firstCard = await page.locator('.join-card').first().boundingBox();
+	if (!firstCard) throw new Error('Missing join card');
+	expect(firstCard.x, 'first join card left edge').toBeGreaterThanOrEqual(stageRect.x);
+	expect(firstCard.x + firstCard.width, 'first join card right edge').toBeLessThanOrEqual(
+		stageRect.x + stageRect.width
+	);
+	expect(firstCard.y + firstCard.height, 'first join card bottom').toBeLessThanOrEqual(
+		stageRect.y + stageRect.height
+	);
 
 	await page.evaluate(() => {
 		location.hash = 'products';

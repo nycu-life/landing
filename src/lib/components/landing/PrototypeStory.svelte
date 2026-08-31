@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { fly, slide } from 'svelte/transition';
-	import { JOIN_FORM_URL, products, productStatusLabel } from '$lib/content/landing';
+	import { joinRoles, products, productStatusLabel } from '$lib/content/landing';
 	import { m } from '$lib/paraglide/messages';
 	import { dismissBootSplash } from '$lib/boot-splash';
 
@@ -79,6 +79,7 @@
 	let switchDir = $state(1);
 	let productStepping = $state(false);
 	let aboutTextIn = $state(false);
+	let aboutFilmIn = $state(false);
 	let storyReady = $state(false);
 	let reducedMotion = $state(false);
 	let activeProductData = $derived(products[activeProduct]);
@@ -149,6 +150,9 @@
 		sceneVisible = SCENE_SPANS.map(([from, to]) => progressValue >= from && progressValue <= to);
 		if (progressValue >= 0.25) aboutTextIn = true;
 		else if (progressValue < 0.21) aboutTextIn = false;
+		// The copy's text realigns left partway through its slide toward the film (#59).
+		if (progressValue >= 0.345) aboutFilmIn = true;
+		else if (progressValue < 0.33) aboutFilmIn = false;
 		const filmShouldPlay = progressValue >= 0.36 && progressValue <= 0.47;
 		if (filmShouldPlay !== aboutFilmShouldPlay) setAboutFilmPlayback(filmShouldPlay);
 	};
@@ -478,7 +482,9 @@
 	data-reduced-motion={reducedMotion ? 'true' : 'false'}
 >
 	<div class="story-stage" bind:this={stageEl}>
-		<div class="story-progress"></div>
+		<div class="story-progress" aria-hidden="true">
+			<img src="{base}/ui/progress-line.svg" alt="" />
+		</div>
 		<nav class="chapter-nav" class:on-hero={chapterIndex === 0} aria-label="Story chapters">
 			{#each chapters as chapter, index (chapter.id)}
 				<a
@@ -761,13 +767,10 @@
 			aria-label={m.story_about_label()}
 		>
 			<div class="section-shell about-shell">
-				<article class="about-copy" class:landed={aboutTextIn}>
+				<article class="about-copy" class:landed={aboutTextIn} class:film-in={aboutFilmIn}>
 					<span class="eyebrow">{m.story_about_eyebrow()}</span>
 					<h2>{m.story_about_title_1()}<br />{m.story_about_title_2()}</h2>
 					<p>{m.story_about_body()}</p>
-					<div class="fact-pills">
-						<span>STUDENT-BUILT</span><span>4 PRODUCTS</span><span>NYCU</span>
-					</div>
 				</article>
 				<div class="team-film">
 					<iframe
@@ -796,24 +799,31 @@
 						<article class="product-copy" in:fly={flyIn(switchDir)} out:fly={flyOut(switchDir)}>
 							<h2>{activeProductData.name()}</h2>
 							<p>{activeProductData.summary()}</p>
-							<div class="feature-list">
+							<div class="feature-list" style="--frame-url: url('{base}/ui/product-frame.svg')">
 								{#each activeProductData.features as feature, index (index)}
 									<div>
 										<strong>{String(index + 1).padStart(2, '0')}</strong><span>{feature()}</span>
 									</div>
 								{/each}
 							</div>
+							<!-- Designer's tag buttons (#64 assets): faces stay stacked so the swap never
+							     flickers, and the label is live text for i18n. -->
 							{#if activeProductData.href}
 								<a
 									class="product-cta"
 									href={activeProductData.href}
 									target="_blank"
-									rel="noreferrer">{m.products_visit()} →</a
+									rel="noreferrer"
 								>
+									<img class="cta-face cta-face-default" src="{base}/ui/visit-default.svg" alt="" />
+									<img class="cta-face cta-face-hover" src="{base}/ui/visit-hover.svg" alt="" />
+									<span class="cta-label">{m.products_visit()}</span>
+								</a>
 							{:else}
-								<span class="product-cta product-cta-soon"
-									>{productStatusLabel[activeProductData.status]()}</span
-								>
+								<span class="product-cta product-cta-soon">
+									<img class="cta-face cta-face-default" src="{base}/ui/soon-tag.svg" alt="" />
+									<span class="cta-label">{productStatusLabel[activeProductData.status]()}</span>
+								</span>
 							{/if}
 						</article>
 					{/key}
@@ -823,8 +833,20 @@
 						type="button"
 						class="arrow previous"
 						aria-label="上一個產品"
-						onclick={() => selectProduct(activeProduct - 1)}>←</button
+						onclick={() => selectProduct(activeProduct - 1)}
 					>
+						<img
+							class="arrow-face arrow-face-default"
+							src="{base}/ui/arrow-default-left.svg"
+							alt=""
+						/>
+						<img class="arrow-face arrow-face-hover" src="{base}/ui/arrow-hover-left.svg" alt="" />
+						<img
+							class="arrow-face arrow-face-pressed"
+							src="{base}/ui/arrow-pressed-left.svg"
+							alt=""
+						/>
+					</button>
 					<!-- Designer's layered hand, split from her composite so every layer shares the
 					     same 1863.64×1631.53 box: back fingers behind the phone, the screen inside
 					     the frame's cutout, then palm/wrist, little finger and the swiping thumb. -->
@@ -869,11 +891,17 @@
 							</div>
 						</div>
 						<img class="device-frame" src="{base}/story/designer/hand/phone-v2.svg" alt="" />
+						<!-- Palm and thumb are separate layers so only the thumb mimes the swipe (#61). -->
 						<img
 							class="device-hand-front"
+							src="{base}/story/designer/hand/front-palm-v2.svg"
+							alt=""
+						/>
+						<img
+							class="device-thumb"
 							class:swipe-up={productStepping && switchDir === 1}
 							class:swipe-down={productStepping && switchDir === -1}
-							src="{base}/story/designer/hand/front-hand-v2.svg"
+							src="{base}/story/designer/hand/thumb-v2.svg"
 							alt=""
 						/>
 						<!-- The charging cable runs in front of the little finger. -->
@@ -883,8 +911,20 @@
 						type="button"
 						class="arrow next"
 						aria-label="下一個產品"
-						onclick={() => selectProduct(activeProduct + 1)}>→</button
+						onclick={() => selectProduct(activeProduct + 1)}
 					>
+						<img
+							class="arrow-face arrow-face-default"
+							src="{base}/ui/arrow-default-right.svg"
+							alt=""
+						/>
+						<img class="arrow-face arrow-face-hover" src="{base}/ui/arrow-hover-right.svg" alt="" />
+						<img
+							class="arrow-face arrow-face-pressed"
+							src="{base}/ui/arrow-pressed-right.svg"
+							alt=""
+						/>
+					</button>
 					<div class="product-dots" aria-label="選擇產品">
 						{#each products as product, index (product.id)}
 							<button
@@ -942,22 +982,32 @@
 			aria-label={m.story_join_label()}
 		>
 			<div class="section-shell join-shell">
-				<article class="join-board">
-					<img src="{base}/story/designer/join-board.svg" alt="" />
-					<div class="join-board-content">
-						<span class="eyebrow">{m.story_join_eyebrow()}</span>
-						<h2>{m.story_join_title_1()}<br />{m.story_join_title_2()}</h2>
-						<p>{m.story_join_body()}</p>
-						<a
-							href={JOIN_FORM_URL}
-							target="_blank"
-							rel="noreferrer"
-							data-analytics-event="join_form_click"
-							data-analytics-source="home_story"
-							><span class="join-cta-lead">{m.story_join_cta_lead()}</span>{m.story_join_cta()}</a
-						>
-					</div>
-				</article>
+				<!-- One card per open role (#63): the heading sits top-centre, the six roles
+				     below it, each linking to its pipeline's recruitment form. -->
+				<div class="join-head">
+					<span class="eyebrow">{m.story_join_eyebrow()}</span>
+					<h2>{m.story_join_heading()}</h2>
+					<p>{m.story_join_tagline()}</p>
+				</div>
+				<ul class="join-cards">
+					{#each joinRoles as role (role.id)}
+						<li class="join-card" data-group={role.group}>
+							<span class="join-card-group">{role.groupLabel()}</span>
+							<h3>{role.title()}</h3>
+							<span class="join-card-en">{role.subtitle()}</span>
+							<p class="join-card-hook">{role.hook()}</p>
+							<p class="join-card-desc">{role.description()}</p>
+							<a
+								href={role.formUrl}
+								target="_blank"
+								rel="noreferrer"
+								data-analytics-event="join_form_click"
+								data-analytics-source="home_story"
+								data-analytics-role={role.id}>{m.story_join_card_cta()}</a
+							>
+						</li>
+					{/each}
+				</ul>
 			</div>
 		</section>
 
@@ -1028,22 +1078,8 @@
 	:global(:root[data-theme='dark']) .hero-orbit::after {
 		border-color: rgba(185, 207, 238, 0.13);
 	}
-	:global(:root[data-theme='dark']) .feature-list div {
-		background: #18263d;
-		box-shadow: 0 0.7rem 2rem rgba(0, 0, 0, 0.2);
-	}
-	:global(:root[data-theme='dark']) .feature-list span {
-		color: #d2dbea;
-	}
-	:global(:root[data-theme='dark']) .product-cta-soon {
-		background: #24354f;
-		color: #b5c3d6;
-	}
-	:global(:root[data-theme='dark']) .arrow {
-		border-color: #36517c;
-		background: #18263d;
-		color: #8fb2ff;
-	}
+	/* The feature rows sit on the designer's white paper frame, so their ink colours hold in
+	   dark mode too (like the notebook and join cards). */
 	:global(:root[data-theme='dark']) .product-dots button {
 		background: #53657f;
 	}
@@ -1054,22 +1090,23 @@
 	:global(:root[data-theme='dark']) .story-count {
 		color: #8c9db4;
 	}
-	:global(:root[data-theme='dark']) .join-board-content h2 {
-		color: #172235;
+	:global(:root[data-theme='dark']) .join-head p {
+		color: #c8d4e5;
 	}
-	:global(:root[data-theme='dark']) .join-board-content p {
-		color: #66758a;
-	}
+	/* The designer's hand-drawn progress line: revealed left-to-right by clipping, so the
+	   stroke's wobble never stretches with progress. */
 	.story-progress {
 		position: absolute;
 		z-index: 30;
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 3px;
-		transform-origin: left;
-		transform: scaleX(var(--story-progress));
-		background: #2462ff;
+		clip-path: inset(0 calc(100% - var(--story-progress) * 100%) 0 0);
+	}
+	.story-progress img {
+		display: block;
+		width: 100%;
+		height: auto;
 	}
 	/* Chapters push each other vertically (#47/#50): during a transition the outgoing scene
 	   slides from 0 to -100% while the incoming one slides from 100% to 0, tiling exactly like
@@ -1552,8 +1589,12 @@
 		animation: bob 1.8s ease-in-out infinite;
 	}
 	.about-shell {
+		/* Shared by the copy's centring shift and the film's rise (#59). */
+		--film-in: clamp(0, calc((var(--story-progress) - 0.3) * 10), 1);
 		grid-template-columns: minmax(0, 0.9fr) minmax(25rem, 1.1fr);
 		gap: clamp(2rem, 6vw, 6rem);
+		/* Container so the copy can measure the shell (cqw) to centre itself in it. */
+		container-type: inline-size;
 	}
 	/* Two-stage entrance (#46): the copy drops in first and settles with two shrinking
 	   bounces; only after the reader keeps scrolling does the film rise into place. Before it
@@ -1561,6 +1602,16 @@
 	   scene's own below-viewport enter offset and leak the copy over the hero. */
 	.about-copy {
 		visibility: hidden;
+		/* The copy drops into the middle of the shell, centred; scrolling on slides it (via
+		   `translate`, composing with the drop animation's transform) into its grid column as
+		   the film rises (#59). 50cqw − 50% moves the element's centre onto the shell's. */
+		translate: calc((1 - var(--film-in)) * (50cqw - 50%)) 0;
+	}
+	.about-copy:not(.film-in) {
+		text-align: center;
+	}
+	.about-copy:not(.film-in) p {
+		margin-inline: auto;
 	}
 	.about-copy.landed {
 		visibility: visible;
@@ -1599,28 +1650,6 @@
 	.about-copy p {
 		max-width: 34rem;
 	}
-	.fact-pills {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.55rem;
-		margin-top: 1.5rem;
-	}
-	.fact-pills span {
-		padding: 0.5rem 0.85rem;
-		border-radius: 999px;
-		background: #ccdbff;
-		color: #2455a8;
-		font-size: 0.72rem;
-		font-weight: 650;
-	}
-	.fact-pills span:nth-child(2) {
-		background: #d5f1b1;
-		color: #4b5563;
-	}
-	.fact-pills span:nth-child(3) {
-		background: #ffe5ad;
-		color: #6c4c08;
-	}
 	.team-film {
 		position: relative;
 		width: 100%;
@@ -1630,7 +1659,6 @@
 		box-shadow: 0 2rem 4rem rgba(36, 98, 255, 0.2);
 		overflow: hidden;
 		color: #fff;
-		--film-in: clamp(0, calc((var(--story-progress) - 0.3) * 10), 1);
 		transform: translateY(calc((1 - var(--film-in)) * 95svh));
 	}
 	.team-video {
@@ -1665,14 +1693,14 @@
 		gap: 0.65rem;
 		margin-top: 1.35rem;
 	}
+	/* Each feature row sits in the designer's hand-drawn frame (框框/產品介紹), stretched to
+	   the row via preserveAspectRatio="none". */
 	.feature-list div {
 		display: flex;
 		align-items: center;
 		gap: 0.9rem;
-		padding: 0.85rem 1rem;
-		border-radius: 1rem;
-		background: #fff;
-		box-shadow: 0 0.7rem 2rem rgba(55, 65, 81, 0.1);
+		padding: 0.85rem 1.2rem;
+		background: var(--frame-url) center / 100% 100% no-repeat;
 	}
 	.feature-list strong {
 		color: #2462ff;
@@ -1682,25 +1710,62 @@
 		color: #4b5563;
 		font-size: 0.86rem;
 	}
+	/* Designer's 前往使用 tag: stacked default/hover faces with a live label over the tag's
+	   text area (left of the arrow disc), tilted to sit on the drawn baseline. */
 	.product-cta {
-		display: inline-flex;
-		align-items: center;
-		margin-top: 1.35rem;
-		padding: 0.8rem 1.35rem;
-		border-radius: 999px;
-		background: #2462ff;
+		position: relative;
+		display: inline-grid;
+		place-items: center;
+		margin-top: 1.1rem;
+		width: 11.5rem;
+		aspect-ratio: 338.17 / 178.42;
 		color: #fff;
-		font-size: 0.88rem;
+		font-size: 1.02rem;
 		font-weight: 700;
+		letter-spacing: 0.04em;
 		transition: transform 0.2s ease;
 	}
 	.product-cta:hover {
 		transform: translateY(-2px);
 	}
+	.cta-face {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.cta-face-default {
+		opacity: 1;
+	}
+	.product-cta:hover .cta-face-default {
+		opacity: 0;
+	}
+	.product-cta:hover .cta-face-hover {
+		opacity: 1;
+	}
+	.cta-label {
+		position: relative;
+		max-width: 62%;
+		text-align: center;
+		line-height: 1.1;
+		transform: translate(-17%, 8%) rotate(-4deg);
+	}
+	/* 開發中 paper tag: ink label, no link affordance. */
 	.product-cta-soon {
-		background: #e5e7eb;
-		color: #6b7280;
+		width: 9.75rem;
+		aspect-ratio: 267.77 / 175.59;
+		color: #1b2b56;
 		cursor: default;
+	}
+	.product-cta-soon:hover {
+		transform: none;
+	}
+	.product-cta-soon .cta-label {
+		max-width: 70%;
+		transform: translate(0%, 12%) rotate(-6deg);
 	}
 	.product-demo {
 		--device-card-width: min(146vh, 100rem);
@@ -1797,30 +1862,55 @@
 		   the extra +0.85% sits the thumb a touch further right per design feedback. */
 		transform: translateX(-0.3%);
 	}
-	/* The thumb mimes the swipe that switches products (#49). */
-	.device-card > .device-hand-front.swipe-up {
+	/* Only the thumb moves, like idly scrolling a feed (#61): a quick flick up from its base
+	   joint, a slower settle back, then a beat of rest. Origin sits on the thumb's knuckle
+	   (≈29.5%, 37% of the shared artwork box) so it pivots instead of drifting. */
+	.device-card > .device-thumb {
+		z-index: 5;
+		transform: translateX(-0.3%);
+		transform-origin: 29.5% 37%;
+		animation: thumb-idle 3.2s ease-in-out infinite;
+	}
+	@keyframes thumb-idle {
+		0%,
+		56%,
+		100% {
+			transform: translateX(-0.3%);
+		}
+		10% {
+			transform: translateX(-0.3%) translateY(-1.3%) rotate(2.2deg);
+		}
+		30% {
+			transform: translateX(-0.3%) translateY(0.4%) rotate(-0.8deg);
+		}
+		44% {
+			transform: translateX(-0.3%);
+		}
+	}
+	/* A firmer flick while the product actually switches (#49). */
+	.device-card > .device-thumb.swipe-up {
 		animation: thumb-swipe-up 0.46s ease;
 	}
-	.device-card > .device-hand-front.swipe-down {
+	.device-card > .device-thumb.swipe-down {
 		animation: thumb-swipe-down 0.46s ease;
 	}
 	@keyframes thumb-swipe-up {
 		40% {
-			transform: translateX(-0.3%) translateY(-1.6%) rotate(-0.6deg);
+			transform: translateX(-0.3%) translateY(-2.1%) rotate(3.2deg);
 		}
 	}
 	@keyframes thumb-swipe-down {
 		40% {
-			transform: translateX(-0.3%) translateY(1.6%) rotate(0.6deg);
+			transform: translateX(-0.3%) translateY(2.1%) rotate(-3.2deg);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.device-card > .device-hand-front {
+		.device-card > .device-thumb {
 			animation: none;
 		}
 	}
 	.device-card > .device-cable {
-		z-index: 5;
+		z-index: 6;
 	}
 	.map-placeholder {
 		height: 100%;
@@ -1843,22 +1933,44 @@
 		border-top: 3px dashed #2462ff;
 		transform: rotate(-20deg);
 	}
+	/* Designer's sticker arrows: three faces per side (default/hover/pressed). */
 	.arrow {
 		position: absolute;
 		z-index: 4;
 		top: 50%;
-		width: 3.2rem;
+		width: 3.4rem;
 		aspect-ratio: 1;
-		border: 1px solid #ccdbff;
-		border-radius: 50%;
-		background: #fff;
-		color: #2462ff;
-		font-size: 1.3rem;
+		padding: 0;
+		border: 0;
+		background: none;
 		cursor: pointer;
-		box-shadow: 0 0.8rem 2rem rgba(55, 65, 81, 0.1);
 	}
 	.arrow:hover {
 		transform: scale(1.08);
+	}
+	.arrow-face {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.arrow-face-default {
+		opacity: 1;
+	}
+	.arrow:hover .arrow-face-default {
+		opacity: 0;
+	}
+	.arrow:hover .arrow-face-hover {
+		opacity: 1;
+	}
+	.arrow:active .arrow-face-default,
+	.arrow:active .arrow-face-hover {
+		opacity: 0;
+	}
+	.arrow:active .arrow-face-pressed {
+		opacity: 1;
 	}
 	.arrow.previous {
 		left: 0;
@@ -1983,58 +2095,169 @@
 			transition: none;
 		}
 	}
+	/* One paper card per open role (#63), pinned like notes on a board: white sheets with the
+	   artwork's ink-blue stroke, a strip of tape on top and alternating tilts. */
 	.join-shell {
-		width: 100%;
+		grid-template-rows: auto auto;
 		place-items: center;
+		align-content: center;
+		gap: clamp(1rem, 2.8vh, 2rem);
 	}
-	.join-board {
-		position: relative;
-		width: min(64vh, 39rem, calc(100vw - 8rem));
-		aspect-ratio: 1;
+	.join-head {
+		text-align: center;
 	}
-	.join-board > img {
+	.join-head h2 {
+		margin: 0.55rem 0 0.4rem;
+	}
+	.join-head p {
+		margin: 0;
+		color: #66758a;
+		font-size: clamp(0.85rem, 1.7vh, 1rem);
+	}
+	.join-cards {
+		list-style: none;
 		width: 100%;
-		height: 100%;
-		display: block;
-		object-fit: contain;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: clamp(0.8rem, 1.9vh, 1.3rem);
 	}
-	.join-board-content {
-		position: absolute;
-		inset: 19% 10% 18% 27%;
+	.join-card {
+		position: relative;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		text-align: center;
+		padding: clamp(0.95rem, 2.1vh, 1.35rem) clamp(1rem, 1.5vw, 1.35rem);
+		border: 1.5px solid #4b6390;
+		border-radius: 0.45rem;
+		background: #fff;
+		box-shadow: 0 0.7rem 1.7rem rgba(55, 65, 81, 0.1);
 		color: #172235;
+		rotate: -0.7deg;
 	}
-	.join-board-content h2 {
-		width: 100%;
-		margin: clamp(0.65rem, 1.5vh, 1rem) 0 clamp(0.8rem, 1.8vh, 1.2rem);
-		color: #172235;
-		font-size: clamp(2rem, 4.2vh, 3.15rem);
-		line-height: 1.12;
+	.join-card:nth-child(even) {
+		rotate: 0.65deg;
 	}
-	.join-board-content p {
-		width: 88%;
-		margin: 0;
-		max-width: 100%;
-		color: #66758a;
-		font-size: clamp(0.82rem, 1.55vh, 1rem);
-		line-height: 1.65;
+	.join-card::before {
+		content: '';
+		position: absolute;
+		top: -0.55rem;
+		left: 50%;
+		width: 3.4rem;
+		height: 1.05rem;
+		border: 1px solid rgba(75, 99, 144, 0.35);
+		background: rgba(204, 219, 255, 0.72);
+		transform: translateX(-50%) rotate(-2deg);
 	}
-	.join-board-content a {
-		box-sizing: border-box;
-		max-width: 100%;
-		text-align: center;
-		text-wrap: balance;
-		margin-top: clamp(1rem, 2.3vh, 1.6rem);
-		padding: 0.85rem 1.35rem;
+	.join-card:nth-child(even)::before {
+		transform: translateX(-50%) rotate(1.6deg);
+	}
+	.join-card-group {
+		align-self: flex-start;
+		padding: 0.22rem 0.62rem;
 		border-radius: 999px;
-		background: #df725e;
-		color: #fff;
-		font-size: clamp(0.8rem, 1.55vh, 1rem);
+		background: #ccdbff;
+		color: #2455a8;
+		font-size: 0.62rem;
 		font-weight: 700;
+		letter-spacing: 0.08em;
+	}
+	.join-card[data-group='marketing'] .join-card-group {
+		background: #ffe5ad;
+		color: #6c4c08;
+	}
+	.join-card[data-group='dev'] .join-card-group {
+		background: #d5f1b1;
+		color: #44691d;
+	}
+	.join-card[data-group='ops'] .join-card-group {
+		background: #e5dbff;
+		color: #5b3fa8;
+	}
+	.join-card h3 {
+		margin: 0.5rem 0 0.1rem;
+		font-size: clamp(1rem, 2vh, 1.2rem);
+		font-weight: 650;
+		letter-spacing: -0.02em;
+	}
+	.join-card-en {
+		color: #8a97ab;
+		font-size: 0.6rem;
+		font-weight: 650;
+		letter-spacing: 0.07em;
+		text-transform: uppercase;
+	}
+	/* Beat `.section-shell p`'s class+type specificity so the card ink colours hold. */
+	.join-card p.join-card-hook {
+		margin: 0.45rem 0 0;
+		color: #172235;
+		font-size: 0.78rem;
+		font-weight: 650;
+		line-height: 1.45;
+		/* CJK closing punctuation would otherwise hang past the card edge on narrow cards. */
+		overflow-wrap: anywhere;
+	}
+	.join-card p.join-card-desc {
+		margin: 0.3rem 0 0;
+		color: #52647d;
+		font-size: 0.72rem;
+		line-height: 1.55;
+		overflow-wrap: anywhere;
+	}
+	.join-card > a {
+		align-self: flex-start;
+		margin-top: auto;
+		padding-top: 0.55rem;
+		color: #df725e;
+		font-size: 0.78rem;
+		font-weight: 700;
+	}
+	.join-card > a:hover {
+		text-decoration: underline;
+	}
+	/* Tight stages — short laptops/landscape tablets (1024×768) and narrow portrait tablets
+	   (768×1024, where two columns make three tall rows): compact the cards so the heading
+	   and every row stay inside the sticky stage. */
+	@media (min-width: 768px) and (max-height: 840px),
+		(min-width: 768px) and (max-width: 1023px) and (max-height: 1040px) {
+		.join-shell {
+			gap: 1rem;
+		}
+		.join-head h2 {
+			margin: 0.4rem 0 0.25rem;
+			font-size: 2.1rem;
+		}
+		.join-head p {
+			font-size: 0.8rem;
+		}
+		.join-cards {
+			gap: 0.8rem;
+		}
+		.join-card {
+			padding: 0.85rem 1rem;
+		}
+		.join-card h3 {
+			margin-top: 0.4rem;
+			font-size: 1rem;
+		}
+		.join-card-group {
+			font-size: 0.58rem;
+		}
+		.join-card-en {
+			font-size: 0.56rem;
+		}
+		.join-card p.join-card-hook {
+			margin-top: 0.35rem;
+			font-size: 0.72rem;
+		}
+		.join-card p.join-card-desc {
+			font-size: 0.68rem;
+			line-height: 1.5;
+		}
+		.join-card > a {
+			padding-top: 0.45rem;
+			font-size: 0.72rem;
+		}
 	}
 	.story-count {
 		position: absolute;
@@ -2090,11 +2313,13 @@
 		.faq-item p {
 			font-size: 1rem;
 		}
-		.join-board {
-			width: min(72vh, 52rem, calc(100vw - 10rem));
+		.join-card h3 {
+			font-size: 1.35rem;
 		}
-		.join-board-content h2 {
-			font-size: clamp(3rem, 4.2vh, 3.6rem);
+		.join-card p.join-card-hook,
+		.join-card p.join-card-desc,
+		.join-card > a {
+			font-size: 0.85rem;
 		}
 	}
 
@@ -2123,6 +2348,9 @@
 		.chapter-nav span {
 			display: none;
 		}
+		.join-cards {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
 	}
 	@media (max-width: 767px) {
 		.chapter-nav {
@@ -2130,6 +2358,24 @@
 		}
 		.story-stage {
 			--stage-gutter: 1.125rem;
+		}
+		/* Phones: the role cards become a horizontal snap strip bleeding to the stage edges. */
+		.join-cards {
+			display: flex;
+			overflow-x: auto;
+			scroll-snap-type: x mandatory;
+			gap: 0.8rem;
+			margin-inline: calc(-1 * var(--stage-gutter));
+			width: calc(100% + 2 * var(--stage-gutter));
+			padding: 0.7rem var(--stage-gutter) 1rem;
+			scrollbar-width: none;
+		}
+		.join-cards::-webkit-scrollbar {
+			display: none;
+		}
+		.join-card {
+			flex: 0 0 min(76vw, 19rem);
+			scroll-snap-align: center;
 		}
 	}
 	@media (max-width: 900px) {
@@ -2199,6 +2445,8 @@
 		}
 		.about-copy {
 			text-align: center;
+			/* Single column: the copy is already centred, no shift toward the film. */
+			translate: none;
 		}
 		.about-copy h2 {
 			font-size: clamp(1.9rem, 7vw, 2.7rem);
@@ -2208,9 +2456,6 @@
 			max-width: 40rem;
 			font-size: 0.9rem;
 			text-wrap: pretty;
-		}
-		.fact-pills {
-			justify-content: center;
 		}
 		.team-film {
 			width: min(92%, 38rem);
@@ -2262,9 +2507,12 @@
 			font-size: 0.78rem;
 		}
 		.product-cta {
-			margin-top: 0.7rem;
-			padding: 0.55rem 1.1rem;
-			font-size: 0.8rem;
+			margin-top: 0.45rem;
+			width: 9.5rem;
+			font-size: 0.88rem;
+		}
+		.product-cta-soon {
+			width: 8.25rem;
 		}
 		.product-demo {
 			min-height: 0;
@@ -2357,32 +2605,6 @@
 			width: calc(var(--pad-width) * 0.028);
 			height: calc(var(--pad-width) * 0.028);
 		}
-		.join-cta-lead {
-			display: none;
-		}
-		.join-shell {
-			width: 100%;
-		}
-		.join-board {
-			width: min(78svh, 88vw, 40rem);
-			transform: translate(-6%, 2svh);
-		}
-		.join-board-content {
-			inset: 17.5% 10% 16.5% 27%;
-		}
-		.join-board-content h2 {
-			margin: 0.45rem 0 0.6rem;
-			font-size: clamp(1.7rem, 6.2vw, 2.4rem);
-		}
-		.join-board-content p {
-			font-size: clamp(0.72rem, 2.1vw, 0.88rem);
-			line-height: 1.45;
-			text-wrap: pretty;
-		}
-		.join-board-content a {
-			margin-top: 0.8rem;
-			padding: 0.7rem 1.1rem;
-		}
 	}
 
 	@media (max-width: 430px) {
@@ -2422,13 +2644,6 @@
 			font-size: 0.78rem;
 			line-height: 1.55;
 		}
-		.fact-pills {
-			margin-top: 0.7rem;
-		}
-		.fact-pills span {
-			padding: 0.35rem 0.6rem;
-			font-size: 0.58rem;
-		}
 		.team-film {
 			width: min(100%, 29rem);
 		}
@@ -2453,9 +2668,6 @@
 			--pad-width: var(--mobile-board-size);
 			gap: 0.55rem;
 		}
-		.join-shell {
-			--mobile-board-size: min(110vw, 34rem, calc((100svh - 10rem) * 0.7857));
-		}
 		.faq-list {
 			/* Keep the board full-size. Only the text block moves down below the spiral; slightly
 			   smaller type prevents short orphan lines such as a standalone 「嗎？」. */
@@ -2472,30 +2684,6 @@
 			font-size: calc(var(--pad-width) * 0.0245);
 			line-height: 1.48;
 		}
-		.join-board {
-			width: var(--mobile-board-size, min(126vw, 34rem));
-			/* The SVG has extra paper on its left, so its main white board is right of canvas centre. */
-			transform: translate(-12%, 0);
-		}
-		.join-board-content {
-			inset: 14% 9% 12% 25%;
-		}
-		.join-board-content .eyebrow {
-			font-size: 0.7rem;
-		}
-		.join-board-content h2 {
-			margin-block: 0.55rem 0.7rem;
-			font-size: clamp(1.75rem, 7.6vw, 2.3rem);
-		}
-		.join-board-content p {
-			font-size: clamp(0.74rem, 3.1vw, 0.88rem);
-			line-height: 1.45;
-		}
-		.join-board-content a {
-			margin-top: 0.85rem;
-			padding: 0.75rem 1.15rem;
-			font-size: 0.82rem;
-		}
 	}
 
 	@media (max-width: 430px) and (max-height: 700px) {
@@ -2506,28 +2694,9 @@
 			--gacha-width: min(90vw, 22rem);
 			transform: translateY(calc(var(--machine-exit) * var(--machine-exit-distance)));
 		}
-		.faq-shell,
-		.join-shell {
-			--mobile-board-size: min(104vw, 34rem, calc((100svh - 6rem) * 0.7857));
-		}
 		.faq-shell {
+			--mobile-board-size: min(104vw, 34rem, calc((100svh - 6rem) * 0.7857));
 			--pad-width: var(--mobile-board-size);
-		}
-		.join-board {
-			width: var(--mobile-board-size);
-			transform: translate(-11%, 0);
-		}
-		.join-board-content p {
-			display: none;
-		}
-		.join-board-content h2 {
-			margin-block: 0.45rem 0.55rem;
-		}
-		.join-board-content a {
-			margin-top: 0.55rem;
-			padding: 0.6rem 0.8rem;
-			font-size: 0.68rem;
-			white-space: nowrap;
 		}
 	}
 

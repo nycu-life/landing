@@ -41,6 +41,86 @@ export const CONTACT_EMAIL = 'life@nycu.edu.tw';
 /* 2026 recruitment form (engineering + design combined): https://forms.gle/QdkDrnu9LjCjk8yK8 */
 export const JOIN_FORM_URL =
 	'https://docs.google.com/forms/d/e/1FAIpQLSfEOQ-o2sbD5PpPcW0k1lGrDjgu2b34TfkH46-G4oneMFNlBQ/viewform';
+/* Per-pipeline recruitment forms from the join-us copy doc (#63). */
+export const DESIGN_FORM_URL =
+	'https://docs.google.com/forms/d/e/1FAIpQLSeKWDex6cPWU10MvZgm2QkR4THKS9p8Inews70466WU-aFCCg/viewform';
+export const ENGINEERING_FORM_URL =
+	'https://docs.google.com/forms/d/e/1FAIpQLScCEb5rf9pGfClM68q6TjgpP_EAqatZo4MLwPoMTpqRfmq9Qg/viewform';
+
+/** One recruiting position on the join board (#63): a card per role. */
+export type JoinRole = {
+	id: string;
+	group: 'ux' | 'marketing' | 'dev' | 'ops';
+	groupLabel: Message;
+	title: Message;
+	subtitle: Message;
+	hook: Message;
+	description: Message;
+	formUrl: string;
+};
+
+export const joinRoles: JoinRole[] = [
+	{
+		id: 'motion',
+		group: 'ux',
+		groupLabel: m.story_join_group_ux,
+		title: m.story_join_role_motion_title,
+		subtitle: m.story_join_role_motion_en,
+		hook: m.story_join_role_motion_hook,
+		description: m.story_join_role_motion_desc,
+		formUrl: DESIGN_FORM_URL
+	},
+	{
+		id: 'uiux',
+		group: 'ux',
+		groupLabel: m.story_join_group_ux,
+		title: m.story_join_role_uiux_title,
+		subtitle: m.story_join_role_uiux_en,
+		hook: m.story_join_role_uiux_hook,
+		description: m.story_join_role_uiux_desc,
+		formUrl: DESIGN_FORM_URL
+	},
+	{
+		id: 'pm',
+		group: 'marketing',
+		groupLabel: m.story_join_group_marketing,
+		title: m.story_join_role_pm_title,
+		subtitle: m.story_join_role_pm_en,
+		hook: m.story_join_role_pm_hook,
+		description: m.story_join_role_pm_desc,
+		formUrl: DESIGN_FORM_URL
+	},
+	{
+		id: 'social',
+		group: 'marketing',
+		groupLabel: m.story_join_group_marketing,
+		title: m.story_join_role_social_title,
+		subtitle: m.story_join_role_social_en,
+		hook: m.story_join_role_social_hook,
+		description: m.story_join_role_social_desc,
+		formUrl: DESIGN_FORM_URL
+	},
+	{
+		id: 'dev',
+		group: 'dev',
+		groupLabel: m.story_join_group_dev,
+		title: m.story_join_role_dev_title,
+		subtitle: m.story_join_role_dev_en,
+		hook: m.story_join_role_dev_hook,
+		description: m.story_join_role_dev_desc,
+		formUrl: ENGINEERING_FORM_URL
+	},
+	{
+		id: 'sre',
+		group: 'ops',
+		groupLabel: m.story_join_group_ops,
+		title: m.story_join_role_sre_title,
+		subtitle: m.story_join_role_sre_en,
+		hook: m.story_join_role_sre_hook,
+		description: m.story_join_role_sre_desc,
+		formUrl: ENGINEERING_FORM_URL
+	}
+];
 
 /** A section that can be reached from the header navigation. */
 export type SectionId = 'products' | 'courses' | 'devlog' | 'team';

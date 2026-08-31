@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_圖層_1" data-name="圖層 1" xmlns="http://www.w3.org/2000/svg" viewBox="-6.00 -6.00 350.17 190.42">
+  <defs>
+    <style>
+      .cls-1 {
+        opacity: .22;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5, .cls-6 {
+        isolation: isolate;
+      }
+
+      .cls-1, .cls-6 {
+        fill: #18346f;
+      }
+
+      .cls-7 {
+        fill: #bfcbff;
+      }
+
+      .cls-8, .cls-9, .cls-10, .cls-11 {
+        stroke: #18346f;
+      }
+
+      .cls-8, .cls-9, .cls-3, .cls-4, .cls-11, .cls-5 {
+        stroke-miterlimit: 4;
+      }
+
+      .cls-8, .cls-12, .cls-13, .cls-3, .cls-4, .cls-5 {
+        fill: none;
+        stroke-linecap: round;
+      }
+
+      .cls-8, .cls-5 {
+        stroke-width: 3px;
+      }
+
+      .cls-14 {
+        fill: #fff;
+      }
+
+      .cls-9 {
+        fill: #fff8de;
+      }
+
+      .cls-9, .cls-10, .cls-11 {
+        stroke-width: 4px;
+      }
+
+      .cls-10 {
+        fill: #fff3c9;
+      }
+
+      .cls-10, .cls-12 {
+        stroke-linejoin: round;
+      }
+
+      .cls-12 {
+        stroke-width: 5px;
+      }
+
+      .cls-12, .cls-13 {
+        stroke: #4968ff;
+      }
+
+      .cls-13 {
+        stroke-width: 6px;
+      }
+
+      .cls-3 {
+        stroke: #7890ff;
+        stroke-width: 8px;
+      }
+
+      .cls-3, .cls-5 {
+        opacity: .9;
+      }
+
+      .cls-4 {
+        opacity: .75;
+        stroke: #fff;
+        stroke-width: 6px;
+      }
+
+      .cls-11 {
+        fill: #4968ff;
+      }
+
+      .cls-5 {
+        stroke: #d5deff;
+        stroke-dasharray: 10 10;
+      }
+
+      .cls-6 {
+        opacity: .18;
+      }
+    </style>
+  </defs>
+  <g id="spark-marks">
+    <path id="spark-1" class="cls-13" d="M317.17,134.17l18,1"/>
+    <path id="spark-2" class="cls-13" d="M310.17,154.17l14,11"/>
+    <path id="spark-3" class="cls-13" d="M294.59,158.42l4,17"/>
+  </g>
+  <g id="button">
+    <rect id="shadow" class="cls-7" x="13.1" y="30.59" width="292" height="126" rx="24" ry="24" transform="translate(-6.14 11.33) rotate(-4)"/>
+    <rect id="button-body" class="cls-11" x="4.42" y="21.18" width="292" height="126" rx="24" ry="24" transform="translate(-5.51 10.7) rotate(-4)"/>
+    <path id="button-highlight" class="cls-3" d="M47.98,44.34l203.5-14.23"/>
+    <path id="stitch" class="cls-5" d="M27.44,45.66c-8.77,3.62-13.13,12.95-12.29,24.92l3,42.9c1.26,17.96,12,28.23,31.09,28.9l216.23-15.49"/>
+    <g id="tape-tab">
+      <path id="tab-shadow" class="cls-6" d="M91.32,13.13l91.78-6.42,8.71,38.49-103.75,7.25,3.26-39.32Z"/>
+      <path id="tab-body" class="cls-10" d="M86.99,8.42l91.78-6.42,8.71,38.49-103.75,7.25,3.26-39.32Z"/>
+      <path id="tab-highlight" class="cls-4" d="M99.86,20.55l65.84-4.6"/>
+      <path id="tab-detail" class="cls-8" d="M110.87,32.56l46.89-3.28"/>
+    </g>
+    
+    <g id="arrow-button">
+      <circle id="arrow-shadow" class="cls-1" cx="256.65" cy="83.77" r="27"/>
+      <circle id="arrow-disc" class="cls-9" cx="253.31" cy="78.99" r="27"/>
+      <path id="arrow-line" class="cls-12" d="M240.34,79.89l23.94-1.67M254.61,68.87l10.67,9.28-9.28,10.67"/>
+    </g>
+  </g>
+</svg>
