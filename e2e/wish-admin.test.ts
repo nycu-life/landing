@@ -150,7 +150,7 @@ test('expired OAuth sessions fail closed and return to sign-in', async ({ page }
 	await expect(page.getByText('已登入許願池管理')).toHaveCount(0);
 });
 
-test('OAuth callback failures explain group denial without keeping the error in the URL', async ({
+test('OAuth callback failures explain authorization denial without keeping the error in the URL', async ({
 	page
 }) => {
 	await page.route('**/api/wishes/auth/me', (route) =>
@@ -158,9 +158,7 @@ test('OAuth callback failures explain group denial without keeping the error in 
 	);
 
 	await page.goto('/wishpool/admin/?auth=denied');
-	await expect(page.getByRole('alert')).toHaveText(
-		'你的帳號不在許願池管理群組中，無法進入管理頁面。'
-	);
+	await expect(page.getByRole('alert')).toHaveText('這個帳號目前無法通過 OAuth 授權，請重新登入。');
 	await expect(page).toHaveURL('/wishpool/admin/');
 });
 
