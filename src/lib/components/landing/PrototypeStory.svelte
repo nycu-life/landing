@@ -1550,11 +1550,12 @@
 		opacity: 0.91;
 	}
 	.capsule-lip {
-		fill: #596586;
+		/* Designer handoff: 信件扭蛋_開殼動畫.svg */
+		fill: #66f;
 		opacity: 0.32;
 	}
 	.capsule-base {
-		fill: #596586;
+		fill: #66f;
 	}
 	.capsule-paper {
 		fill: #fff;
@@ -1838,6 +1839,15 @@
 		max-width: 70%;
 		left: 50%;
 		transform: translate(-50%, -50%) rotate(-6deg);
+	}
+	/* The English status is substantially longer than 開發中. Keep it on two intact words and
+	   scale it independently from the phone copy so "development" stays inside the paper tag. */
+	:global(html[lang='en']) .product-cta-soon .cta-label {
+		width: 78%;
+		max-width: none;
+		font-size: clamp(0.72rem, 1.3vw, 0.9rem);
+		letter-spacing: 0.01em;
+		white-space: normal;
 	}
 	.product-demo {
 		--device-card-width: min(146vh, 100rem);
@@ -2663,7 +2673,23 @@
 			/* Align copy to the actual front sheet, not the transparent/decorative SVG canvas. */
 			/* Match the phone insets: the looser 14/15% margins let long answers and the +/-
 			   toggles spill past the sheet's grid squares on mid-size tablets (e.g. 853×1280). */
-			inset: 21.5% 18.1% 4% 20%;
+			inset: 21.5% 18.1% 17% 20%;
+			overflow-y: auto;
+			overflow-x: hidden;
+			overscroll-behavior-y: contain;
+			scroll-padding-block: calc(var(--pad-width) * 0.02);
+			padding-right: max(0.2rem, calc(var(--pad-width) * 0.01));
+			touch-action: pan-y;
+			-webkit-overflow-scrolling: touch;
+			scrollbar-width: thin;
+			scrollbar-color: rgba(36, 98, 255, 0.45) transparent;
+		}
+		.faq-list::-webkit-scrollbar {
+			width: 4px;
+		}
+		.faq-list::-webkit-scrollbar-thumb {
+			border-radius: 999px;
+			background: rgba(36, 98, 255, 0.45);
 		}
 		/* Type scales with the pad, so a bigger board means bigger text. */
 		.faq-list > strong {
@@ -2735,7 +2761,7 @@
 			padding-top: 0.5rem;
 		}
 		.product-copy h2 {
-			font-size: 1.8167rem;
+			font-size: 1.65rem;
 		}
 		.product-demo {
 			--device-card-width: min(292vw, 116svh, 68rem, 195cqh);
@@ -2754,7 +2780,7 @@
 		.faq-list {
 			/* Keep the board full-size. Only the text block moves down below the spiral; slightly
 			   smaller type prevents short orphan lines such as a standalone 「嗎？」. */
-			inset: 21.5% 18.1% 4% 20%;
+			inset: 21.5% 18.1% 17% 20%;
 		}
 		.faq-list > strong {
 			font-size: calc(var(--pad-width) * 0.069 + 0.1667rem);
@@ -2781,18 +2807,6 @@
 		}
 		.eyebrow {
 			font-size: 0.9267rem;
-		}
-		.product-copy > p {
-			font-size: 0.9967rem;
-		}
-		.feature-list strong {
-			font-size: 1.0167rem;
-		}
-		.feature-list span {
-			font-size: 0.9467rem;
-		}
-		.product-cta {
-			font-size: 1.0467rem;
 		}
 		.join-head p {
 			font-size: 1.0167rem;

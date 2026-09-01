@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { dev } from '$app/environment';
 	import { onMount } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -214,7 +215,11 @@
 	}
 </script>
 
-<section class="wish-pool" aria-label={m.footer_wishlist()}>
+<section
+	class="wish-pool"
+	aria-label={m.footer_wishlist()}
+	style="--composer-frame: url('{base}/wishpool/composer-frame.svg'); --card-frame: url('{base}/wishpool/card-frame.svg'); --support-default: url('{base}/wishpool/support-default.svg'); --support-active: url('{base}/wishpool/support-active.svg'); --submit-default: url('{base}/wishpool/submit-default.svg'); --submit-hover: url('{base}/wishpool/submit-hover.svg');"
+>
 	<form class="wish-composer" onsubmit={submitWish} aria-describedby="wish-privacy-note">
 		<div class="wish-composer-row">
 			<label class="wish-title-field">
@@ -261,66 +266,75 @@
 				></textarea>
 			</label>
 		</details>
+		<p id="wish-privacy-note" class="wish-privacy">
+			<strong>{m.wish_privacy_title()}</strong> · {m.wish_privacy_body()}
+		</p>
+		<div class="wish-feedback" aria-live="polite">
+			{#if error}<p class="wish-error">{error}</p>{/if}
+			{#if notice}<p class="wish-notice">{notice}</p>{/if}
+		</div>
 	</form>
-	<p id="wish-privacy-note" class="wish-privacy">
-		<strong>{m.wish_privacy_title()}</strong> · {m.wish_privacy_body()}
-	</p>
-	<div class="wish-feedback" aria-live="polite">
-		{#if error}<p class="wish-error">{error}</p>{/if}
-		{#if notice}<p class="wish-notice">{notice}</p>{/if}
-	</div>
 
-	{#if showFilters}
-		<div class="wish-filter" aria-label={m.wish_filter_label()}>
-			{#each ['all', ...wishCategories] as option (option)}
-				<button
-					type="button"
-					class:active={activeCategory === option}
-					aria-pressed={activeCategory === option}
-					onclick={() => (activeCategory = option as WishCategory | 'all')}
-				>
-					{categoryLabel(option as WishCategory | 'all')}
-				</button>
-			{/each}
-		</div>
-	{/if}
+	<section class="wish-board" aria-labelledby="wish-board-title">
+		<header class="wish-board-head">
+			<img src="{base}/wishpool/megaphone.svg" alt="" />
+			<h2 id="wish-board-title">{m.wish_board_title()}</h2>
+		</header>
 
-	{#if loading}
-		<p class="wish-state" role="status">{m.wish_loading()}</p>
-	{:else if visibleWishes.length === 0}
-		<div class="wish-state">
-			<strong>{m.wish_empty_title()}</strong>
-			<span>{m.wish_empty_body()}</span>
-		</div>
-	{:else}
-		<div class="wish-list">
-			{#each visibleWishes as wish (wish.id)}
-				<article class="wish-card" class:is-new={justCreatedId === wish.id}>
-					<span class="wish-card-meta">
-						<span class="wish-card-category">{categoryLabel(wish.category)}</span>
-						<time class="wish-card-time" datetime={wish.createdAt}
-							>{relativeTime(wish.createdAt)}</time
-						>
-					</span>
-					<strong class="wish-card-title">{wish.title}</strong>
-					<div class="wish-card-actions">
-						<button
-							type="button"
-							class="wish-support"
-							class:supported={wish.supportedByMe}
-							aria-pressed={wish.supportedByMe}
-							aria-label={`${m.wish_support()}：${wish.title}，${wish.supportCount}`}
-							disabled={supportingId === wish.id}
-							onclick={() => toggleSupport(wish)}
-						>
-							{wish.supportedByMe ? '✓ ' : ''}+1
-						</button>
-						<span class="wish-support-count">{supportCountLabel(wish.supportCount)}</span>
-					</div>
-				</article>
-			{/each}
-		</div>
-	{/if}
+		{#if showFilters}
+			<div class="wish-filter" aria-label={m.wish_filter_label()}>
+				{#each ['all', ...wishCategories] as option (option)}
+					<button
+						type="button"
+						class:active={activeCategory === option}
+						aria-pressed={activeCategory === option}
+						onclick={() => (activeCategory = option as WishCategory | 'all')}
+					>
+						{categoryLabel(option as WishCategory | 'all')}
+					</button>
+				{/each}
+			</div>
+		{/if}
+
+		{#if loading}
+			<p class="wish-state" role="status">{m.wish_loading()}</p>
+		{:else if visibleWishes.length === 0}
+			<div class="wish-state">
+				<strong>{m.wish_empty_title()}</strong>
+				<span>{m.wish_empty_body()}</span>
+			</div>
+		{:else}
+			<div class="wish-list">
+				{#each visibleWishes as wish (wish.id)}
+					<article class="wish-card" class:is-new={justCreatedId === wish.id}>
+						<span class="wish-card-meta">
+							<span class="wish-card-category" data-category={wish.category}
+								>{categoryLabel(wish.category)}</span
+							>
+							<time class="wish-card-time" datetime={wish.createdAt}
+								>{relativeTime(wish.createdAt)}</time
+							>
+						</span>
+						<strong class="wish-card-title">{wish.title}</strong>
+						<div class="wish-card-actions">
+							<button
+								type="button"
+								class="wish-support"
+								class:supported={wish.supportedByMe}
+								aria-pressed={wish.supportedByMe}
+								aria-label={`${m.wish_support()}：${wish.title}，${wish.supportCount}`}
+								disabled={supportingId === wish.id}
+								onclick={() => toggleSupport(wish)}
+							>
+								{wish.supportedByMe ? '✓ ' : ''}+1
+							</button>
+							<span class="wish-support-count">{supportCountLabel(wish.supportCount)}</span>
+						</div>
+					</article>
+				{/each}
+			</div>
+		{/if}
+	</section>
 </section>
 
 <style>
@@ -665,6 +679,337 @@
 		}
 		.wish-list {
 			grid-template-columns: 1fr;
+		}
+	}
+
+	/* Designer handoff, September 2026. The supplied SVGs provide the irregular blue outlines;
+	   live HTML remains on top so the form, filters and voting controls stay accessible. */
+	.wish-pool {
+		gap: clamp(2.25rem, 5vw, 4rem);
+		color: #111c36;
+	}
+	.wish-composer {
+		position: relative;
+		isolation: isolate;
+		min-height: 13.5rem;
+		border: 0;
+		border-radius: 0;
+		padding: clamp(2.15rem, 4vw, 3rem) clamp(2rem, 4.5vw, 3.75rem) 1.6rem;
+		background: var(--composer-frame) center / 100% 100% no-repeat;
+		box-shadow: none;
+		color: #111c36;
+	}
+	.wish-composer-row {
+		grid-template-columns: minmax(0, 1fr) minmax(8.5rem, 0.19fr) 11rem;
+		gap: clamp(0.75rem, 2vw, 1.35rem);
+		align-items: end;
+	}
+	.wish-field-label {
+		padding-inline: 0;
+		color: #111c36;
+		font-size: 0.82rem;
+		font-weight: 700;
+	}
+	.wish-title-field input,
+	.wish-category-field select,
+	.wish-detail-field textarea {
+		border: 1.5px solid #536489;
+		border-radius: 0.5rem;
+		background: rgba(255, 255, 255, 0.74);
+		color: #182744;
+		box-shadow: none;
+	}
+	.wish-title-field input,
+	.wish-category-field select {
+		min-height: 3.25rem;
+	}
+	.wish-title-field input {
+		font-size: 1rem;
+	}
+	.wish-category-field select {
+		min-width: 0;
+		font-size: 0.92rem;
+		font-weight: 650;
+	}
+	.wish-title-field input:focus-visible,
+	.wish-category-field select:focus-visible,
+	.wish-detail-field textarea:focus-visible {
+		border-color: #123cff;
+		background: #fff;
+		box-shadow: 0 0 0 3px rgba(36, 98, 255, 0.16);
+	}
+	.wish-detail-field {
+		padding: 0.5rem 0 0;
+	}
+	.wish-detail-field summary {
+		color: #536489;
+		font-size: 0.8rem;
+		font-weight: 600;
+	}
+	.wish-detail-field textarea {
+		min-height: 5.5rem;
+		background: #fff;
+	}
+	.wish-privacy {
+		margin-top: 0.65rem;
+		padding-inline: 0;
+		color: #536489;
+		font-size: 0.78rem;
+	}
+	.wish-privacy strong {
+		color: #354665;
+	}
+	.wish-feedback {
+		min-height: 0;
+		font-size: 0.8rem;
+	}
+	.wish-feedback p {
+		margin-top: 0.4rem;
+		padding-inline: 0;
+	}
+	.wish-submit {
+		align-self: end;
+		width: 11rem;
+		min-height: 0;
+		aspect-ratio: 375 / 145;
+		border: 0;
+		border-radius: 0;
+		padding: 0;
+		background: var(--submit-default) center / contain no-repeat;
+		box-shadow: none;
+		color: transparent;
+		font-size: 1rem;
+		transition: transform 0.18s ease;
+	}
+	.wish-submit:hover:not(:disabled) {
+		background: var(--submit-hover) center / contain no-repeat;
+		transform: translateY(-2px);
+	}
+	:global(html[lang='en']) .wish-submit {
+		width: 10.5rem;
+		min-height: 3.5rem;
+		aspect-ratio: auto;
+		border: 2px solid #102253;
+		border-radius: 999px;
+		background: #3136ff;
+		color: #fff;
+		box-shadow:
+			0 0 0 3px #fff,
+			0 0 0 5px #2462ff;
+	}
+	:global(html[lang='en']) .wish-submit:hover:not(:disabled) {
+		background: #c8c9ff;
+		color: #102253;
+	}
+	.wish-board {
+		display: grid;
+		gap: 1.2rem;
+	}
+	.wish-board-head {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+	}
+	.wish-board-head img {
+		width: clamp(2.9rem, 5vw, 4.5rem);
+		height: auto;
+		transform: rotate(-7deg);
+	}
+	.wish-board-head h2 {
+		margin: 0;
+		font-size: clamp(1.5rem, 3vw, 2.15rem);
+		font-weight: 700;
+		letter-spacing: -0.025em;
+	}
+	.wish-filter {
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+	.wish-filter button {
+		border: 1.5px solid #2462ff;
+		background: #fff;
+		color: #123cff;
+		font-weight: 650;
+	}
+	.wish-filter button.active {
+		border-color: #123cff;
+		background: #3136ff;
+		color: #fff;
+	}
+	.wish-list {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: clamp(0.85rem, 2vw, 1.3rem);
+		margin-top: 0;
+	}
+	.wish-card {
+		position: relative;
+		isolation: isolate;
+		min-height: 11.5rem;
+		gap: 0.7rem;
+		border: 0;
+		border-radius: 0;
+		padding: 1.35rem 1.55rem 1.25rem;
+		background: var(--card-frame) center / 100% 100% no-repeat;
+		color: #111c36;
+	}
+	.wish-card::before {
+		content: '';
+		position: absolute;
+		z-index: 2;
+		top: 0.35rem;
+		right: 1.15rem;
+		width: 2rem;
+		height: 0.7rem;
+		background: rgba(196, 203, 255, 0.68);
+		border: 1px solid rgba(36, 98, 255, 0.28);
+		transform: rotate(35deg);
+		pointer-events: none;
+	}
+	.wish-card-meta,
+	.wish-card-title,
+	.wish-card-actions {
+		position: relative;
+		z-index: 3;
+	}
+	.wish-card-category {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		min-height: 2rem;
+		border: 1.5px solid #2462ff;
+		border-radius: 0.7rem;
+		padding: 0.25rem 0.7rem;
+		background: #fff;
+		color: #123cff;
+		font-size: 0.8rem;
+		font-weight: 700;
+	}
+	.wish-card-category::before {
+		font-size: 1rem;
+		line-height: 1;
+	}
+	.wish-card-category[data-category='life']::before {
+		content: '♡';
+	}
+	.wish-card-category[data-category='transport']::before {
+		content: '▣';
+	}
+	.wish-card-category[data-category='learning']::before {
+		content: '▤';
+	}
+	.wish-card-category[data-category='space']::before {
+		content: '⌂';
+	}
+	.wish-card-category[data-category='other']::before {
+		content: '✦';
+	}
+	.wish-card-time {
+		color: #536489;
+		font-size: 0.78rem;
+	}
+	.wish-card-title {
+		font-size: clamp(1rem, 1.6vw, 1.15rem);
+		font-weight: 650;
+		line-height: 1.45;
+	}
+	.wish-card-actions {
+		gap: 0.65rem;
+		margin-top: auto;
+	}
+	.wish-support {
+		width: 4.8rem;
+		min-width: 0;
+		aspect-ratio: 95 / 47;
+		border: 0;
+		border-radius: 0;
+		padding: 0;
+		background: var(--support-default) center / 100% 100% no-repeat;
+		color: transparent;
+	}
+	.wish-support:hover:not(:disabled) {
+		background: var(--support-active) center / 100% 100% no-repeat;
+	}
+	.wish-support.supported {
+		background: var(--support-active) center / 100% 100% no-repeat;
+		color: transparent;
+	}
+	.wish-support-count {
+		color: #536489;
+		font-size: 0.8rem;
+	}
+	.wish-state {
+		border: 1.5px dashed #2462ff;
+		background: rgba(255, 255, 255, 0.78);
+		color: #536489;
+	}
+
+	:global(:root[data-theme='dark']) .wish-pool {
+		color: #eef4ff;
+	}
+	:global(:root[data-theme='dark']) .wish-board-head h2 {
+		color: #eef4ff;
+	}
+
+	@media (max-width: 900px) {
+		.wish-composer {
+			/* The supplied composer art is intentionally very wide. At stacked breakpoints a
+			   responsive double outline keeps the same visual language without distorting it. */
+			border: 2px solid #33f;
+			border-radius: 1.75rem;
+			background: #fff;
+			box-shadow:
+				0 0 0 4px #fff,
+				0 0 0 5px #33f;
+		}
+		.wish-composer-row {
+			grid-template-columns: minmax(0, 1fr) minmax(8rem, 0.32fr);
+		}
+		.wish-submit {
+			grid-column: 1 / -1;
+			justify-self: center;
+		}
+		.wish-list {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 620px) {
+		.wish-pool {
+			gap: 2.25rem;
+		}
+		.wish-composer {
+			min-height: 22rem;
+			padding: 2rem 1.45rem 1.4rem;
+		}
+		.wish-composer-row {
+			grid-template-columns: minmax(0, 1fr) auto;
+			gap: 0.75rem;
+		}
+		.wish-title-field {
+			grid-column: 1 / -1;
+		}
+		.wish-category-field select {
+			min-width: 8.5rem;
+		}
+		.wish-submit,
+		:global(html[lang='en']) .wish-submit {
+			grid-column: auto;
+			width: 8.5rem;
+		}
+		.wish-privacy {
+			font-size: 0.72rem;
+			line-height: 1.45;
+		}
+		.wish-board-head {
+			gap: 0.35rem;
+		}
+		.wish-list {
+			grid-template-columns: 1fr;
+		}
+		.wish-card {
+			min-height: 10.75rem;
+			padding-inline: 1.4rem;
 		}
 	}
 

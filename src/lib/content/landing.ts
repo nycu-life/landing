@@ -37,15 +37,14 @@ export const YOUTUBE_URL = 'https://www.youtube.com/@NYCU_LIFE';
 export const GITHUB_URL = 'https://github.com/nycu-life';
 export const WEBSITE_URL = 'https://nycu.one';
 export const EVENTS_URL = 'https://events.life.nycu.edu.tw/';
+export const GOOGLE_PLAY_URL =
+	'https://play.google.com/store/apps/details?id=one.nycu.life&pcampaignid=web_share';
+export const APP_STORE_URL = 'https://apps.apple.com/us/app/nycu-life/id6800430694';
 export const CONTACT_EMAIL = 'life@nycu.edu.tw';
-/* 2026 recruitment form (engineering + design combined): https://forms.gle/QdkDrnu9LjCjk8yK8 */
-export const JOIN_FORM_URL =
-	'https://docs.google.com/forms/d/e/1FAIpQLSfEOQ-o2sbD5PpPcW0k1lGrDjgu2b34TfkH46-G4oneMFNlBQ/viewform';
-/* Per-pipeline recruitment forms from the join-us copy doc (#63). */
-export const DESIGN_FORM_URL =
-	'https://docs.google.com/forms/d/e/1FAIpQLSeKWDex6cPWU10MvZgm2QkR4THKS9p8Inews70466WU-aFCCg/viewform';
-export const ENGINEERING_FORM_URL =
-	'https://docs.google.com/forms/d/e/1FAIpQLScCEb5rf9pGfClM68q6TjgpP_EAqatZo4MLwPoMTpqRfmq9Qg/viewform';
+/* Shared 2026 recruitment form for every role and recruitment entry point. */
+export const JOIN_FORM_URL = 'https://forms.gle/2GcrxSShqfwrkumS9';
+export const DESIGN_FORM_URL = JOIN_FORM_URL;
+export const ENGINEERING_FORM_URL = JOIN_FORM_URL;
 
 /** One recruiting position on the join board (#63): a card per role. */
 export type JoinRole = {

@@ -123,24 +123,44 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(story(page)).toContainText('ABOUT US');
 	await expect(story(page)).toContainText('FAQ');
 	await expect(story(page)).toContainText('JOIN THE TEAM');
-	// One card per role (#63): six links, split between the two pipeline forms.
+	// One card per role (#63): all six roles use the shared recruitment form.
 	const joinLinks = page.locator('#join .join-card > a');
 	await expect(joinLinks).toHaveCount(6);
-	await expect(joinLinks.first()).toHaveAttribute(
-		'href',
-		'https://docs.google.com/forms/d/e/1FAIpQLSeKWDex6cPWU10MvZgm2QkR4THKS9p8Inews70466WU-aFCCg/viewform'
-	);
-	await expect(joinLinks.last()).toHaveAttribute(
-		'href',
-		'https://docs.google.com/forms/d/e/1FAIpQLScCEb5rf9pGfClM68q6TjgpP_EAqatZo4MLwPoMTpqRfmq9Qg/viewform'
-	);
+	await expect(joinLinks.first()).toHaveAttribute('href', 'https://forms.gle/2GcrxSShqfwrkumS9');
+	await expect(joinLinks.last()).toHaveAttribute('href', 'https://forms.gle/2GcrxSShqfwrkumS9');
+	await expect
+		.poll(() =>
+			joinLinks.evaluateAll((links) =>
+				links.every((link) => link.getAttribute('href') === 'https://forms.gle/2GcrxSShqfwrkumS9')
+			)
+		)
+		.toBe(true);
 	await expect(joinLinks.first()).toHaveAttribute('data-analytics-event', 'join_form_click');
 	await expect(joinLinks.first()).toHaveAttribute('data-analytics-source', 'home_story');
 	await expect(page.locator('#prototype-footer')).toBeAttached();
+	await expect(page.locator('#prototype-footer nav')).toHaveCount(0);
 	await expect(page.locator('a[href="mailto:life@nycu.edu.tw"]')).toHaveText('life@nycu.edu.tw');
 	await expect(page.locator('a[href="https://www.youtube.com/@NYCU_LIFE"]').first()).toHaveText(
 		'YouTube'
 	);
+	const appDownloadLinks = page.locator('#prototype-footer .store-link');
+	await expect(appDownloadLinks).toHaveCount(2);
+	await expect(appDownloadLinks.first()).toHaveAttribute(
+		'href',
+		'https://play.google.com/store/apps/details?id=one.nycu.life&pcampaignid=web_share'
+	);
+	await expect(appDownloadLinks.last()).toHaveAttribute(
+		'href',
+		'https://apps.apple.com/us/app/nycu-life/id6800430694'
+	);
+	await expect(appDownloadLinks.first()).toHaveAttribute(
+		'data-analytics-event',
+		'app_download_click'
+	);
+	await expect(appDownloadLinks.first()).toHaveAttribute('data-analytics-platform', 'android');
+	await expect(appDownloadLinks.last()).toHaveAttribute('data-analytics-platform', 'ios');
+	await expect(appDownloadLinks.first().locator('.store-icon-play')).toBeVisible();
+	await expect(appDownloadLinks.last().locator('.store-icon-apple')).toBeVisible();
 	const wishInvite = page.locator('#wishes');
 	await expect(wishInvite.getByRole('heading', { level: 2 })).toHaveText('一起改造 NYCU 的 LIFE');
 	await expect(wishInvite.getByText('許下一個願望，也來看看大家敲碗的功能！')).toBeVisible();
@@ -162,22 +182,44 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 		'https://raw.githubusercontent.com/nycu-life/landing/main/static/og/nycu-life.png'
 	);
 	await expect(page.locator('.footer-contact a[href="/wishpool/"]')).toBeAttached();
-	const wishPoolNavigation = page.locator('.topbar-nav a[href="/wishpool/"]');
+	const wishPoolNavigation = page.locator('.topbar-actions a[href="/wishpool/"]');
 	await expect(wishPoolNavigation).toBeVisible();
-	await expect(wishPoolNavigation).toHaveText('許願池');
+	await expect(page.locator('.topbar-nav a[href="/wishpool/"]')).toHaveCount(0);
+	await expect(wishPoolNavigation).toHaveAccessibleName('許願池');
 });
 
 test('phone header provides a direct wish pool button', async ({ page }) => {
+	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');
 	const button = page.locator('.mobile-wish-link');
 	await expect(button).toBeVisible();
 	await expect(button).toHaveText(/許願池/);
 	await expect(button).toHaveAttribute('href', '/wishpool/');
+	await expect(button.locator('.mobile-wish-face-default')).toHaveAttribute(
+		'src',
+		'./ui/wishpool-mobile.svg'
+	);
+	await expect(button.locator('.mobile-wish-face-hover')).toHaveAttribute(
+		'src',
+		'./ui/wishpool-mobile-hover.svg'
+	);
 	const headerOverflow = await page
 		.locator('.topbar')
 		.evaluate((element) => element.scrollWidth - element.clientWidth);
 	expect(headerOverflow).toBe(0);
+	if (screenshotDirectory) {
+		const header = page.locator('.topbar');
+		await header.screenshot({
+			path: `${screenshotDirectory}/mobile-wish-button-default.png`,
+			animations: 'disabled'
+		});
+		await button.hover();
+		await header.screenshot({
+			path: `${screenshotDirectory}/mobile-wish-button-hover.png`,
+			animations: 'disabled'
+		});
+	}
 });
 
 test('English desktop header uses the compact FAQ label', async ({ page }) => {
@@ -476,6 +518,82 @@ test('the story hands off to normal page scrolling after the final chapter', asy
 	await expect(page.locator('#prototype-footer')).toBeVisible();
 });
 
+test('footer app download links stay readable across locale, theme, and viewport', async ({
+	page
+}) => {
+	test.slow();
+	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
+	for (const viewport of [
+		{ name: 'desktop', width: 1440, height: 900 },
+		{ name: 'tablet', width: 768, height: 1024 },
+		{ name: 'phone', width: 390, height: 844 }
+	]) {
+		await page.setViewportSize(viewport);
+		for (const locale of ['zh-tw', 'en'] as const) {
+			for (const theme of ['light', 'dark'] as const) {
+				await page.goto('/?motion=on#join');
+				await page.evaluate(
+					({ locale, theme }) => {
+						document.cookie = `PARAGLIDE_LOCALE=${locale}; path=/`;
+						localStorage.setItem('nycu-life-theme', theme);
+					},
+					{ locale, theme }
+				);
+				await page.reload();
+				await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+				const footer = page.locator('#prototype-footer');
+				await expect(footer).toBeVisible();
+				await expect(footer.locator('.store-link')).toHaveCount(2);
+
+				const result = await footer.evaluate((element) => {
+					const footerRect = element.getBoundingClientRect();
+					const links = Array.from(element.querySelectorAll<HTMLElement>('.store-link')).map(
+						(link) => {
+							const rect = link.getBoundingClientRect();
+							return {
+								left: rect.left,
+								right: rect.right,
+								top: rect.top,
+								bottom: rect.bottom,
+								height: rect.height,
+								textOverflow: link.scrollWidth - link.clientWidth
+							};
+						}
+					);
+					return {
+						footer: footerRect.toJSON(),
+						links,
+						documentOverflow:
+							document.documentElement.scrollWidth - document.documentElement.clientWidth
+					};
+				});
+				const label = `${viewport.name}/${locale}/${theme}`;
+				for (const link of result.links) {
+					expect.soft(link.left, `${label}: store link left`).toBeGreaterThanOrEqual(0);
+					expect.soft(link.right, `${label}: store link right`).toBeLessThanOrEqual(viewport.width);
+					expect
+						.soft(link.top, `${label}: store link top`)
+						.toBeGreaterThanOrEqual(result.footer.top);
+					expect
+						.soft(link.bottom, `${label}: store link bottom`)
+						.toBeLessThanOrEqual(result.footer.bottom);
+					expect.soft(link.height, `${label}: store link touch target`).toBeGreaterThanOrEqual(48);
+					expect
+						.soft(link.textOverflow, `${label}: store link text overflow`)
+						.toBeLessThanOrEqual(1);
+				}
+				expect.soft(result.documentOverflow, `${label}: document overflow`).toBe(0);
+				if (screenshotDirectory) {
+					await footer.screenshot({
+						path: `${screenshotDirectory}/footer-apps-${viewport.name}-${locale}-${theme}.png`,
+						animations: 'disabled'
+					});
+				}
+			}
+		}
+	}
+});
+
 test('motion opt-in overrides system reduced-motion for review', async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: 'reduce' });
 	await page.goto('/?motion=on');
@@ -730,6 +848,69 @@ test('product carousel exposes all four products without changing story chapter'
 	}
 });
 
+test('localized product CTA labels stay inside the designer tags', async ({ page }) => {
+	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
+	for (const viewport of [
+		{ width: 1440, height: 900 },
+		{ width: 768, height: 1024 },
+		{ width: 390, height: 844 },
+		{ width: 320, height: 568 }
+	]) {
+		await page.setViewportSize(viewport);
+		for (const locale of ['zh-tw', 'en'] as const) {
+			await page.goto(`/?motion=on&cta=${viewport.width}-${locale}#products`);
+			await page.evaluate((nextLocale) => {
+				document.cookie = `PARAGLIDE_LOCALE=${nextLocale}; path=/`;
+			}, locale);
+			await page.reload();
+			await expect(page.locator('html')).toHaveAttribute('lang', locale);
+
+			const assertLabelInset = async (kind: string) => {
+				const result = await page.locator('.product-cta').evaluate((cta) => {
+					const label = cta.querySelector<HTMLElement>('.cta-label');
+					if (!label) throw new Error('Missing product CTA label');
+					const ctaRect = cta.getBoundingClientRect();
+					const labelRect = label.getBoundingClientRect();
+					return {
+						left: labelRect.left - ctaRect.left,
+						right: ctaRect.right - labelRect.right,
+						top: labelRect.top - ctaRect.top,
+						bottom: ctaRect.bottom - labelRect.bottom,
+						scrollOverflow: label.scrollWidth - label.clientWidth
+					};
+				});
+				const label = `${viewport.width}x${viewport.height}/${locale}/${kind}`;
+				expect.soft(result.left, `${label}: left inset`).toBeGreaterThanOrEqual(4);
+				expect.soft(result.right, `${label}: right inset`).toBeGreaterThanOrEqual(4);
+				expect.soft(result.top, `${label}: top inset`).toBeGreaterThanOrEqual(4);
+				expect.soft(result.bottom, `${label}: bottom inset`).toBeGreaterThanOrEqual(4);
+				expect.soft(result.scrollOverflow, `${label}: text overflow`).toBeLessThanOrEqual(1);
+			};
+
+			await assertLabelInset('visit');
+			if (screenshotDirectory) {
+				await page.screenshot({
+					path: `${screenshotDirectory}/product-cta-visit-${viewport.width}x${viewport.height}-${locale}.png`,
+					animations: 'disabled'
+				});
+			}
+			const next = page.locator('.arrow.next');
+			for (let productIndex = 1; productIndex < 4; productIndex += 1) {
+				await next.click();
+				await page.waitForTimeout(600);
+			}
+			await expect(page.locator('.product-cta-soon')).toBeVisible();
+			await assertLabelInset('development');
+			if (screenshotDirectory) {
+				await page.screenshot({
+					path: `${screenshotDirectory}/product-cta-development-${viewport.width}x${viewport.height}-${locale}.png`,
+					animations: 'disabled'
+				});
+			}
+		}
+	}
+});
+
 test('FAQ and recruitment boards stay readable in dark mode', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/?motion=on#faq');
@@ -799,8 +980,17 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 									() => {}
 								)
 							);
+					} else if (chapter === 'products') {
+						// Product copy also enters in pieces; settled screenshots are required for a real
+						// visual review (mid-animation frames can look like missing labels in dark mode).
+						await page
+							.locator('.product-copy')
+							.evaluate((element) =>
+								Promise.all(element.getAnimations().map((animation) => animation.finished)).catch(
+									() => {}
+								)
+							);
 					}
-
 					const result = await page.locator('.story-scene.scene-active').evaluate((scene) => {
 						const stage = document.querySelector<HTMLElement>('.story-stage');
 						if (!stage) throw new Error('Missing story stage');
@@ -866,6 +1056,9 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 							)
 						).flatMap((container) => {
 							const containerRect = container.getBoundingClientRect();
+							const containerOverflowY = getComputedStyle(container).overflowY;
+							const isVerticalScroller =
+								containerOverflowY === 'auto' || containerOverflowY === 'scroll';
 							return Array.from(
 								container.querySelectorAll<HTMLElement>('h1, h2, h3, p, a, button, .eyebrow')
 							)
@@ -875,8 +1068,8 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 									return (
 										rect.left < containerRect.left - 2 ||
 										rect.right > containerRect.right + 2 ||
-										rect.top < containerRect.top - 2 ||
-										rect.bottom > containerRect.bottom + 2
+										(!isVerticalScroller &&
+											(rect.top < containerRect.top - 2 || rect.bottom > containerRect.bottom + 2))
 									);
 								})
 								.map((element) => `${element.tagName}.${element.className}`);
@@ -939,6 +1132,18 @@ test('wish pool entrance stays readable in the 12 locale, appearance, and viewpo
 				});
 				await expect(wishInvite.getByRole('heading', { level: 2 })).toBeVisible();
 				await expect(wishInvite.getByRole('link')).toBeVisible();
+				await expect(wishInvite.locator('.wish-machine')).toHaveAttribute(
+					'src',
+					'./story/designer/wishpool/machine.svg'
+				);
+				await expect(wishInvite.locator('.wish-sticker')).toHaveAttribute(
+					'src',
+					'./story/designer/wishpool/sticker.svg'
+				);
+				await expect(wishInvite.locator('.wish-hand')).toHaveAttribute(
+					'src',
+					'./story/designer/wishpool/hand-ball.svg'
+				);
 				await expect
 					.poll(() =>
 						wishInvite
@@ -1013,6 +1218,10 @@ test('every expanded FAQ fits inside the notebook on phones', async ({ page }) =
 					const notebook = list.closest<HTMLElement>('.notebook');
 					if (!notebook) throw new Error('Missing FAQ notebook');
 					const notebookRect = notebook.getBoundingClientRect();
+					const artRect = notebook
+						.querySelector<HTMLElement>('.notebook-art')
+						?.getBoundingClientRect();
+					if (!artRect) throw new Error('Missing FAQ notebook artwork');
 					const visibleChildren = Array.from(list.children).filter(
 						(child) => getComputedStyle(child).display !== 'none'
 					);
@@ -1028,19 +1237,24 @@ test('every expanded FAQ fits inside the notebook on phones', async ({ page }) =
 					}).length;
 					return {
 						scrollOverflow: list.scrollHeight - list.clientHeight,
+						overflowY: getComputedStyle(list).overflowY,
 						horizontalOverflow,
 						topGridInset: (listRect.top - notebookRect.top) / notebookRect.height,
 						leftGridInset: (listRect.left - notebookRect.left) / notebookRect.width,
 						rightGridInset: (notebookRect.right - listRect.right) / notebookRect.width,
+						bottomPaperInset: (artRect.bottom - listRect.bottom) / artRect.height,
 						outside: visibleChildren
 							.map((child) => child.getBoundingClientRect())
-							.filter((rect) => rect.top < listRect.top - 1 || rect.bottom > listRect.bottom + 1)
+							.filter((rect) => rect.left < listRect.left - 1 || rect.right > listRect.right + 1)
 							.length
 					};
 				});
 				expect
 					.soft(result.scrollOverflow, `${viewport.width}/${locale}/faq ${index + 1}`)
-					.toBeLessThanOrEqual(1);
+					.toBeGreaterThanOrEqual(-1);
+				expect
+					.soft(result.overflowY, `${viewport.width}/${locale}/faq ${index + 1} scroll`)
+					.toBe('auto');
 				expect
 					.soft(result.horizontalOverflow, `${viewport.width}/${locale}/faq ${index + 1}`)
 					.toBe(0);
@@ -1053,10 +1267,44 @@ test('every expanded FAQ fits inside the notebook on phones', async ({ page }) =
 				expect
 					.soft(result.rightGridInset, `${viewport.width}/${locale}/faq ${index + 1} right grid`)
 					.toBeGreaterThanOrEqual(0.18);
+				expect
+					.soft(
+						result.bottomPaperInset,
+						`${viewport.width}/${locale}/faq ${index + 1} paper bottom`
+					)
+					.toBeGreaterThanOrEqual(0.05);
 				expect.soft(result.outside, `${viewport.width}/${locale}/faq ${index + 1}`).toBe(0);
+				const lastQuestion = questions.last();
+				await page.locator('.faq-list').evaluate((list) => {
+					list.scrollTop = list.scrollHeight;
+				});
+				const lastQuestionInsideScroller = await lastQuestion.evaluate((question) => {
+					const questionRect = question.getBoundingClientRect();
+					const listRect = question.closest<HTMLElement>('.faq-list')?.getBoundingClientRect();
+					return (
+						!!listRect &&
+						questionRect.top >= listRect.top - 1 &&
+						questionRect.bottom <= listRect.bottom + 1
+					);
+				});
+				expect
+					.soft(
+						lastQuestionInsideScroller,
+						`${viewport.width}/${locale}/faq ${index + 1} last item`
+					)
+					.toBe(true);
 				if (screenshotDirectory && viewport.width === 412 && locale === 'zh-tw' && index === 4) {
 					await page.screenshot({
 						path: `${screenshotDirectory}/phone-user-zh-tw-faq-expanded-5.png`,
+						animations: 'disabled'
+					});
+				}
+				if (screenshotDirectory && viewport.width === 412 && locale === 'en' && index === 0) {
+					await page.locator('.faq-list').evaluate((list) => {
+						list.scrollTop = 0;
+					});
+					await page.screenshot({
+						path: `${screenshotDirectory}/phone-en-faq-expanded-1.png`,
 						animations: 'disabled'
 					});
 				}
@@ -1200,7 +1448,7 @@ test('phone story stage follows Chrome dynamic viewport changes without exposing
 	}
 });
 
-test('phone body copy uses the requested two-point type increase', async ({ page }) => {
+test('phone product copy keeps the original compact type scale', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/?motion=on#products');
 	await expect(story(page)).toHaveAttribute('data-story-step-name', 'products');
@@ -1213,8 +1461,8 @@ test('phone body copy uses the requested two-point type increase', async ({ page
 			getComputedStyle(document.querySelector('.feature-list span')!).fontSize
 		)
 	}));
-	expect(sizes.product).toBeCloseTo(15.9472, 2);
-	expect(sizes.feature).toBeCloseTo(15.1472, 2);
+	expect(sizes.product).toBeCloseTo(13.28, 2);
+	expect(sizes.feature).toBeCloseTo(12.48, 2);
 });
 
 test('theme persists and the burger menu is gone on phones', async ({ page }) => {
