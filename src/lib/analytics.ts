@@ -25,22 +25,52 @@ export function getJoinFormClickParams(source: string, linkUrl: string, language
 	};
 }
 
+export function getAppDownloadClickParams(
+	platform: 'android' | 'ios',
+	source: string,
+	linkUrl: string,
+	language: string
+) {
+	return {
+		platform,
+		link_url: linkUrl,
+		link_domain: new URL(linkUrl).hostname,
+		link_source: source,
+		language
+	};
+}
+
 function trackMarkedLinkClick(event: MouseEvent) {
 	const eventTarget = event.target;
 	if (!(eventTarget instanceof Element) || !window.gtag) return;
 
 	const link = eventTarget.closest<HTMLAnchorElement>('a[data-analytics-event]');
-	if (!link || link.dataset.analyticsEvent !== 'join_form_click') return;
+	if (!link) return;
 
-	window.gtag(
-		'event',
-		'join_form_click',
-		getJoinFormClickParams(
-			link.dataset.analyticsSource ?? 'unknown',
-			link.href,
-			document.documentElement.lang
-		)
-	);
+	if (link.dataset.analyticsEvent === 'join_form_click') {
+		window.gtag(
+			'event',
+			'join_form_click',
+			getJoinFormClickParams(
+				link.dataset.analyticsSource ?? 'unknown',
+				link.href,
+				document.documentElement.lang
+			)
+		);
+	} else if (link.dataset.analyticsEvent === 'app_download_click') {
+		const platform = link.dataset.analyticsPlatform;
+		if (platform !== 'android' && platform !== 'ios') return;
+		window.gtag(
+			'event',
+			'app_download_click',
+			getAppDownloadClickParams(
+				platform,
+				link.dataset.analyticsSource ?? 'unknown',
+				link.href,
+				document.documentElement.lang
+			)
+		);
+	}
 }
 
 export function initAnalytics() {

@@ -28,9 +28,6 @@
 		<a href="{base}/#products">{m.nav_products()}</a>
 		<a href="{base}/#faq">{m.nav_faq()}</a>
 		<a href="{base}/#join">{m.nav_join()}</a>
-		<a href="{base}/wishpool/" aria-current={wishPoolActive ? 'page' : undefined}
-			>{m.footer_wishlist()}</a
-		>
 	</nav>
 	<div class="topbar-actions">
 		<a
@@ -39,8 +36,20 @@
 			aria-label={m.footer_wishlist()}
 			aria-current={wishPoolActive ? 'page' : undefined}
 		>
-			<span aria-hidden="true">✦</span>
-			<span class="mobile-wish-label">{m.footer_wishlist()}</span>
+			<span class="mobile-wish-art" aria-hidden="true">
+				<img
+					class="mobile-wish-face mobile-wish-face-default"
+					src="{base}/ui/wishpool-mobile.svg"
+					alt=""
+				/>
+				<img
+					class="mobile-wish-face mobile-wish-face-hover"
+					src="{base}/ui/wishpool-mobile-hover.svg"
+					alt=""
+				/>
+			</span>
+			<span class="mobile-wish-erase" aria-hidden="true"></span>
+			<span class="mobile-wish-label">{m.footer_wishlist()} <span aria-hidden="true">✦</span></span>
 		</a>
 		<LocaleSwitch />
 		<!-- Designer's star badge (static/ui/theme-*.svg); both faces stay mounted per mode so
@@ -113,22 +122,59 @@
 		gap: 0.55rem;
 	}
 	.mobile-wish-link {
-		display: none;
+		position: relative;
+		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.3rem;
-		min-height: 2.5rem;
-		border: 1px solid var(--brand);
-		border-radius: 999px;
-		padding: 0.45rem 0.75rem;
-		background: var(--brand);
+		width: 7.3rem;
+		height: 3rem;
+		padding: 0;
 		color: #fff;
-		font-size: 0.78rem;
+		font-size: 0.8rem;
 		font-weight: 700;
 		white-space: nowrap;
 	}
-	.mobile-wish-link:hover {
-		filter: brightness(1.06);
+	.mobile-wish-art,
+	.mobile-wish-face {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+	.mobile-wish-face {
+		object-fit: fill;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.mobile-wish-face-default {
+		opacity: 1;
+	}
+	.mobile-wish-erase {
+		position: absolute;
+		z-index: 1;
+		inset: 27% 14% 25% 23%;
+		background: #33f;
+		pointer-events: none;
+	}
+	.mobile-wish-label {
+		position: relative;
+		z-index: 2;
+	}
+	.mobile-wish-link:hover .mobile-wish-face-default,
+	.mobile-wish-link:focus-visible .mobile-wish-face-default {
+		opacity: 0;
+	}
+	.mobile-wish-link:hover .mobile-wish-face-hover,
+	.mobile-wish-link:focus-visible .mobile-wish-face-hover {
+		opacity: 1;
+	}
+	.mobile-wish-link:hover .mobile-wish-erase,
+	.mobile-wish-link:focus-visible .mobile-wish-erase {
+		background: #ccf;
+	}
+	.mobile-wish-link:hover .mobile-wish-label,
+	.mobile-wish-link:focus-visible .mobile-wish-label {
+		color: #33f;
 	}
 	.theme-toggle {
 		position: relative;
@@ -164,13 +210,15 @@
 		.topbar-nav {
 			display: none;
 		}
-		.mobile-wish-link {
-			display: inline-flex;
-		}
 	}
 	@media (max-width: 680px) {
 		.topbar-actions {
 			gap: 0.45rem;
+		}
+		.mobile-wish-link {
+			width: 5.9rem;
+			height: 2.55rem;
+			font-size: 0.72rem;
 		}
 	}
 	@media (max-width: 420px) {
@@ -186,17 +234,15 @@
 			gap: 0.35rem;
 		}
 		.topbar-brand img {
-			width: 6.75rem;
+			width: 6.25rem;
 		}
 		.topbar-actions {
 			gap: 0.25rem;
 		}
 		.mobile-wish-link {
-			width: 2.5rem;
-			padding: 0;
-		}
-		.mobile-wish-label {
-			display: none;
+			width: 5.35rem;
+			height: 2.35rem;
+			font-size: 0.67rem;
 		}
 	}
 </style>

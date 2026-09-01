@@ -72,9 +72,12 @@ test('wish pool publishes and supports directly from wish cards', async ({ page 
 
 	await page.goto('/wishpool/');
 	const pool = page.locator('#wishes');
-	await expect(page.getByRole('heading', { level: 1, name: '許願池' })).toBeVisible();
+	await expect(
+		page.getByRole('heading', { level: 1, name: '一起改造 NYCU 的 LIFE' })
+	).toBeVisible();
+	await expect(page.getByRole('heading', { level: 2, name: '大家正在敲碗' })).toBeVisible();
 	await expect(page.locator('.topbar-brand')).toBeVisible();
-	await expect(page.locator('.topbar-nav a[href="/wishpool/"]')).toHaveAttribute(
+	await expect(page.locator('.topbar-actions a[href="/wishpool/"]')).toHaveAttribute(
 		'aria-current',
 		'page'
 	);
@@ -98,7 +101,7 @@ test('wish pool publishes and supports directly from wish cards', async ({ page 
 
 	await pool.getByPlaceholder('例如：想知道健身房現在有多少人').fill('希望圖書館座位更好找');
 	await pool.locator('select').selectOption('learning');
-	await pool.getByRole('button', { name: /投進池裡/ }).click();
+	await pool.getByRole('button', { name: /投下願望/ }).click();
 	await expect(pool.getByText('願望已經落進池裡')).toBeVisible();
 	await expect(pool.getByText('希望圖書館座位更好找')).toBeVisible();
 });
@@ -217,4 +220,38 @@ test('wish pool stays readable in the 12 locale, appearance, and viewport states
 			}
 		}
 	}
+});
+
+test('wide dark wish pool keeps designer frames aligned with live content', async ({ page }) => {
+	await page.setViewportSize({ width: 1920, height: 1200 });
+	await page.route('**/api/wishes**', (route) =>
+		route.fulfill({ json: { data: [seedWishes[0]] } })
+	);
+	await page.goto('/wishpool/');
+	await page.evaluate(() => localStorage.setItem('nycu-life-theme', 'dark'));
+	await page.reload();
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await expect(page.locator('.wish-card')).toHaveCount(1);
+
+	const result = await page.evaluate(async () => {
+		const [composerSource, cardSource] = await Promise.all([
+			fetch('/wishpool/composer-frame.svg').then((response) => response.text()),
+			fetch('/wishpool/card-frame.svg').then((response) => response.text())
+		]);
+		const readAspectMode = (source: string) =>
+			new DOMParser()
+				.parseFromString(source, 'image/svg+xml')
+				.documentElement.getAttribute('preserveAspectRatio');
+		return {
+			composerAspectMode: readAspectMode(composerSource),
+			cardAspectMode: readAspectMode(cardSource),
+			pageBackground: getComputedStyle(document.querySelector<HTMLElement>('.wish-page')!)
+				.backgroundImage,
+			overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+		};
+	});
+	expect(result.composerAspectMode).toBe('none');
+	expect(result.cardAspectMode).toBe('none');
+	expect(result.pageBackground).toBe('none');
+	expect(result.overflow).toBe(0);
 });

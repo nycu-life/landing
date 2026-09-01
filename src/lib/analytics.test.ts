@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getCampaignEventId, getJoinFormClickParams, getPageViewPath } from './analytics';
+import {
+	getAppDownloadClickParams,
+	getCampaignEventId,
+	getJoinFormClickParams,
+	getPageViewPath
+} from './analytics';
 
 describe('getCampaignEventId', () => {
 	it('accepts the event ids used by campaign links', () => {
@@ -22,14 +27,27 @@ describe('getPageViewPath', () => {
 
 describe('getJoinFormClickParams', () => {
 	it('records the recruitment destination, CTA source, and active locale', () => {
-		const linkUrl =
-			'https://docs.google.com/forms/d/e/1FAIpQLSfEOQ-o2sbD5PpPcW0k1lGrDjgu2b34TfkH46-G4oneMFNlBQ/viewform';
+		const linkUrl = 'https://forms.gle/2GcrxSShqfwrkumS9';
 
 		expect(getJoinFormClickParams('home_story', linkUrl, 'zh-tw')).toEqual({
 			link_url: linkUrl,
-			link_domain: 'docs.google.com',
+			link_domain: 'forms.gle',
 			link_id: 'join_form',
 			link_source: 'home_story',
+			language: 'zh-tw'
+		});
+	});
+});
+
+describe('getAppDownloadClickParams', () => {
+	it('records the app platform, store destination, CTA source, and active locale', () => {
+		const linkUrl = 'https://apps.apple.com/us/app/nycu-life/id6800430694';
+
+		expect(getAppDownloadClickParams('ios', 'footer', linkUrl, 'zh-tw')).toEqual({
+			platform: 'ios',
+			link_url: linkUrl,
+			link_domain: 'apps.apple.com',
+			link_source: 'footer',
 			language: 'zh-tw'
 		});
 	});
