@@ -215,12 +215,9 @@
 	}
 </script>
 
-<section
-	class="wish-pool"
-	aria-label={m.footer_wishlist()}
-	style="--composer-frame: url('{base}/wishpool/composer-frame.svg'); --card-frame: url('{base}/wishpool/card-frame.svg'); --support-default: url('{base}/wishpool/support-default.svg'); --support-active: url('{base}/wishpool/support-active.svg'); --submit-default: url('{base}/wishpool/submit-default.svg'); --submit-hover: url('{base}/wishpool/submit-hover.svg');"
->
+<section class="wish-pool" aria-label={m.footer_wishlist()}>
 	<form class="wish-composer" onsubmit={submitWish} aria-describedby="wish-privacy-note">
+		<img class="wish-composer-frame" src="{base}/wishpool/composer-frame.svg" alt="" />
 		<div class="wish-composer-row">
 			<label class="wish-title-field">
 				<span class="wish-field-label">{m.wish_input_label()}</span>
@@ -250,7 +247,11 @@
 				type="submit"
 				disabled={submitting}
 			>
-				{submitting ? m.wish_submitting() : m.wish_submit()}
+				<span class="wish-submit-art" aria-hidden="true">
+					<img class="wish-submit-default" src="{base}/wishpool/submit-default.svg" alt="" />
+					<img class="wish-submit-hover" src="{base}/wishpool/submit-hover.svg" alt="" />
+				</span>
+				<span class="wish-submit-label">{submitting ? m.wish_submitting() : m.wish_submit()}</span>
 			</button>
 		</div>
 		<details class="wish-detail-field">
@@ -307,6 +308,7 @@
 			<div class="wish-list">
 				{#each visibleWishes as wish (wish.id)}
 					<article class="wish-card" class:is-new={justCreatedId === wish.id}>
+						<img class="wish-card-frame" src="{base}/wishpool/card-frame.svg" alt="" />
 						<span class="wish-card-meta">
 							<span class="wish-card-category" data-category={wish.category}
 								>{categoryLabel(wish.category)}</span
@@ -326,7 +328,19 @@
 								disabled={supportingId === wish.id}
 								onclick={() => toggleSupport(wish)}
 							>
-								{wish.supportedByMe ? '✓ ' : ''}+1
+								<span class="wish-support-art" aria-hidden="true">
+									<img
+										class="wish-support-default"
+										src="{base}/wishpool/support-default.svg"
+										alt=""
+									/>
+									<img
+										class="wish-support-active"
+										src="{base}/wishpool/support-active.svg"
+										alt=""
+									/>
+								</span>
+								<span class="wish-support-label">{wish.supportedByMe ? '✓ ' : ''}+1</span>
 							</button>
 							<span class="wish-support-count">{supportCountLabel(wish.supportCount)}</span>
 						</div>
@@ -695,9 +709,22 @@
 		border: 0;
 		border-radius: 0;
 		padding: clamp(2.15rem, 4vw, 3rem) clamp(2rem, 4.5vw, 3.75rem) 1.6rem;
-		background: var(--composer-frame) center / 100% 100% no-repeat;
+		background: transparent;
 		box-shadow: none;
 		color: #111c36;
+	}
+	.wish-composer-frame {
+		position: absolute;
+		z-index: 0;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: fill;
+		pointer-events: none;
+	}
+	.wish-composer > :not(.wish-composer-frame) {
+		position: relative;
+		z-index: 1;
 	}
 	.wish-composer-row {
 		grid-template-columns: minmax(0, 1fr) minmax(8.5rem, 0.19fr) 11rem;
@@ -768,6 +795,7 @@
 		padding-inline: 0;
 	}
 	.wish-submit {
+		position: relative;
 		align-self: end;
 		width: 11rem;
 		min-height: 0;
@@ -775,15 +803,54 @@
 		border: 0;
 		border-radius: 0;
 		padding: 0;
-		background: var(--submit-default) center / contain no-repeat;
+		background: transparent;
 		box-shadow: none;
 		color: transparent;
 		font-size: 1rem;
 		transition: transform 0.18s ease;
 	}
+	.wish-submit-art,
+	.wish-support-art {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+	.wish-submit-art img,
+	.wish-support-art img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		transition: opacity 0.18s ease;
+	}
+	.wish-submit-art img {
+		object-fit: contain;
+	}
+	.wish-support-art img {
+		object-fit: fill;
+	}
+	.wish-submit-hover,
+	.wish-support-active {
+		opacity: 0;
+	}
+	.wish-submit-label,
+	.wish-support-label {
+		position: relative;
+		z-index: 1;
+	}
 	.wish-submit:hover:not(:disabled) {
-		background: var(--submit-hover) center / contain no-repeat;
+		background: transparent;
 		transform: translateY(-2px);
+	}
+	.wish-submit:hover:not(:disabled) .wish-submit-default,
+	.wish-support:hover:not(:disabled) .wish-support-default,
+	.wish-support.supported .wish-support-default {
+		opacity: 0;
+	}
+	.wish-submit:hover:not(:disabled) .wish-submit-hover,
+	.wish-support:hover:not(:disabled) .wish-support-active,
+	.wish-support.supported .wish-support-active {
+		opacity: 1;
 	}
 	:global(html[lang='en']) .wish-submit {
 		width: 10.5rem;
@@ -796,6 +863,9 @@
 		box-shadow:
 			0 0 0 3px #fff,
 			0 0 0 5px #2462ff;
+	}
+	:global(html[lang='en']) .wish-submit-art {
+		display: none;
 	}
 	:global(html[lang='en']) .wish-submit:hover:not(:disabled) {
 		background: #c8c9ff;
@@ -850,8 +920,17 @@
 		border: 0;
 		border-radius: 0;
 		padding: 1.35rem 1.55rem 1.25rem;
-		background: var(--card-frame) center / 100% 100% no-repeat;
+		background: transparent;
 		color: #111c36;
+	}
+	.wish-card-frame {
+		position: absolute;
+		z-index: 0;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: fill;
+		pointer-events: none;
 	}
 	.wish-card::before {
 		content: '';
@@ -918,20 +997,21 @@
 		margin-top: auto;
 	}
 	.wish-support {
+		position: relative;
 		width: 4.8rem;
 		min-width: 0;
 		aspect-ratio: 95 / 47;
 		border: 0;
 		border-radius: 0;
 		padding: 0;
-		background: var(--support-default) center / 100% 100% no-repeat;
+		background: transparent;
 		color: transparent;
 	}
 	.wish-support:hover:not(:disabled) {
-		background: var(--support-active) center / 100% 100% no-repeat;
+		background: transparent;
 	}
 	.wish-support.supported {
-		background: var(--support-active) center / 100% 100% no-repeat;
+		background: transparent;
 		color: transparent;
 	}
 	.wish-support-count {
@@ -961,6 +1041,9 @@
 			box-shadow:
 				0 0 0 4px #fff,
 				0 0 0 5px #33f;
+		}
+		.wish-composer-frame {
+			display: none;
 		}
 		.wish-composer-row {
 			grid-template-columns: minmax(0, 1fr) minmax(8rem, 0.32fr);
