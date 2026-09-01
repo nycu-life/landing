@@ -142,8 +142,8 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 		'YouTube'
 	);
 	const wishInvite = page.locator('#wishes');
-	await expect(wishInvite.getByRole('heading', { level: 2 })).toHaveText('許願池');
-	await expect(wishInvite.getByText('您的回饋是我們更新的重要方向。')).toBeVisible();
+	await expect(wishInvite.getByRole('heading', { level: 2 })).toHaveText('一起改造 NYCU 的 LIFE');
+	await expect(wishInvite.getByText('許下一個願望，也來看看大家敲碗的功能！')).toBeVisible();
 	await expect(wishInvite.getByRole('link')).toHaveAttribute('href', '/wishpool/');
 	await expect(wishInvite.locator('.wish-machine')).toHaveAttribute(
 		'src',
