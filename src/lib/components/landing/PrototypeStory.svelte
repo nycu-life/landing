@@ -855,9 +855,15 @@
 						<article class="product-copy" in:fly={flyIn(switchDir)} out:fly={flyOut(switchDir)}>
 							<h2>{activeProductData.name()}</h2>
 							<p>{activeProductData.summary()}</p>
-							<div class="feature-list" style="--frame-url: url('{base}/ui/product-frame.svg')">
+							<div class="feature-list">
 								{#each activeProductData.features as feature, index (index)}
 									<div>
+										<img
+											class="feature-frame"
+											src="{base}/ui/product-frame.svg"
+											alt=""
+											aria-hidden="true"
+										/>
 										<strong>{String(index + 1).padStart(2, '0')}</strong><span>{feature()}</span>
 									</div>
 								{/each}
@@ -1765,11 +1771,25 @@
 	/* Each feature row sits in the designer's hand-drawn frame (框框/產品介紹), stretched to
 	   the row via preserveAspectRatio="none". */
 	.feature-list div {
+		position: relative;
 		display: flex;
 		align-items: center;
 		gap: 0.9rem;
 		padding: 0.85rem 1.2rem;
-		background: var(--frame-url) center / 100% 100% no-repeat;
+	}
+	.feature-frame {
+		position: absolute;
+		z-index: 0;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: fill;
+		pointer-events: none;
+	}
+	.feature-list strong,
+	.feature-list span {
+		position: relative;
+		z-index: 1;
 	}
 	.feature-list strong {
 		color: #2462ff;
