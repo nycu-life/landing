@@ -222,36 +222,46 @@ test('wish pool stays readable in the 12 locale, appearance, and viewport states
 	}
 });
 
-test('wide dark wish pool keeps designer frames aligned with live content', async ({ page }) => {
+test('wide wish pool keeps designer frames aligned without a tinted page seam', async ({
+	page
+}) => {
 	await page.setViewportSize({ width: 1920, height: 1200 });
 	await page.route('**/api/wishes**', (route) =>
 		route.fulfill({ json: { data: [seedWishes[0]] } })
 	);
-	await page.goto('/wishpool/');
-	await page.evaluate(() => localStorage.setItem('nycu-life-theme', 'dark'));
-	await page.reload();
-	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-	await expect(page.locator('.wish-card')).toHaveCount(1);
 
-	const result = await page.evaluate(async () => {
-		const [composerSource, cardSource] = await Promise.all([
-			fetch('/wishpool/composer-frame.svg').then((response) => response.text()),
-			fetch('/wishpool/card-frame.svg').then((response) => response.text())
-		]);
-		const readAspectMode = (source: string) =>
-			new DOMParser()
-				.parseFromString(source, 'image/svg+xml')
-				.documentElement.getAttribute('preserveAspectRatio');
-		return {
-			composerAspectMode: readAspectMode(composerSource),
-			cardAspectMode: readAspectMode(cardSource),
-			pageBackground: getComputedStyle(document.querySelector<HTMLElement>('.wish-page')!)
-				.backgroundImage,
-			overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
-		};
-	});
-	expect(result.composerAspectMode).toBe('none');
-	expect(result.cardAspectMode).toBe('none');
-	expect(result.pageBackground).toBe('none');
-	expect(result.overflow).toBe(0);
+	const readLayout = () =>
+		page.evaluate(async () => {
+			const [composerSource, cardSource] = await Promise.all([
+				fetch('/wishpool/composer-frame.svg').then((response) => response.text()),
+				fetch('/wishpool/card-frame.svg').then((response) => response.text())
+			]);
+			const readAspectMode = (source: string) =>
+				new DOMParser()
+					.parseFromString(source, 'image/svg+xml')
+					.documentElement.getAttribute('preserveAspectRatio');
+			return {
+				composerAspectMode: readAspectMode(composerSource),
+				cardAspectMode: readAspectMode(cardSource),
+				pageBackground: getComputedStyle(document.querySelector<HTMLElement>('.wish-page')!)
+					.backgroundImage,
+				overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+			};
+		});
+
+	for (const theme of ['light', 'dark']) {
+		await page.goto('/wishpool/');
+		await page.evaluate(
+			(selectedTheme) => localStorage.setItem('nycu-life-theme', selectedTheme),
+			theme
+		);
+		await page.reload();
+		await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+		await expect(page.locator('.wish-card')).toHaveCount(1);
+		const result = await readLayout();
+		expect(result.composerAspectMode).toBe('none');
+		expect(result.cardAspectMode).toBe('none');
+		expect(result.pageBackground).toBe('none');
+		expect(result.overflow).toBe(0);
+	}
 });

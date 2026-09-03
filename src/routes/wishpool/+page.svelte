@@ -25,12 +25,6 @@
 	.wish-page {
 		max-width: var(--shell);
 		overflow: hidden;
-		background:
-			radial-gradient(circle at 4% 7%, rgba(95, 111, 255, 0.09), transparent 16rem),
-			radial-gradient(circle at 97% 82%, rgba(255, 190, 180, 0.11), transparent 20rem);
-	}
-	:global(:root[data-theme='dark']) .wish-page {
-		/* Avoid a hard rectangular seam where the centred page surface meets the dark body. */
 		background: transparent;
 	}
 	.page-head {
