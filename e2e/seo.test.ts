@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { memberSlugs } from '../src/lib/content/team';
 
 const siteOrigin = 'https://nycu.life';
-const publicRoutes = ['/', '/about/', '/products/', '/courses/', '/devlog/', '/wishpool/'];
+const publicRoutes = ['/', '/wishpool/'];
 
 test('publishes a complete production sitemap and advertises it to crawlers', async ({
 	request
@@ -18,6 +18,9 @@ test('publishes a complete production sitemap and advertises it to crawlers', as
 	];
 
 	expect(sitemapLocations).toEqual(expectedLocations);
+	for (const withdrawnRoute of ['/about/', '/courses/', '/products/', '/devlog/']) {
+		expect(sitemap).not.toContain(withdrawnRoute);
+	}
 	expect(sitemap).not.toContain('/demo/');
 	expect(sitemap).not.toContain('/wishpool/admin/');
 
