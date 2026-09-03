@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { memberSlugs } from '../src/lib/content/team';
 
 const siteOrigin = 'https://nycu.life';
 const publicRoutes = ['/', '/wishpool/'];
@@ -12,15 +11,13 @@ test('publishes a complete production sitemap and advertises it to crawlers', as
 	expect(sitemapResponse.headers()['content-type']).toMatch(/^(application|text)\/xml/);
 	const sitemap = await sitemapResponse.text();
 	const sitemapLocations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-	const expectedLocations = [
-		...publicRoutes.map((route) => `${siteOrigin}${route}`),
-		...memberSlugs.map((slug) => `${siteOrigin}/team/${slug}/`)
-	];
+	const expectedLocations = publicRoutes.map((route) => `${siteOrigin}${route}`);
 
 	expect(sitemapLocations).toEqual(expectedLocations);
 	for (const withdrawnRoute of ['/about/', '/courses/', '/products/', '/devlog/']) {
 		expect(sitemap).not.toContain(withdrawnRoute);
 	}
+	expect(sitemap).not.toContain('/team/');
 	expect(sitemap).not.toContain('/demo/');
 	expect(sitemap).not.toContain('/wishpool/admin/');
 
