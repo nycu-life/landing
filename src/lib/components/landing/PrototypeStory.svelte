@@ -868,7 +868,7 @@
 									</div>
 								{/each}
 							</div>
-							<!-- Designer's tag buttons (#64 assets): faces stay stacked so the swap never
+							<!-- Designer's cloud buttons: faces stay stacked so the swap never
 							     flickers, and the label is live text for i18n. -->
 							{#if activeProductData.href}
 								<a
@@ -1799,16 +1799,15 @@
 		color: #4b5563;
 		font-size: 0.86rem;
 	}
-	/* Designer's 前往使用 tag: stacked default/hover faces with a live label over the tag's
-	   text area (left of the arrow disc). The source lettering is removed so the label stays
-	   localisable while the supplied paper, tape, arrow and hover artwork remain intact. */
+	/* Cloud button artwork keeps its default/hover faces aligned. Live text replaces the
+	   outlined lettering so both locales share the supplied shape and arrow. */
 	.product-cta {
 		position: relative;
 		display: inline-grid;
 		place-items: center;
 		margin-top: 1.1rem;
 		width: 12.25rem;
-		aspect-ratio: 292 / 157;
+		aspect-ratio: 382 / 150;
 		color: #fff;
 		font-size: 1.02rem;
 		font-weight: 700;
@@ -1830,20 +1829,26 @@
 	.cta-face-default {
 		opacity: 1;
 	}
-	.product-cta:hover .cta-face-default {
+	.product-cta:hover .cta-face-default,
+	.product-cta:focus-visible .cta-face-default {
 		opacity: 0;
 	}
-	.product-cta:hover .cta-face-hover {
+	.product-cta:hover .cta-face-hover,
+	.product-cta:focus-visible .cta-face-hover {
 		opacity: 1;
+	}
+	.product-cta:hover,
+	.product-cta:focus-visible {
+		color: #00f;
 	}
 	.cta-label {
 		position: absolute;
 		left: 39%;
-		top: 50%;
+		top: 47%;
 		max-width: 58%;
 		text-align: center;
 		line-height: 1.1;
-		transform: translate(-50%, -50%) rotate(-2deg);
+		transform: translate(-50%, -50%);
 	}
 	/* 開發中 paper tag: ink label, no link affordance. */
 	.product-cta-soon {
@@ -1853,9 +1858,11 @@
 		cursor: default;
 	}
 	.product-cta-soon:hover {
+		color: #1b2b56;
 		transform: none;
 	}
 	.product-cta-soon .cta-label {
+		top: 50%;
 		max-width: 70%;
 		left: 50%;
 		transform: translate(-50%, -50%) rotate(-6deg);
@@ -2621,7 +2628,7 @@
 		.product-cta {
 			margin-top: 0.25rem;
 			width: 8.25rem;
-			font-size: 0.88rem;
+			font-size: 0.78rem;
 		}
 		.product-cta-soon {
 			width: 7.25rem;
