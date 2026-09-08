@@ -18,9 +18,12 @@ same page.
   a same-origin Server-Sent Events stream. A 10-second refresh is retained as a
   fallback when a proxy or temporary network cannot keep that stream open.
 - Category filters stay hidden until the pool has more than 20 public wishes.
-- Content with a URL, email address, or a 7–12 digit number is held in
-  `pending` review instead of being published immediately.
-  New wishes use a short entrance transition, while the list and its clickable
+- Every new wish is stored as `pending` and never appears publicly until an
+  administrator approves it from `/wishpool/admin/`. The submitter sees a
+  confirmation that the wish is waiting for review; the public list and the
+  SSE stream only change when an administrator publishes, hides, or restores a
+  wish, or when someone adds a `+1`.
+- New wishes use a short entrance transition, while the list and its clickable
   cards stay still and predictable. Reduced-motion preferences disable the
   optional transition.
 

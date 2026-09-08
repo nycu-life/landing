@@ -74,11 +74,12 @@ var MigrationStatements = []string{
 		title text NOT NULL,
 		detail text NOT NULL DEFAULT '',
 		category text NOT NULL CHECK (category IN ('life','transport','learning','space','other')),
-		visibility text NOT NULL DEFAULT 'published' CHECK (visibility IN ('published','pending','hidden')),
+		visibility text NOT NULL DEFAULT 'pending' CHECK (visibility IN ('published','pending','hidden')),
 		actor_hash bytea NOT NULL,
 		created_at timestamptz NOT NULL DEFAULT now(),
 		updated_at timestamptz NOT NULL DEFAULT now()
 	)`,
+	`ALTER TABLE wishes ALTER COLUMN visibility SET DEFAULT 'pending'`,
 	`CREATE INDEX IF NOT EXISTS wishes_public_created_idx ON wishes (created_at DESC) WHERE visibility = 'published'`,
 	`CREATE INDEX IF NOT EXISTS wishes_actor_created_idx ON wishes (actor_hash, created_at DESC)`,
 	`CREATE TABLE IF NOT EXISTS wish_supports (

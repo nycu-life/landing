@@ -14,7 +14,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"time"
 	"unicode"
@@ -24,12 +23,6 @@ import (
 const (
 	deviceCookieName = "nycu_wish_device"
 	maxBodyBytes     = 4096
-)
-
-var (
-	urlPattern       = regexp.MustCompile(`(?i)(https?://|www\.|[a-z0-9-]+\.(com|net|org|tw)(/|\b))`)
-	emailPattern     = regexp.MustCompile(`(?i)\b[^\s@]+@[^\s@]+\.[^\s@]+\b`)
-	longDigitPattern = regexp.MustCompile(`\b\d{7,12}\b`)
 )
 
 type Handler struct {
@@ -169,10 +162,9 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	input.ActorHash = actorHash
-	input.Visibility = VisibilityPublished
-	if requiresReview(input.Title + " " + input.Detail) {
-		input.Visibility = VisibilityPending
-	}
+	// Every wish waits for an administrator to approve it before it becomes
+	// public, so user-submitted content is never served without review.
+	input.Visibility = VisibilityPending
 
 	wish, err := h.store.Create(r.Context(), input)
 	if errors.Is(err, ErrRateLimited) {
@@ -188,9 +180,6 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		"data": wish,
 		"meta": map[string]bool{"pending": wish.Visibility == VisibilityPending},
 	})
-	if wish.Visibility == VisibilityPublished {
-		h.changes.publish()
-	}
 }
 
 func (h *Handler) support(w http.ResponseWriter, r *http.Request) {
@@ -385,10 +374,6 @@ func containsUnsafeControl(value string) bool {
 		}
 	}
 	return false
-}
-
-func requiresReview(value string) bool {
-	return urlPattern.MatchString(value) || emailPattern.MatchString(value) || longDigitPattern.MatchString(value)
 }
 
 func sameOrigin(r *http.Request) bool {
