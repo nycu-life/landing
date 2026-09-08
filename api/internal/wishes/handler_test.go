@@ -127,7 +127,7 @@ func requestJSON(t *testing.T, handler http.Handler, method, target, body string
 	return recorder
 }
 
-func TestCreatePublishesNormalizedWishAndSetsAnonymousCookie(t *testing.T) {
+func TestCreateHoldsNormalizedWishForReviewAndSetsAnonymousCookie(t *testing.T) {
 	store := &fakeStore{}
 	recorder := requestJSON(t, testHandler(t, store), http.MethodPost, "/api/wishes", `{
 		"title":"  想知道   健身房人流  ",
@@ -140,7 +140,7 @@ func TestCreatePublishesNormalizedWishAndSetsAnonymousCookie(t *testing.T) {
 	if store.created.Title != "想知道 健身房人流" || store.created.Detail != "出發前 想先確認" {
 		t.Fatalf("text was not normalized: %#v", store.created)
 	}
-	if store.created.Visibility != VisibilityPublished || len(store.created.ActorHash) != sha256Size {
+	if store.created.Visibility != VisibilityPending || len(store.created.ActorHash) != sha256Size {
 		t.Fatalf("unexpected create metadata: %#v", store.created)
 	}
 	response := recorder.Result()
@@ -157,36 +157,44 @@ func TestCreatePublishesNormalizedWishAndSetsAnonymousCookie(t *testing.T) {
 	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
 		t.Fatal(err)
 	}
-	if payload.Meta.Pending {
-		t.Fatal("ordinary wish should publish immediately")
+	if !payload.Meta.Pending {
+		t.Fatal("every new wish should wait for review before it is published")
 	}
 }
 
 const sha256Size = 32
 
-func TestCreateRoutesPersonalDataToReview(t *testing.T) {
+func TestCreateNeverPublishesWithoutReview(t *testing.T) {
 	store := &fakeStore{}
-	recorder := requestJSON(t, testHandler(t, store), http.MethodPost, "/api/wishes", `{
-		"title":"請聯絡 0912345678 一起做專案",
-		"detail":"",
-		"category":"other"
-	}`)
-	if recorder.Code != http.StatusCreated {
-		t.Fatalf("create returned %d: %s", recorder.Code, recorder.Body.String())
-	}
-	if store.created.Visibility != VisibilityPending {
-		t.Fatalf("personal data should be pending, got %q", store.created.Visibility)
-	}
-	var payload struct {
-		Meta struct {
-			Pending bool `json:"pending"`
-		} `json:"meta"`
-	}
-	if err := json.NewDecoder(recorder.Body).Decode(&payload); err != nil {
+	handler, err := NewHandler(
+		store,
+		"0123456789abcdef0123456789abcdef",
+		"admin-token-for-tests",
+		nil,
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+	)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if !payload.Meta.Pending {
-		t.Fatal("pending metadata should be visible to the submitter")
+	updates, unsubscribe := handler.changes.subscribe()
+	defer unsubscribe()
+
+	for _, body := range []string{
+		`{"title":"希望可以顯示校車即時位置","detail":"","category":"transport"}`,
+		`{"title":"請聯絡 0912345678 一起做專案","detail":"","category":"other"}`,
+	} {
+		recorder := requestJSON(t, handler.Routes(), http.MethodPost, "/api/wishes", body)
+		if recorder.Code != http.StatusCreated {
+			t.Fatalf("create returned %d: %s", recorder.Code, recorder.Body.String())
+		}
+		if store.created.Visibility != VisibilityPending {
+			t.Fatalf("wish %q should be pending, got %q", body, store.created.Visibility)
+		}
+	}
+	select {
+	case <-updates:
+		t.Fatal("a pending wish must not trigger a public list refresh")
+	default:
 	}
 }
 
@@ -393,7 +401,7 @@ func TestAdminOIDCRejectsInvalidStateAndExchangeFailure(t *testing.T) {
 	}
 }
 
-func TestEventsPushPublishedWishChanges(t *testing.T) {
+func TestEventsPushAdminApprovedWishChanges(t *testing.T) {
 	store := &fakeStore{}
 	server := httptest.NewServer(testHandler(t, store))
 	defer server.Close()
@@ -417,24 +425,24 @@ func TestEventsPushPublishedWishChanges(t *testing.T) {
 		t.Fatalf("missing ready event: %q", scanner.Text())
 	}
 
-	post, err := http.NewRequestWithContext(
+	approve, err := http.NewRequestWithContext(
 		ctx,
-		http.MethodPost,
-		server.URL+"/api/wishes",
-		bytes.NewBufferString(`{"title":"希望圖書館座位更好找","detail":"","category":"learning"}`),
+		http.MethodPatch,
+		server.URL+"/api/wishes/admin/00000000-0000-4000-8000-000000000001",
+		bytes.NewBufferString(`{"visibility":"published"}`),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	post.Header.Set("Content-Type", "application/json")
-	post.Header.Set("Origin", server.URL)
-	posted, err := http.DefaultClient.Do(post)
+	approve.Header.Set("Content-Type", "application/json")
+	approve.Header.Set("Authorization", "Bearer admin-token-for-tests")
+	approved, err := http.DefaultClient.Do(approve)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer posted.Body.Close()
-	if posted.StatusCode != http.StatusCreated {
-		t.Fatalf("create returned %d", posted.StatusCode)
+	defer approved.Body.Close()
+	if approved.StatusCode != http.StatusOK {
+		t.Fatalf("admin approval returned %d", approved.StatusCode)
 	}
 
 	foundChange := false
@@ -449,13 +457,7 @@ func TestEventsPushPublishedWishChanges(t *testing.T) {
 	}
 }
 
-func TestValidationAndReviewDetection(t *testing.T) {
-	if !requiresReview("email me at hello@example.com") || !requiresReview("https://example.com") {
-		t.Fatal("contact details and URLs should require review")
-	}
-	if requiresReview("希望可以顯示校車即時位置") {
-		t.Fatal("ordinary campus wish should not require review")
-	}
+func TestValidation(t *testing.T) {
 	if err := validateCreate(CreateInput{Title: "太短", Category: CategoryLife}); err == nil {
 		t.Fatal("short title should fail validation")
 	}
