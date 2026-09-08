@@ -63,8 +63,8 @@
 		property="og:image"
 		content="https://raw.githubusercontent.com/nycu-life/landing/main/static/og/nycu-life.png"
 	/>
-	<meta property="og:image:width" content="1800" />
-	<meta property="og:image:height" content="938" />
+	<meta property="og:image:width" content="1796" />
+	<meta property="og:image:height" content="935" />
 	<meta property="og:image:alt" content="NYCU LIFE" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta
