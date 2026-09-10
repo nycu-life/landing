@@ -35,6 +35,7 @@ export type IconName =
 export const INSTAGRAM_URL = 'https://instagram.com/nycu.life';
 export const YOUTUBE_URL = 'https://www.youtube.com/@NYCU_LIFE';
 export const GITHUB_URL = 'https://github.com/nycu-life';
+export const LANDING_REPO_URL = 'https://github.com/nycu-life/landing';
 export const WEBSITE_URL = 'https://nycu.one';
 export const EVENTS_URL = 'https://events.life.nycu.edu.tw/';
 export const GOOGLE_PLAY_URL =
@@ -477,7 +478,8 @@ export const footer = {
 	tagline: m.footer_tagline,
 	linksLabel: m.footer_links_label,
 	localeLabel: m.footer_locale_label,
-	rights: m.footer_rights,
+	madeWith: m.footer_made_with,
+	madeBy: m.footer_made_by,
 	backToTop: m.footer_back_to_top
 };
 

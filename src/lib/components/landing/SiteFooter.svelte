@@ -7,6 +7,7 @@
 		GITHUB_URL,
 		GOOGLE_PLAY_URL,
 		INSTAGRAM_URL,
+		LANDING_REPO_URL,
 		YOUTUBE_URL
 	} from '$lib/content/landing';
 </script>
@@ -81,7 +82,13 @@
 		</div>
 	</div>
 	<div class="footer-bottom">
-		<span>© 2026 {m.brand_name()}</span><span>{m.footer_rights()}</span>
+		<span>© 2026 {m.brand_name()}</span>
+		<span class="made-with">
+			{m.footer_made_with()}
+			<img class="made-with-mark" src="{base}/brand/logo-white.svg" alt="" aria-hidden="true" />
+			{m.footer_made_by()}
+			<a href={LANDING_REPO_URL} target="_blank" rel="noopener noreferrer">{m.brand_name()}</a>
+		</span>
 	</div>
 </footer>
 
@@ -200,6 +207,30 @@
 		gap: 1rem;
 		color: #9ca3af;
 		font-size: 0.72rem;
+	}
+	.made-with {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3em;
+	}
+	.made-with a {
+		color: #d1d5db;
+		text-decoration: none;
+		border-bottom: 1px solid transparent;
+		transition:
+			color 0.18s ease,
+			border-color 0.18s ease;
+	}
+	.made-with a:hover,
+	.made-with a:focus-visible {
+		color: #fff;
+		border-color: currentColor;
+	}
+	.made-with-mark {
+		width: 1.15em;
+		height: 1.15em;
+		object-fit: contain;
+		opacity: 0.85;
 	}
 	@media (max-width: 900px) {
 		.footer-grid {
