@@ -85,7 +85,7 @@
 		<span>© 2026 {m.brand_name()}</span>
 		<span class="made-with">
 			{m.footer_made_with()}
-			<img class="made-with-mark" src="{base}/brand/logo-white.svg" alt="" aria-hidden="true" />
+			<img class="made-with-mark" src="{base}/ui/liver.svg" alt="肝" />
 			{m.footer_made_by()}
 			<a href={LANDING_REPO_URL} target="_blank" rel="noopener noreferrer">{m.brand_name()}</a>
 		</span>
@@ -227,10 +227,9 @@
 		border-color: currentColor;
 	}
 	.made-with-mark {
-		width: 1.15em;
+		width: 1.35em;
 		height: 1.15em;
 		object-fit: contain;
-		opacity: 0.85;
 	}
 	@media (max-width: 900px) {
 		.footer-grid {
