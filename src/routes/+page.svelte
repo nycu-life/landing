@@ -8,6 +8,10 @@
 <svelte:head>
 	<title>{m.meta_title()}</title>
 	<meta name="description" content={m.meta_description()} />
+	<meta property="og:title" content={m.meta_title()} />
+	<meta property="og:description" content={m.meta_description()} />
+	<meta name="twitter:title" content={m.meta_title()} />
+	<meta name="twitter:description" content={m.meta_description()} />
 </svelte:head>
 
 <div class="prototype-home">

@@ -8,6 +8,10 @@
 <svelte:head>
 	<title>{m.wish_admin_title()}｜NYCU LIFE</title>
 	<meta name="description" content={m.wish_admin_lede()} />
+	<meta property="og:title" content={`${m.wish_admin_title()}｜NYCU LIFE`} />
+	<meta property="og:description" content={m.wish_admin_lede()} />
+	<meta name="twitter:title" content={`${m.wish_admin_title()}｜NYCU LIFE`} />
+	<meta name="twitter:description" content={m.wish_admin_lede()} />
 	<meta name="robots" content="noindex,nofollow" />
 </svelte:head>
 

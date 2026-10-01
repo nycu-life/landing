@@ -2,12 +2,19 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { afterNavigate, onNavigate } from '$app/navigation';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import TopBar from '$lib/components/landing/TopBar.svelte';
 	import { initAnalytics, trackCampaignVisit, trackPageView } from '$lib/analytics';
 	import { dismissBootSplash } from '$lib/boot-splash';
 
 	let { children } = $props();
+
+	const siteOrigin = 'https://nycu.life';
+	const ogImage = `${siteOrigin}/og/nycu-life.jpg`;
+	// Messenger/Facebook refuse to render a card without og:url; the prerender origin is
+	// a placeholder, so rebuild the canonical URL from the public domain.
+	const pageUrl = $derived(`${siteOrigin}${page.url.pathname}`);
 
 	let darkMode = $state(false);
 
@@ -57,20 +64,18 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
+	<link rel="canonical" href={pageUrl} />
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="NYCU LIFE" />
-	<meta
-		property="og:image"
-		content="https://raw.githubusercontent.com/nycu-life/landing/main/static/og/nycu-life.png?v=1"
-	/>
+	<meta property="og:url" content={pageUrl} />
+	<meta property="og:image" content={ogImage} />
+	<meta property="og:image:secure_url" content={ogImage} />
+	<meta property="og:image:type" content="image/jpeg" />
 	<meta property="og:image:width" content="1796" />
 	<meta property="og:image:height" content="935" />
 	<meta property="og:image:alt" content="NYCU LIFE" />
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta
-		name="twitter:image"
-		content="https://raw.githubusercontent.com/nycu-life/landing/main/static/og/nycu-life.png?v=1"
-	/>
+	<meta name="twitter:image" content={ogImage} />
 </svelte:head>
 
 <!--
