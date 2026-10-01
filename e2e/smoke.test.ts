@@ -123,20 +123,28 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(story(page)).toContainText('ABOUT US');
 	await expect(story(page)).toContainText('FAQ');
 	await expect(story(page)).toContainText('JOIN THE TEAM');
-	// One card per role (#63): all six roles use the shared recruitment form.
+	// One card per role (#63): all six roles use the shared recruitment form while the
+	// window is open; outside it (#100) the links go away and every card is stamped.
+	const joinCards = page.locator('#join .join-card');
+	await expect(joinCards).toHaveCount(6);
 	const joinLinks = page.locator('#join .join-card > a');
-	await expect(joinLinks).toHaveCount(6);
-	await expect(joinLinks.first()).toHaveAttribute('href', 'https://forms.gle/2GcrxSShqfwrkumS9');
-	await expect(joinLinks.last()).toHaveAttribute('href', 'https://forms.gle/2GcrxSShqfwrkumS9');
-	await expect
-		.poll(() =>
-			joinLinks.evaluateAll((links) =>
-				links.every((link) => link.getAttribute('href') === 'https://forms.gle/2GcrxSShqfwrkumS9')
+	if ((await page.locator('#join').getAttribute('data-recruiting')) === 'open') {
+		await expect(joinLinks).toHaveCount(6);
+		await expect
+			.poll(() =>
+				joinLinks.evaluateAll((links) =>
+					links.every((link) => link.getAttribute('href') === 'https://forms.gle/2GcrxSShqfwrkumS9')
+				)
 			)
-		)
-		.toBe(true);
-	await expect(joinLinks.first()).toHaveAttribute('data-analytics-event', 'join_form_click');
-	await expect(joinLinks.first()).toHaveAttribute('data-analytics-source', 'home_story');
+			.toBe(true);
+		await expect(joinLinks.first()).toHaveAttribute('data-analytics-event', 'join_form_click');
+		await expect(joinLinks.first()).toHaveAttribute('data-analytics-source', 'home_story');
+		await expect(page.locator('#join .join-stamp')).toHaveCount(0);
+	} else {
+		await expect(joinLinks).toHaveCount(0);
+		await expect(page.locator('#join .join-stamp')).toHaveCount(6);
+		await expect(page.locator('#join .join-head p')).toHaveText('期待明年與你相遇');
+	}
 	await expect(page.locator('#prototype-footer')).toBeAttached();
 	await expect(page.locator('#prototype-footer nav')).toHaveCount(0);
 	await expect(page.locator('a[href="mailto:life@nycu.edu.tw"]')).toHaveText('life@nycu.edu.tw');

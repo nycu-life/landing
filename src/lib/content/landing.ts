@@ -47,6 +47,10 @@ export const JOIN_FORM_URL = 'https://forms.gle/2GcrxSShqfwrkumS9';
 export const DESIGN_FORM_URL = JOIN_FORM_URL;
 export const ENGINEERING_FORM_URL = JOIN_FORM_URL;
 
+/* Recruitment window on the join board (#100). Flip this when a window opens or closes;
+   the dates and term live in the `story_join_open_lede` / `story_join_stamp_*` messages. */
+export const RECRUITMENT_OPEN = false;
+
 /** One recruiting position on the join board (#63): a card per role. */
 export type JoinRole = {
 	id: string;

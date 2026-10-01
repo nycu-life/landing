@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { fly, slide } from 'svelte/transition';
-	import { joinRoles, products, productStatusLabel } from '$lib/content/landing';
+	import { RECRUITMENT_OPEN, joinRoles, products, productStatusLabel } from '$lib/content/landing';
 	import { m } from '$lib/paraglide/messages';
 	import { dismissBootSplash } from '$lib/boot-splash';
 
@@ -1054,31 +1054,43 @@
 			class="story-scene join-scene"
 			class:scene-active={sceneVisible[4]}
 			aria-label={m.story_join_label()}
+			data-recruiting={RECRUITMENT_OPEN ? 'open' : 'closed'}
 		>
 			<div class="section-shell join-shell">
 				<!-- One card per open role (#63): the heading sits top-centre, the six roles
-				     below it, each linking to its pipeline's recruitment form. -->
+				     below it, each linking to its pipeline's recruitment form. Outside the
+				     recruitment window (#100) the cards fade, lose their form link, and carry
+				     a "closed" stamp. -->
 				<div class="join-head">
 					<span class="eyebrow">{m.story_join_eyebrow()}</span>
 					<h2>{m.story_join_heading()}</h2>
-					<p>{m.story_join_tagline()}</p>
+					<p>{RECRUITMENT_OPEN ? m.story_join_open_lede() : m.story_join_closed_lede()}</p>
 				</div>
 				<ul class="join-cards">
 					{#each joinRoles as role (role.id)}
 						<li class="join-card" data-group={role.group}>
+							{#if !RECRUITMENT_OPEN}
+								<span class="join-stamp">
+									<span>{m.story_join_stamp_term()}</span>
+									<span>{m.story_join_stamp_semester()}</span>
+									<strong>{m.story_join_stamp_closed()}</strong>
+								</span>
+							{/if}
 							<span class="join-card-group">{role.groupLabel()}</span>
 							<h3>{role.title()}</h3>
 							<span class="join-card-en">{role.subtitle()}</span>
 							<p class="join-card-hook">{role.hook()}</p>
 							<p class="join-card-desc">{role.description()}</p>
-							<a
-								href={role.formUrl}
-								target="_blank"
-								rel="noreferrer"
-								data-analytics-event="join_form_click"
-								data-analytics-source="home_story"
-								data-analytics-role={role.id}>{m.story_join_card_cta()}</a
-							>
+							{#if RECRUITMENT_OPEN}
+								<a
+									href={role.formUrl}
+									target="_blank"
+									rel="noreferrer"
+									data-analytics-event="join_form_click"
+									data-analytics-source="home_story"
+									data-analytics-role={role.id}>{m.story_join_card_cta()}</a
+								>
+							{/if}
 						</li>
 					{/each}
 				</ul>
@@ -2333,6 +2345,71 @@
 	}
 	.join-card > a:hover {
 		text-decoration: underline;
+	}
+	/* Closed window (#100): the paper goes grey and quiet, the ink stamp stays sharp. */
+	.join-scene[data-recruiting='closed'] .join-card {
+		border-color: #b4bdcb;
+		box-shadow: 0 0.5rem 1.3rem rgba(55, 65, 81, 0.06);
+	}
+	.join-scene[data-recruiting='closed'] .join-card > :not(.join-stamp) {
+		opacity: 0.5;
+		filter: grayscale(1);
+	}
+	.join-scene[data-recruiting='closed'] .join-card h3,
+	.join-scene[data-recruiting='closed'] .join-card-en {
+		/* Keep the title clear of the stamp in the top-right corner. */
+		margin-right: 4.6rem;
+	}
+	.join-stamp {
+		--stamp-ink: #2a3a58;
+		position: absolute;
+		top: 0.7rem;
+		right: 0.75rem;
+		display: grid;
+		place-content: center;
+		width: 4.5rem;
+		height: 4.5rem;
+		border: 2px solid var(--stamp-ink);
+		border-radius: 50%;
+		box-shadow:
+			inset 0 0 0 2px #fff,
+			inset 0 0 0 3.5px var(--stamp-ink);
+		color: var(--stamp-ink);
+		font-size: 0.5rem;
+		font-weight: 700;
+		line-height: 1.3;
+		letter-spacing: 0.02em;
+		text-align: center;
+		rotate: -14deg;
+		mix-blend-mode: multiply;
+	}
+	.join-card:nth-child(even) .join-stamp {
+		rotate: -9deg;
+	}
+	.join-stamp strong {
+		margin-top: 0.1rem;
+		font-size: 0.6rem;
+		letter-spacing: 0.04em;
+		white-space: nowrap;
+	}
+	/* Phones: the carousel cards are narrow and long titles wrap, so the stamp sits in the
+	   empty bottom-right corner (where the form link used to be) instead of beside the title. */
+	@media (max-width: 767px) {
+		.join-scene[data-recruiting='closed'] .join-card h3,
+		.join-scene[data-recruiting='closed'] .join-card-en {
+			margin-right: 0;
+		}
+		.join-stamp {
+			top: auto;
+			bottom: 0.7rem;
+			right: 0.8rem;
+			width: 4rem;
+			height: 4rem;
+			font-size: 0.46rem;
+		}
+		.join-stamp strong {
+			font-size: 0.55rem;
+		}
 	}
 	/* Tight stages — short laptops/landscape tablets (1024×768) and narrow portrait tablets
 	   (768×1024, where two columns make three tall rows): compact the cards so the heading
