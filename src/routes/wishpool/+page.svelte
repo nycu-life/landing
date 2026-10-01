@@ -7,6 +7,10 @@
 <svelte:head>
 	<title>{m.footer_wishlist()}｜NYCU LIFE</title>
 	<meta name="description" content={m.wish_lede()} />
+	<meta property="og:title" content={`${m.footer_wishlist()}｜NYCU LIFE`} />
+	<meta property="og:description" content={m.wish_lede()} />
+	<meta name="twitter:title" content={`${m.footer_wishlist()}｜NYCU LIFE`} />
+	<meta name="twitter:description" content={m.wish_lede()} />
 </svelte:head>
 
 <div id="wishes" class="page wish-page">
