@@ -143,7 +143,7 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	} else {
 		await expect(joinLinks).toHaveCount(0);
 		await expect(page.locator('#join .join-stamp')).toHaveCount(6);
-		await expect(page.locator('#join .join-head p')).toHaveText('期待明年與你相遇');
+		await expect(page.locator('#join .join-head p')).toHaveText('期待下學期與你相遇');
 	}
 	await expect(page.locator('#prototype-footer')).toBeAttached();
 	await expect(page.locator('#prototype-footer nav')).toHaveCount(0);
