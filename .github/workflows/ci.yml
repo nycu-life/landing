@@ -11,11 +11,14 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # Keep external fork PRs on GitHub-hosted runners; shared runners execute trusted code.
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || 'nycu-life-linux' }}
     timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4

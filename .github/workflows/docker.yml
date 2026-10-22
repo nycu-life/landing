@@ -18,17 +18,25 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    # Keep external fork PRs on GitHub-hosted runners; shared runners execute trusted code.
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || 'nycu-life-linux' }}
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       # Push only on push/tag events to the canonical repo AND only when Harbor
       # credentials are configured. PRs (incl. forks) verify the build without
       # pushing, and main stays green even before the secrets are added.
       - id: guard
         run: echo "push=${{ github.event_name != 'pull_request' && secrets.HARBOR_USERNAME != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU for the existing multi-platform build
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -65,14 +73,22 @@ jobs:
           build-args: PUBLIC_GA_ID=${{ vars.PUBLIC_GA_ID }}
 
   build-and-push-wish-api:
-    runs-on: ubuntu-latest
+    # Keep external fork PRs on GitHub-hosted runners; shared runners execute trusted code.
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || 'nycu-life-linux' }}
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - id: guard
         run: echo "push=${{ github.event_name != 'pull_request' && secrets.HARBOR_USERNAME != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU for the existing multi-platform build
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
