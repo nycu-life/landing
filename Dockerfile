@@ -1,4 +1,4 @@
-ARG NODE_VERSION=24.16.0
+ARG NODE_VERSION=24.22.1
 ARG PNPM_VERSION=10.21.0
 
 FROM node:${NODE_VERSION}-bookworm-slim AS build
@@ -22,7 +22,7 @@ COPY . .
 # empty.
 RUN pnpm run build
 
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.30.6-alpine AS runtime
 
 COPY --from=build /app/build /usr/share/nginx/html
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
