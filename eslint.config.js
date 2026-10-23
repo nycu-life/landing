@@ -48,7 +48,8 @@ export default defineConfig(
 		files: [
 			'src/lib/components/landing/**/*.svelte',
 			'src/lib/components/glass/**/*.svelte',
-			'src/routes/**/+page.svelte'
+			'src/routes/**/+page.svelte',
+			'src/routes/+error.svelte'
 		],
 		rules: {
 			'svelte/no-navigation-without-resolve': 'off'

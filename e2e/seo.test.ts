@@ -25,3 +25,26 @@ test('publishes a complete production sitemap and advertises it to crawlers', as
 	expect(robotsResponse.ok()).toBe(true);
 	expect(await robotsResponse.text()).toContain(`Sitemap: ${siteOrigin}/sitemap.xml`);
 });
+
+test('serves unknown URLs a noindex error page without a canonical', async ({ page }) => {
+	for (const path of ['/nonexistent-page/', '/demo/']) {
+		const response = await page.goto(path);
+		expect(response?.status()).toBe(404);
+		await expect(page.locator('h1')).toHaveText('找不到這個頁面');
+		await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+		await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+		await expect(page.locator('meta[property="og:url"]')).toHaveCount(0);
+	}
+});
+
+test('keeps a self-referencing canonical on every sitemap page', async ({ page }) => {
+	for (const route of publicRoutes) {
+		const response = await page.goto(route);
+		expect(response?.status()).toBe(200);
+		await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+			'href',
+			`${siteOrigin}${route}`
+		);
+		await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+	}
+});

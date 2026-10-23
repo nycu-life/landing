@@ -12,7 +12,9 @@ const config = {
 	kit: {
 		adapter: adapter({
 			pages: 'build',
-			assets: 'build'
+			assets: 'build',
+			// Served by nginx (docker/nginx.conf) as the body of real 404/410 responses.
+			fallback: '404.html'
 		}),
 		paths: {
 			base: dev ? '' : base

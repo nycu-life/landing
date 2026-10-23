@@ -390,5 +390,8 @@
 	"footer_locale_label": "語言",
 	"footer_made_with": "Crafted with care",
 	"footer_made_by": "by the",
-	"footer_back_to_top": "回到頂端"
+	"footer_back_to_top": "回到頂端",
+
+	"not_found_title": "找不到這個頁面",
+	"not_found_lede": "這個網址不存在，或頁面已經下架。可以從首頁看看我們的產品，或到許願池告訴我們你想要的功能。"
 }
