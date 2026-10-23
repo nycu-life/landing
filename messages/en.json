@@ -390,5 +390,8 @@
 	"footer_locale_label": "Language",
 	"footer_made_with": "Crafted with care",
 	"footer_made_by": "by the",
-	"footer_back_to_top": "Back to top"
+	"footer_back_to_top": "Back to top",
+
+	"not_found_title": "Page not found",
+	"not_found_lede": "This address does not exist, or the page has been retired. Head back home to browse our products, or tell us what you need in the Wish Pool."
 }

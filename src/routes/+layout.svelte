@@ -64,10 +64,13 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<link rel="canonical" href={pageUrl} />
+	<!-- Error pages are served at arbitrary unknown/withdrawn URLs; never canonicalise those. -->
+	{#if !page.error}
+		<link rel="canonical" href={pageUrl} />
+		<meta property="og:url" content={pageUrl} />
+	{/if}
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="NYCU LIFE" />
-	<meta property="og:url" content={pageUrl} />
 	<meta property="og:image" content={ogImage} />
 	<meta property="og:image:secure_url" content={ogImage} />
 	<meta property="og:image:type" content="image/jpeg" />

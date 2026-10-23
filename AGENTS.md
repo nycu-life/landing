@@ -34,9 +34,9 @@ Keep all of them green — don't merge a red gate.
 
 ## Layout
 
-- `src/routes/` — pages: `/` (hero + `OrbitWheel`), `products`, `about`,
-  `courses`, `devlog`, `team/[slug]`. Navigation is a **burger menu**
-  (`TopBar` + `MenuOverlay`), not a top nav bar.
+- `src/routes/` — public pages: `/` (scroll story: hero, about, products, FAQ,
+  join) and `/wishpool/`; `/wishpool/admin/` is noindex. `+error.svelte` is the
+  404/410 page. Navigation is the `TopBar` (home-section anchors + Wish Pool).
 - `src/lib/content/` — **page copy lives here as data** (`landing.ts`, `about.ts`,
   `team.ts`, `departments.ts`), wired to Paraglide messages. Edit content here,
   not inline in components.
@@ -66,6 +66,12 @@ editing here, match this repo's tokens; don't import the other system.
   at request time — everything is prerendered at build.
 - The default locale is **`zh-tw`**; the unprefixed `/` renders Chinese copy.
 - Brand string "NYCU LIFE" is identical in both locales — safe to assert in tests.
+- **SEO routing** (see `docs/seo.md`): `static/sitemap.xml` lists exactly the
+  indexable pages. nginx returns a real 404 for unknown paths (no SPA fallback to
+  the home page) and 410 for withdrawn ones (`/about/`, `/courses/`,
+  `/products/`, `/devlog/`, `/team/…`), both with the noindex `404.html` shell.
+  Adding or withdrawing a page means updating the route, the sitemap,
+  `docker/nginx.conf`, and `e2e/seo.test.ts` together.
 
 ## Visual acceptance gate
 
