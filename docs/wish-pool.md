@@ -128,6 +128,15 @@ clients are public OAuth clients secured with PKCE S256, so they do not use a
 client secret. `WISH_OIDC_CLIENT_SECRET` remains optional for a separately
 registered confidential client and must never be committed to Git.
 
+### CMS gate
+
+`/api/wishes/auth/gate` is the Traefik forwardAuth target for the Ghost CMS
+at `/cms/` (`docs/ghost.md`). It answers `204` for a valid admin session (read
+from the `Path=/cms` copy of the session cookie, `nycu_cms_session`). A
+signed-out navigation gets `302` to `/api/wishes/auth/login?return=/cms/…`, and
+any other signed-out request gets `401`. `return` only accepts local paths under
+`/cms/`; the callback falls back to `/wishpool/admin/` for anything else.
+
 ## Wish JSON
 
 Every public and admin endpoint returns wishes in this shape (`visibility` is

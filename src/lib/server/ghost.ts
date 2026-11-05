@@ -11,7 +11,7 @@
  * `$env/dynamic/*` during prerendering, and `$env/static/*` would make the
  * variables mandatory):
  *
- * - `GHOST_URL`              Ghost base URL reachable from the build, e.g. https://cms.nycu.life
+ * - `GHOST_URL`              Ghost base URL reachable from the build, e.g. https://nycu.life/cms
  * - `GHOST_CONTENT_API_KEY`  Content API key of a Ghost Custom Integration (read-only, public-grade)
  * - `GHOST_REQUIRED=1`       Fail the build when Ghost is unset or unreachable (an empty
  *                            section is still fine)
@@ -82,7 +82,7 @@ const isMirrorablePath = (path: string) => /^[\w%./-]+$/.test(path) && !path.inc
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
- * Rewrite absolute Ghost image URLs (`<origin>/content/images/<path>`) to the
+ * Rewrite absolute Ghost image URLs (`<base>/content/images/<path>`) to the
  * mirrored static path and record every `<path>` that must be mirrored. Also
  * lazy-loads inline images that Ghost did not already mark.
  */
@@ -175,6 +175,12 @@ const placeholderCatalog = (): ComicsCatalog => ({
 
 const trimSlash = (url: string) => url.replace(/\/+$/, '');
 
+/** `https://nycu.life/cms/` → `https://nycu.life/cms`; keeps sub-path installs (Ghost `url` with a path). */
+export const ghostBase = (url: string): string => {
+	const parsed = new URL(url);
+	return trimSlash(`${parsed.origin}${parsed.pathname}`);
+};
+
 const isRequired = (env: GhostEnv) => env.GHOST_REQUIRED === '1' || env.GHOST_REQUIRED === 'true';
 
 async function ghostGet<T>(
@@ -200,7 +206,10 @@ async function ghostGet<T>(
 interface TaggedPosts {
 	ghostUrl: string;
 	posts: GhostPost[];
-	/** Origins whose `/content/images/` URLs are mirrored (build-side URL + Ghost's public URL). */
+	/**
+	 * Ghost base URLs (origin + optional sub-path, e.g. `https://nycu.life/cms`) whose
+	 * `/content/images/` URLs are mirrored: the build-side URL and Ghost's public URL.
+	 */
 	origins: string[];
 }
 
@@ -238,7 +247,7 @@ async function fetchTaggedPosts(
 			...new Set(
 				[ghostUrl, settings.settings?.url]
 					.filter((value): value is string => Boolean(value))
-					.map((value) => new URL(value).origin)
+					.map(ghostBase)
 			)
 		];
 		return { ghostUrl, posts, origins };

@@ -96,6 +96,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("GET /api/wishes/auth/login", h.authLogin)
 	mux.HandleFunc("GET /api/wishes/auth/callback", h.authCallback)
 	mux.HandleFunc("GET /api/wishes/auth/me", h.authMe)
+	mux.HandleFunc("/api/wishes/auth/gate", h.authGate)
 	mux.HandleFunc("POST /api/wishes/auth/logout", h.authLogout)
 	mux.HandleFunc("GET /api/wishes/admin", h.adminList)
 	mux.HandleFunc("PATCH /api/wishes/admin/{id}", h.adminUpdate)

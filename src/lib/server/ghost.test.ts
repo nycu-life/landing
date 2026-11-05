@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+	ghostBase,
 	loadComics,
 	loadDevlog,
 	mapDevlogPosts,
@@ -215,6 +216,37 @@ describe('dev log', () => {
 		});
 		const catalog = await loadDevlog(configured, fetchFn, '/devlog/media/');
 		expect(catalog.posts.map((entry) => entry.slug)).toEqual(['one']);
+		info.mockRestore();
+	});
+});
+
+describe('sub-path Ghost installs', () => {
+	it('keeps the sub-path when matching image URLs', async () => {
+		expect(ghostBase('https://nycu.life/cms/')).toBe('https://nycu.life/cms');
+		expect(ghostBase('http://127.0.0.1:2368')).toBe('http://127.0.0.1:2368');
+		const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+		const fetchFn = vi.fn<typeof fetch>(async (input) => {
+			const url = new URL(String(input));
+			expect(url.pathname.startsWith('/cms/ghost/api/content/')).toBe(true);
+			if (url.pathname.endsWith('/settings/')) {
+				return jsonResponse({ settings: { url: 'https://nycu.life/cms/' } });
+			}
+			return jsonResponse({
+				posts: [
+					post('one', '2026-11-01T00:00:00Z', {
+						tags: [{ slug: 'hash-devlog' }],
+						feature_image: 'https://nycu.life/cms/content/images/2026/11/a.png'
+					})
+				]
+			});
+		});
+		const catalog = await loadDevlog(
+			{ GHOST_URL: 'https://nycu.life/cms/', GHOST_CONTENT_API_KEY: 'k' },
+			fetchFn,
+			'/devlog/media/'
+		);
+		expect(catalog.posts[0].cover?.src).toBe('/devlog/media/2026/11/a.png');
+		expect(catalog.media).toEqual(['2026/11/a.png']);
 		info.mockRestore();
 	});
 });

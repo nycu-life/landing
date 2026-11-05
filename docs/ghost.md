@@ -13,7 +13,7 @@ browsers never contact Ghost, and a Ghost outage never takes nycu.life down.
 It only blocks the next content rebuild.
 
 ```
-editor ──(SSO: auth.nycu.one)──▶ Ghost Admin (cms.nycu.life/ghost/)
+editor ──(SSO: auth.nycu.one)──▶ Ghost Admin (nycu.life/cms/ghost/)
                                      │ publish → webhook
                                      ▼
                               relay ──▶ GitHub repository_dispatch "ghost-publish"
@@ -27,7 +27,7 @@ editor ──(SSO: auth.nycu.one)──▶ Ghost Admin (cms.nycu.life/ghost/)
 
 | Variable                | Where                                                  | Meaning                                                                                      |
 | ----------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `GHOST_URL`             | env / Docker build arg / repo **variable** `GHOST_URL` | Ghost base URL reachable from the build, e.g. `https://cms.nycu.life`.                       |
+| `GHOST_URL`             | env / Docker build arg / repo **variable** `GHOST_URL` | Ghost base URL reachable from the build, e.g. `https://nycu.life/cms`.                       |
 | `GHOST_CONTENT_API_KEY` | env / BuildKit secret / repo **secret**                | Content API key of the "NYCU LIFE landing build" Custom Integration (read-only).             |
 | `GHOST_REQUIRED`        | env / Docker build arg                                 | `1` = fail the build if Ghost is unset or unreachable. CI sets it for every image it pushes. |
 
@@ -143,106 +143,47 @@ include:
   - path: landing/docker/ghost/compose.yml
 ```
 
-## Editor login via auth.nycu.one
+## Production: Ghost at `https://nycu.life/cms/`
 
-Ghost has no native OIDC/SAML for staff users. The agreed model has two gates:
+Ghost runs in `landing-prod` next to the site, on the same host, as a
+sub-path install (`url=https://nycu.life/cms`). Manifests live in
+`nycu-life/k8s-manifests` (`apps/landing/overlays/prod/ghost*.yaml`): Ghost 6,
+MySQL 8.4 (Ghost 6 supports only MySQL), Longhorn volumes for both, and
+generated passwords stored in OpenBao.
 
-1. **Authentik forward auth** (auth.nycu.one) in front of `cms.nycu.life`. Only
-   people allowed into the Authentik application ever reach Ghost Admin.
+| Path                                          | Who                 | Notes                                                  |
+| --------------------------------------------- | ------------------- | ------------------------------------------------------ |
+| `/cms/ghost/` (Admin) and the rest of `/cms/` | signed-in editors   | Traefik forwardAuth → wish-api `/api/wishes/auth/gate` |
+| `/cms/ghost/api/content/`                     | anyone with the key | The landing build (GitHub runners) reads posts here    |
+| `/cms/content/images/`                        | public              | Mirrored by the build; Ghost Admin previews use it     |
+
+### Editor login via auth.nycu.one
+
+Ghost has no native OIDC for staff users, so there are two gates:
+
+1. **auth.nycu.one**, using the Wish Pool admin sign-in that already exists.
+   The forwardAuth middleware asks wish-api whether the browser has an admin
+   session. If not, it sends the browser to `/api/wishes/auth/login?return=/cms/…`
+   (the existing `wishpool-admin` OIDC client; no new Authentik provider) and
+   back to the CMS afterwards. On sign-in wish-api sets the API session cookie
+   and an identical, `HttpOnly`, `Path=/cms` copy (`nycu_cms_session`) that the
+   gate checks. Signing out of the Wish Pool admin closes both. Who passes is
+   whoever Authentik lets into the `wishpool-admin` application (currently:
+   every auth.nycu.one account).
 2. The editor then signs in with their **Ghost staff account**. Invite them from
-   Ghost Admin → Settings → Staff, using their NYCU LIFE email.
+   Ghost Admin → Settings → Staff. Only invited staff can write or publish.
 
-Removing someone means removing them from the Authentik group, which closes
-the gate, and suspending their Ghost staff user.
+First boot: the first person to open `/cms/ghost/` gets Ghost's owner setup.
+Do that right after the first deploy, then create the Custom Integration
+"NYCU LIFE landing build" (Settings → Integrations) for the Content API key.
 
-### Authentik (Proxy Provider, forward auth, single application)
+Without SMTP, Ghost's emailed staff-device verification is turned off
+(`security__staffDeviceVerification=false`); auth.nycu.one is the first factor.
+Add `mail__*` SMTP settings and turn it back on once a mail account exists
+(staff invitations are emailed too).
 
-1. **Applications → Providers → Create → Proxy Provider**
-   - Name: `nycu-life-cms`
-   - Authorization flow: the default explicit/implicit consent flow
-   - Mode: **Forward auth (single application)**
-   - External host: `https://cms.nycu.life`
-   - Token validity: e.g. `hours=12`
-   - Advanced → **Unauthenticated Paths**: leave empty. Public paths are routed
-     around the middleware in Traefik (below), which is easier to audit.
-2. **Applications → Applications → Create**: name `NYCU LIFE CMS`, slug
-   `nycu-life-cms`, provider `nycu-life-cms`. Bind a group policy, e.g. only the
-   `nycu-life-editors` group.
-3. **Applications → Outposts**: add the application to the embedded outpost (or
-   to the cluster's proxy outpost).
-
-### Traefik (example for `nycu-life/k8s-manifests`, not deployable from here)
-
-```yaml
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: authentik-forward-auth
-  namespace: ghost
-spec:
-  forwardAuth:
-    # Embedded outpost service; adjust namespace/name to the cluster's Authentik release.
-    address: http://ak-outpost-authentik-embedded-outpost.authentik.svc.cluster.local:9000/outpost.goauthentik.io/auth/traefik
-    trustForwardHeader: true
-    authResponseHeaders:
-      - X-authentik-username
-      - X-authentik-groups
-      - X-authentik-email
-      - X-authentik-name
-      - X-authentik-uid
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: ghost
-  namespace: ghost
-spec:
-  entryPoints: [websecure]
-  routes:
-    # Public, key-gated: the landing build (GitHub runners) reads posts here.
-    - match: Host(`cms.nycu.life`) && PathPrefix(`/ghost/api/content/`)
-      priority: 100
-      kind: Rule
-      services: [{ name: ghost, port: 2368 }]
-    # Public: uploaded images (the build mirrors them; editors' previews load them).
-    - match: Host(`cms.nycu.life`) && PathPrefix(`/content/images/`)
-      priority: 100
-      kind: Rule
-      services: [{ name: ghost, port: 2368 }]
-    # Members API: only needed if Ghost members/newsletters are ever enabled.
-    - match: Host(`cms.nycu.life`) && PathPrefix(`/members/api/`)
-      priority: 100
-      kind: Rule
-      services: [{ name: ghost, port: 2368 }]
-    # Authentik's callback/sign-in endpoints for this host.
-    - match: Host(`cms.nycu.life`) && PathPrefix(`/outpost.goauthentik.io/`)
-      priority: 90
-      kind: Rule
-      services:
-        - name: ak-outpost-authentik-embedded-outpost
-          namespace: authentik
-          port: 9000
-    # Everything else, incl. Ghost Admin (/ghost/, /ghost/api/admin/) and the
-    # unused theme front end, behind SSO.
-    - match: Host(`cms.nycu.life`)
-      priority: 10
-      kind: Rule
-      middlewares: [{ name: authentik-forward-auth }]
-      services: [{ name: ghost, port: 2368 }]
-  tls:
-    secretName: cms-nycu-life-tls
-```
-
-Notes:
-
-- Cross-namespace services need Traefik's `allowCrossNamespace`. Otherwise
-  route the outpost path through an `ExternalName` service in `ghost`.
-- Webhooks are **outbound** from Ghost, so no inbound path is needed for them.
-- Admin API scripts (like `seed.mjs`) can't get through forward auth from
-  outside. Run them against the in-cluster service, e.g.
-  `kubectl port-forward svc/ghost 2368`.
-- Production Ghost needs `url=https://cms.nycu.life`, real `mail__*` SMTP
-  settings, and device verification left on (the default).
+Admin API scripts (like `seed.mjs`) can't get through the gate from outside;
+run them against the in-cluster service (`kubectl port-forward svc/ghost 2368`).
 
 ### Local SSO profile (oauth2-proxy)
 
@@ -278,7 +219,7 @@ because BuildKit secrets aren't part of the cache key.
 
 Repo configuration:
 
-- Variable `GHOST_URL` = `https://cms.nycu.life`
+- Variable `GHOST_URL` = `https://nycu.life/cms`
 - Secret `GHOST_CONTENT_API_KEY` = the Content API key of the "NYCU LIFE
   landing build" integration
 
