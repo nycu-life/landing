@@ -7,6 +7,18 @@ on:
   # Build on PRs too so Dockerfile / pnpm / build regressions surface
   # pre-merge. PR runs build the image but never push (gated below).
   pull_request:
+  # Ghost publish → rebuild (docs/ghost.md). A relay turns Ghost's post webhooks
+  # into `POST /repos/nycu-life/landing/dispatches {"event_type":"ghost-publish"}`;
+  # the run rebuilds and pushes :latest with fresh comics from Ghost.
+  repository_dispatch:
+    types: [ghost-publish]
+  workflow_dispatch:
+
+# Bursts of Ghost edits each send a dispatch; only the newest content rebuild
+# matters, so supersede queued ones. Code builds keep one group per run.
+concurrency:
+  group: ${{ github.event_name == 'repository_dispatch' && 'ghost-publish' || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'repository_dispatch' }}
 
 # Registry host comes from the HARBOR_REGISTRY secret (falls back to the known
 # host for fork PRs where secrets are unavailable). The image lives in the
@@ -62,9 +74,22 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: PUBLIC_GA_ID=${{ vars.PUBLIC_GA_ID }}
+          # Comics are prerendered from Ghost (docs/ghost.md). GHOST_URL is a repo
+          # variable; the Content API key is a BuildKit secret, never a build arg,
+          # so it stays out of image layers, history and the GHA cache. Pushed
+          # images must carry real Ghost content (GHOST_REQUIRED=1 fails the build
+          # rather than shipping placeholders); PR builds may fall back.
+          build-args: |
+            PUBLIC_GA_ID=${{ vars.PUBLIC_GA_ID }}
+            GHOST_URL=${{ vars.GHOST_URL }}
+            GHOST_REQUIRED=${{ steps.guard.outputs.push == 'true' && vars.GHOST_URL != '' && '1' || '' }}
+            CONTENT_REVISION=${{ github.run_id }}-${{ github.run_attempt }}
+          secrets: |
+            ghost_content_api_key=${{ secrets.GHOST_CONTENT_API_KEY }}
 
   build-and-push-wish-api:
+    # Content-only rebuilds (Ghost publish) don't touch the Wish API.
+    if: github.event_name != 'repository_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
