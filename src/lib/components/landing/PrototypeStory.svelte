@@ -541,20 +541,6 @@
 		<div class="story-progress" aria-hidden="true">
 			<img src="{base}/ui/progress-line.svg" alt="" />
 		</div>
-		<nav class="chapter-nav" class:on-hero={chapterIndex === 0} aria-label="Story chapters">
-			{#each chapters as chapter, index (chapter.id)}
-				<a
-					href={`#${chapter.id}`}
-					class:active={chapterIndex === index}
-					aria-current={chapterIndex === index ? 'step' : undefined}
-					onclick={(event) => {
-						event.preventDefault();
-						history.replaceState(null, '', `#${chapter.id}`);
-						goToChapter(chapter.id);
-					}}><i></i><span>{chapter.id}</span></a
-				>
-			{/each}
-		</nav>
 		<button
 			type="button"
 			class="skip-story"
@@ -1260,9 +1246,8 @@
 		color: #4b5563;
 		line-height: 1.75;
 	}
-	/* Nav-to-content clearance follows the design spec (#53): ≥1440px keeps 80–96px between the
-	   nav and the shell, 1024–1439px keeps 56–64px, 768–1023px keeps 32–48px (dots only), and
-	   below 768px the side nav disappears entirely. */
+	/* Stage gutters were sized for the former left chapter nav (#53, removed in #108); they
+	   are kept as symmetric breathing room so every chapter composition stays unchanged. */
 	.story-stage {
 		--stage-gutter: 9.25rem;
 	}
@@ -1270,27 +1255,6 @@
 		.story-stage {
 			--stage-gutter: 11rem;
 		}
-	}
-	.chapter-nav {
-		position: absolute;
-		z-index: 40;
-		left: 1.4rem;
-		top: 50%;
-		transform: translateY(-50%);
-		display: flex;
-		flex-direction: column;
-		gap: 0.9rem;
-		transition:
-			opacity 0.3s ease,
-			transform 0.3s ease,
-			visibility 0.3s;
-	}
-	/* The hero keeps the whole stage for the machine (#45). */
-	.chapter-nav.on-hero {
-		opacity: 0;
-		visibility: hidden;
-		transform: translateY(-50%) translateX(-0.6rem);
-		pointer-events: none;
 	}
 	/* The designer's cloud pill (static/ui/skip-*.svg). All three faces are stacked and kept
 	   loaded so hover/press swaps never flicker; the label stays live text for i18n. */
@@ -1372,31 +1336,6 @@
 		opacity: 0;
 		visibility: hidden;
 		pointer-events: none;
-	}
-	.chapter-nav a {
-		display: flex;
-		align-items: center;
-		gap: 0.55rem;
-		color: #9ca3af;
-		font-size: 0.65rem;
-		text-transform: uppercase;
-		letter-spacing: 0.12em;
-	}
-	.chapter-nav i {
-		display: block;
-		width: 0.5rem;
-		height: 0.5rem;
-		border-radius: 50%;
-		background: #d1d5db;
-		transition: 0.25s ease;
-	}
-	.chapter-nav a.active {
-		color: #2462ff;
-	}
-	.chapter-nav a.active i {
-		height: 0.9rem;
-		border-radius: 999px;
-		background: #2462ff;
 	}
 	.hero-orbit {
 		position: absolute;
@@ -2537,21 +2476,14 @@
 	}
 
 	@media (max-width: 1023px) {
-		/* Tablets keep the side nav as dots only (#53). */
 		.story-stage {
 			--stage-gutter: 4.5rem;
-		}
-		.chapter-nav span {
-			display: none;
 		}
 		.join-cards {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 	}
 	@media (max-width: 767px) {
-		.chapter-nav {
-			display: none;
-		}
 		.story-stage {
 			--stage-gutter: 1.125rem;
 		}
