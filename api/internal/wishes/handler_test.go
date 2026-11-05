@@ -20,7 +20,12 @@ type fakeStore struct {
 	created       CreateInput
 	createErr     error
 	supportResult SupportResult
+	supportActor  []byte
 	updated       UpdateInput
+	updatedWish   *Wish
+	listActor     []byte
+	listStatus    Status
+	adminStatus   Status
 }
 
 type fakeAdminAuthenticator struct {
@@ -54,7 +59,9 @@ func (f *fakeAdminAuthenticator) Exchange(
 }
 
 func (f *fakeStore) Ping(context.Context) error { return nil }
-func (f *fakeStore) List(context.Context, []byte, int) ([]Wish, error) {
+func (f *fakeStore) List(_ context.Context, actorHash []byte, status Status, _ int) ([]Wish, error) {
+	f.listActor = actorHash
+	f.listStatus = status
 	return f.items, nil
 }
 func (f *fakeStore) Create(_ context.Context, input CreateInput) (Wish, error) {
@@ -73,15 +80,24 @@ func (f *fakeStore) Create(_ context.Context, input CreateInput) (Wish, error) {
 		CreatedAt:     time.Unix(1_700_000_000, 0).UTC(),
 	}, nil
 }
-func (f *fakeStore) ToggleSupport(context.Context, string, []byte) (SupportResult, error) {
+func (f *fakeStore) ToggleSupport(_ context.Context, _ string, actorHash []byte) (SupportResult, error) {
+	f.supportActor = actorHash
 	return f.supportResult, nil
 }
-func (f *fakeStore) AdminList(context.Context, Visibility, int) ([]Wish, error) {
+func (f *fakeStore) AdminList(_ context.Context, _ Visibility, status Status, _ int) ([]Wish, error) {
+	f.adminStatus = status
 	return f.items, nil
 }
 func (f *fakeStore) AdminUpdate(_ context.Context, _ string, input UpdateInput) (Wish, error) {
 	f.updated = input
-	return Wish{ID: "00000000-0000-4000-8000-000000000001", Visibility: *input.Visibility}, nil
+	if f.updatedWish != nil {
+		return *f.updatedWish, nil
+	}
+	wish := Wish{ID: "00000000-0000-4000-8000-000000000001", Visibility: VisibilityPublished, Status: StatusOpen}
+	if input.Visibility != nil {
+		wish.Visibility = *input.Visibility
+	}
+	return wish, nil
 }
 
 func testHandler(t *testing.T, store *fakeStore) http.Handler {
