@@ -2046,6 +2046,9 @@
 		/* Below the charging plug: the cable ends at 69.4% of the artwork's height, the phone's
 		   centre sits at 28.4%; (0.694 − 0.284) × H with H = W / 1.1423 ≈ 0.359 × W. */
 		top: calc(50% + var(--device-card-width) * 0.359 + 0.6rem);
+		/* …but never below the visible stage: on landscape viewports the plug sits under the
+		   fold, so the dots stop just beneath the demo area instead. */
+		top: min(calc(50% + var(--device-card-width) * 0.359 + 0.6rem), calc(100% + 1.4rem));
 		display: flex;
 		gap: 0.45rem;
 		transform: translateX(-50%);
