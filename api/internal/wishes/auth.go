@@ -231,7 +231,12 @@ func (h *Handler) authGate(w http.ResponseWriter, r *http.Request) {
 		if target := safeReturnPath(r.Header.Get("X-Forwarded-Uri")); target != "" {
 			login.RawQuery = url.Values{"return": {target}}.Encode()
 		}
-		http.Redirect(w, r, login.String(), http.StatusFound)
+		location := login.String()
+		if origin, ok := h.adminAuth.(interface{ PublicOrigin() string }); ok && origin.PublicOrigin() != "" {
+			location = origin.PublicOrigin() + location
+		}
+		w.Header().Set("Location", location)
+		w.WriteHeader(http.StatusFound)
 		return
 	}
 	writeError(w, http.StatusUnauthorized, "sign in at /api/wishes/auth/login first")

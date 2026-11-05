@@ -75,6 +75,17 @@ func NewOIDCAuthenticator(config OIDCConfig) (*OIDCAuthenticator, error) {
 	return &OIDCAuthenticator{config: config}, nil
 }
 
+// PublicOrigin is the site origin (scheme://host) the browser uses, taken from
+// the configured redirect URL. The CMS gate needs it: Traefik forwardAuth
+// resolves a relative Location against the internal auth address.
+func (a *OIDCAuthenticator) PublicOrigin() string {
+	redirect, err := url.Parse(a.config.RedirectURL)
+	if err != nil {
+		return ""
+	}
+	return (&url.URL{Scheme: redirect.Scheme, Host: redirect.Host}).String()
+}
+
 func isLoopbackHost(host string) bool {
 	return host == "localhost" || host == "127.0.0.1" || host == "::1"
 }

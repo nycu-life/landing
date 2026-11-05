@@ -537,6 +537,31 @@ func TestCMSGateUsesTheAdminSignIn(t *testing.T) {
 	}
 }
 
+type originAuthenticator struct{ *fakeAdminAuthenticator }
+
+func (originAuthenticator) PublicOrigin() string { return "https://nycu.life" }
+
+func TestCMSGateRedirectsToThePublicOrigin(t *testing.T) {
+	auth := originAuthenticator{&fakeAdminAuthenticator{}}
+	handler := testHandlerWithAuth(t, &fakeStore{}, auth)
+	request := httptest.NewRequest(http.MethodGet, "http://landing-wish-api:3001/api/wishes/auth/gate", nil)
+	request.Header.Set("X-Forwarded-Method", http.MethodGet)
+	request.Header.Set("X-Forwarded-Uri", "/cms/ghost/")
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, request)
+	want := "https://nycu.life/api/wishes/auth/login?return=%2Fcms%2Fghost%2F"
+	if recorder.Code != http.StatusFound || recorder.Header().Get("Location") != want {
+		t.Fatalf("gate returned %d → %q, want %q", recorder.Code, recorder.Header().Get("Location"), want)
+	}
+}
+
+func TestOIDCPublicOrigin(t *testing.T) {
+	auth := &OIDCAuthenticator{config: OIDCConfig{RedirectURL: "https://nycu.life/api/wishes/auth/callback"}}
+	if got := auth.PublicOrigin(); got != "https://nycu.life" {
+		t.Fatalf("PublicOrigin = %q", got)
+	}
+}
+
 func TestSafeReturnPath(t *testing.T) {
 	for raw, want := range map[string]string{
 		"/cms/ghost/":           "/cms/ghost/",
