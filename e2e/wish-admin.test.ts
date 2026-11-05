@@ -15,6 +15,10 @@ const adminWishes = [
 		title: '希望校車能顯示即時擁擠度',
 		detail: '',
 		category: 'transport',
+		status: 'fulfilled',
+		reply: '校車擁擠度已經在 App 的交通分頁上線，謝謝大家的 +1！',
+		repliedAt: '2026-10-02T04:00:00Z',
+		fulfilledAt: '2026-10-01T08:00:00Z',
 		supportCount: 31,
 		supportedByMe: false,
 		createdAt: '2026-08-29T06:15:00Z'
@@ -124,6 +128,83 @@ test('OAuth session moderates, switches lists, and signs out without authorizati
 			})
 		])
 	);
+});
+
+test('admins mark wishes fulfilled, reopen them, and write or clear the team reply', async ({
+	page
+}) => {
+	const patches: string[] = [];
+	const listPaths: string[] = [];
+	let current = {
+		...adminWishes[0],
+		status: 'open',
+		reply: '',
+		repliedAt: null,
+		fulfilledAt: null
+	};
+	await page.route('**/api/wishes/auth/me', (route) =>
+		route.fulfill({
+			json: {
+				data: { authenticated: true, user: { subject: 'authentik-user-id', name: '測試管理員' } }
+			}
+		})
+	);
+	await page.route('**/api/wishes/admin**', async (route) => {
+		const request = route.request();
+		const url = new URL(request.url());
+		if (request.method() === 'PATCH') {
+			const body = request.postData() ?? '';
+			patches.push(body);
+			const update = JSON.parse(body) as { status?: string; reply?: string };
+			current = {
+				...current,
+				...(update.status ? { status: update.status } : {}),
+				...(update.reply !== undefined ? { reply: update.reply } : {})
+			};
+			await route.fulfill({ json: { data: current } });
+			return;
+		}
+		listPaths.push(`${url.pathname}${url.search}`);
+		const status = url.searchParams.get('status');
+		await route.fulfill({
+			json: { data: status === 'fulfilled' ? [adminWishes[1]] : [current] }
+		});
+	});
+
+	await page.goto('/wishpool/admin/');
+	const card = page.locator('.admin-card').filter({ hasText: adminWishes[0].title });
+	await card.getByRole('button', { name: '撰寫回覆' }).click();
+	await card.getByRole('textbox', { name: '團隊回覆' }).fill('  謝謝建議，我們會評估！  ');
+	await expect(card.getByText('15 / 1000')).toBeVisible();
+	await card.getByRole('button', { name: '儲存回覆' }).click();
+	await expect(page.getByText('團隊回覆已儲存。')).toBeVisible();
+	await expect(card.locator('.reply-preview')).toContainText('謝謝建議，我們會評估！');
+
+	await card.getByRole('button', { name: '標記為已實現' }).click();
+	await expect(page.getByText('已標記為已實現')).toBeVisible();
+	await expect(card.getByText('✓ 已實現')).toBeVisible();
+	await card.getByRole('button', { name: '重新開啟' }).click();
+	await expect(page.getByText('願望已重新開啟。')).toBeVisible();
+
+	await card.getByRole('button', { name: '編輯回覆' }).click();
+	await card.getByRole('button', { name: '清除回覆' }).click();
+	await expect(page.getByText('團隊回覆已清除。')).toBeVisible();
+	await expect(card.locator('.reply-preview')).toHaveCount(0);
+
+	await page.getByRole('combobox', { name: '處理狀態' }).selectOption('fulfilled');
+	await expect(page.getByText(adminWishes[1].title)).toBeVisible();
+	await expect(page.getByText(adminWishes[0].title)).toHaveCount(0);
+
+	expect(patches).toEqual([
+		'{"reply":"謝謝建議，我們會評估！"}',
+		'{"status":"fulfilled"}',
+		'{"status":"open"}',
+		'{"reply":""}'
+	]);
+	expect(listPaths).toEqual([
+		'/api/wishes/admin?visibility=pending',
+		'/api/wishes/admin?visibility=pending&status=fulfilled'
+	]);
 });
 
 test('expired OAuth sessions fail closed and return to sign-in', async ({ page }) => {

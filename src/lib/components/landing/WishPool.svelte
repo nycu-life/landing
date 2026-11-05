@@ -3,13 +3,16 @@
 	import { dev } from '$app/environment';
 	import { onMount } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { localeState } from '$lib/i18n.svelte';
 	import {
 		createWish,
 		listWishes,
 		toggleWishSupport,
 		wishCategories,
+		wishStatuses,
 		type Wish,
-		type WishCategory
+		type WishCategory,
+		type WishStatus
 	} from '$lib/wishes';
 
 	const previewWishes: Wish[] = [
@@ -18,6 +21,9 @@
 			title: '想知道健身房現在有多少人',
 			detail: '出發前就能判斷要不要換個時段。',
 			category: 'life',
+			status: 'open',
+			reply: '我們正在和體育室討論人流資料的串接方式，有進度會第一時間更新！',
+			repliedAt: '2026-08-30T02:00:00Z',
 			supportCount: 42,
 			supportedByMe: false,
 			createdAt: '2026-08-29T10:00:00Z'
@@ -59,13 +65,57 @@
 			createdAt: '2026-08-30T00:40:00Z'
 		}
 	];
+	const previewFulfilledWishes: Wish[] = [
+		{
+			id: 'preview-bus-live',
+			title: '希望校車可以看到即時位置',
+			detail: '',
+			category: 'transport',
+			status: 'fulfilled',
+			reply:
+				'校車即時位置已經在 NYCU LIFE App 上線！打開「交通」分頁就能看到每一班車目前的位置與預估到站時間。',
+			repliedAt: '2026-10-02T04:00:00Z',
+			fulfilledAt: '2026-10-01T08:00:00Z',
+			supportCount: 128,
+			supportedByMe: true,
+			createdAt: '2026-08-12T10:00:00Z'
+		},
+		{
+			id: 'preview-menu',
+			title: '想在一個地方看到各餐廳的營業時間',
+			detail: '',
+			category: 'life',
+			status: 'fulfilled',
+			reply: '餐廳資訊頁已整合二餐、女二餐與小木屋的營業時間，假日與連假也會同步更新。',
+			repliedAt: '2026-09-20T06:30:00Z',
+			fulfilledAt: '2026-09-18T09:00:00Z',
+			supportCount: 64,
+			supportedByMe: false,
+			createdAt: '2026-08-05T03:20:00Z'
+		},
+		{
+			id: 'preview-calendar',
+			title: '希望可以把課表匯出到手機行事曆',
+			detail: '',
+			category: 'learning',
+			status: 'fulfilled',
+			reply: '',
+			repliedAt: null,
+			fulfilledAt: '2026-09-02T12:00:00Z',
+			supportCount: 37,
+			supportedByMe: false,
+			createdAt: '2026-07-28T03:20:00Z'
+		}
+	];
 
-	let wishes = $state<Wish[]>([]);
+	let lists = $state<Record<WishStatus, Wish[]>>({ open: [], fulfilled: [] });
+	let loaded = $state<Record<WishStatus, boolean>>({ open: false, fulfilled: false });
+	let failed = $state<Record<WishStatus, boolean>>({ open: false, fulfilled: false });
+	let activeTab = $state<WishStatus>('open');
 	let activeCategory = $state<WishCategory | 'all'>('all');
 	let title = $state('');
 	let detail = $state('');
 	let category = $state<WishCategory>('life');
-	let loading = $state(true);
 	let submitting = $state(false);
 	let error = $state('');
 	let notice = $state('');
@@ -73,7 +123,10 @@
 	let justCreatedId = $state('');
 	let previewMode = $state(false);
 	let now = $state(Date.now());
+	let requestFetch: ((status: WishStatus, showError: boolean) => Promise<void>) | undefined;
 
+	const wishes = $derived(lists[activeTab]);
+	const loading = $derived(!loaded[activeTab] && !failed[activeTab]);
 	const showFilters = $derived(wishes.length > 20);
 	const visibleWishes = $derived(
 		!showFilters || activeCategory === 'all'
@@ -93,6 +146,15 @@
 	};
 	const supportCountLabel = (count: number) =>
 		count === 1 ? m.wish_support_one() : m.wish_support_count({ count });
+	const formatDate = (value: string | null | undefined) => {
+		const date = new Date(value ?? '');
+		if (Number.isNaN(date.getTime())) return '';
+		return new Intl.DateTimeFormat(localeState.current === 'zh-tw' ? 'zh-TW' : 'en', {
+			dateStyle: 'medium'
+		}).format(date);
+	};
+	const tabLabel = (status: WishStatus) =>
+		status === 'open' ? m.wish_tab_open() : m.wish_tab_fulfilled();
 	const relativeTime = (createdAt: string) => {
 		const timestamp = Date.parse(createdAt);
 		if (!Number.isFinite(timestamp)) return m.wish_time_just_now();
@@ -114,7 +176,7 @@
 		const clock = setInterval(() => (now = Date.now()), 60_000);
 		let liveUpdates: EventSource | undefined;
 		let fallbackRefresh: ReturnType<typeof setInterval> | undefined;
-		let refreshing = false;
+		const refreshing: Record<WishStatus, boolean> = { open: false, fulfilled: false };
 		const cleanup = () => {
 			controller.abort();
 			clearInterval(clock);
@@ -123,27 +185,38 @@
 		};
 		previewMode = dev && new URL(window.location.href).searchParams.get('wish-preview') === '1';
 		if (previewMode) {
-			wishes = previewWishes;
-			loading = false;
+			lists = { open: previewWishes, fulfilled: previewFulfilledWishes };
+			loaded = { open: true, fulfilled: true };
 			return cleanup;
 		}
-		const refresh = async (showError: boolean) => {
-			if (refreshing) return;
-			refreshing = true;
+		const fetchList = async (status: WishStatus, showError: boolean) => {
+			if (refreshing[status]) return;
+			refreshing[status] = true;
 			try {
-				wishes = await listWishes(controller.signal);
+				lists[status] = await listWishes(status, controller.signal);
+				loaded[status] = true;
+				failed[status] = false;
 			} catch {
-				if (showError && !controller.signal.aborted) error = m.wish_error_load();
+				if (showError && !controller.signal.aborted) {
+					failed[status] = true;
+					if (status === 'open') error = m.wish_error_load();
+				}
 			} finally {
-				refreshing = false;
-				if (showError) loading = false;
+				refreshing[status] = false;
 			}
 		};
-		void refresh(true);
+		requestFetch = fetchList;
+		// The fulfilled list is fetched lazily on first view and kept fresh afterwards.
+		const refresh = () => {
+			for (const status of wishStatuses) {
+				if (status === 'open' || loaded[status]) void fetchList(status, false);
+			}
+		};
+		void fetchList('open', true);
 		liveUpdates = new EventSource('/api/wishes/events');
-		liveUpdates.addEventListener('wishes', () => void refresh(false));
+		liveUpdates.addEventListener('wishes', refresh);
 		// A quiet fallback covers proxies or temporary networks that cannot keep SSE open.
-		fallbackRefresh = setInterval(() => void refresh(false), 10_000);
+		fallbackRefresh = setInterval(refresh, 10_000);
 		return cleanup;
 	});
 
@@ -176,7 +249,7 @@
 				result = await createWish({ title: cleanTitle, detail: detail.trim(), category });
 			}
 			if (!result.pending) {
-				wishes = [result.wish, ...wishes.filter((wish) => wish.id !== result.wish.id)];
+				lists.open = [result.wish, ...lists.open.filter((wish) => wish.id !== result.wish.id)];
 				justCreatedId = result.wish.id;
 				setTimeout(() => (justCreatedId = ''), 1200);
 			}
@@ -206,12 +279,34 @@
 				supportedByMe: result.supported,
 				supportCount: result.supportCount
 			};
-			wishes = wishes.map((wish) => (wish.id === updated.id ? updated : wish));
+			for (const status of wishStatuses) {
+				lists[status] = lists[status].map((wish) => (wish.id === updated.id ? updated : wish));
+			}
 		} catch (caught) {
 			error = caught instanceof Error ? caught.message : m.wish_error_support();
 		} finally {
 			supportingId = '';
 		}
+	}
+
+	function selectTab(status: WishStatus) {
+		if (status === activeTab) return;
+		activeTab = status;
+		activeCategory = 'all';
+		if (!loaded[status]) {
+			failed[status] = false;
+			void requestFetch?.(status, true);
+		}
+	}
+
+	function onTabKeydown(event: KeyboardEvent) {
+		if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+		event.preventDefault();
+		const index = wishStatuses.indexOf(activeTab);
+		const step = event.key === 'ArrowRight' ? 1 : -1;
+		const next = wishStatuses[(index + step + wishStatuses.length) % wishStatuses.length];
+		selectTab(next);
+		document.getElementById(`wish-tab-${next}`)?.focus();
 	}
 </script>
 
@@ -279,75 +374,144 @@
 	<section class="wish-board" aria-labelledby="wish-board-title">
 		<header class="wish-board-head">
 			<img src="{base}/wishpool/megaphone.svg" alt="" />
-			<h2 id="wish-board-title">{m.wish_board_title()}</h2>
-		</header>
-
-		{#if showFilters}
-			<div class="wish-filter" aria-label={m.wish_filter_label()}>
-				{#each ['all', ...wishCategories] as option (option)}
+			<h2 id="wish-board-title">
+				{activeTab === 'fulfilled' ? m.wish_fulfilled_board_title() : m.wish_board_title()}
+			</h2>
+			<div class="wish-tabs" role="tablist" aria-label={m.wish_tabs_label()}>
+				{#each wishStatuses as status (status)}
 					<button
 						type="button"
-						class:active={activeCategory === option}
-						aria-pressed={activeCategory === option}
-						onclick={() => (activeCategory = option as WishCategory | 'all')}
+						role="tab"
+						id="wish-tab-{status}"
+						aria-selected={activeTab === status}
+						aria-controls="wish-panel"
+						tabindex={activeTab === status ? 0 : -1}
+						class:active={activeTab === status}
+						onclick={() => selectTab(status)}
+						onkeydown={onTabKeydown}
 					>
-						{categoryLabel(option as WishCategory | 'all')}
+						{#if status === 'fulfilled'}<span class="wish-tab-mark" aria-hidden="true">✓</span>{/if}
+						{tabLabel(status)}
 					</button>
 				{/each}
 			</div>
-		{/if}
+		</header>
 
-		{#if loading}
-			<p class="wish-state" role="status">{m.wish_loading()}</p>
-		{:else if visibleWishes.length === 0}
-			<div class="wish-state">
-				<strong>{m.wish_empty_title()}</strong>
-				<span>{m.wish_empty_body()}</span>
-			</div>
-		{:else}
-			<div class="wish-list">
-				{#each visibleWishes as wish (wish.id)}
-					<article class="wish-card" class:is-new={justCreatedId === wish.id}>
-						<img class="wish-card-frame" src="{base}/wishpool/card-frame.svg" alt="" />
-						<span class="wish-card-meta">
-							<span class="wish-card-category" data-category={wish.category}
-								>{categoryLabel(wish.category)}</span
-							>
-							<time class="wish-card-time" datetime={wish.createdAt}
-								>{relativeTime(wish.createdAt)}</time
-							>
-						</span>
-						<strong class="wish-card-title">{wish.title}</strong>
-						<div class="wish-card-actions">
-							<button
-								type="button"
-								class="wish-support"
-								class:supported={wish.supportedByMe}
-								aria-pressed={wish.supportedByMe}
-								aria-label={`${m.wish_support()}：${wish.title}，${wish.supportCount}`}
-								disabled={supportingId === wish.id}
-								onclick={() => toggleSupport(wish)}
-							>
-								<span class="wish-support-art" aria-hidden="true">
-									<img
-										class="wish-support-default"
-										src="{base}/wishpool/support-default.svg"
-										alt=""
-									/>
-									<img
-										class="wish-support-active"
-										src="{base}/wishpool/support-active.svg"
-										alt=""
-									/>
-								</span>
-								<span class="wish-support-label">{wish.supportedByMe ? '✓ ' : ''}+1</span>
-							</button>
-							<span class="wish-support-count">{supportCountLabel(wish.supportCount)}</span>
-						</div>
-					</article>
-				{/each}
-			</div>
-		{/if}
+		<div
+			id="wish-panel"
+			class="wish-panel"
+			role="tabpanel"
+			aria-labelledby="wish-tab-{activeTab}"
+			tabindex="-1"
+		>
+			{#if activeTab === 'fulfilled'}
+				<p class="wish-board-lede">{m.wish_fulfilled_lede()}</p>
+			{/if}
+
+			{#if showFilters}
+				<div class="wish-filter" aria-label={m.wish_filter_label()}>
+					{#each ['all', ...wishCategories] as option (option)}
+						<button
+							type="button"
+							class:active={activeCategory === option}
+							aria-pressed={activeCategory === option}
+							onclick={() => (activeCategory = option as WishCategory | 'all')}
+						>
+							{categoryLabel(option as WishCategory | 'all')}
+						</button>
+					{/each}
+				</div>
+			{/if}
+
+			{#if loading}
+				<p class="wish-state" role="status">{m.wish_loading()}</p>
+			{:else if activeTab === 'fulfilled' && failed.fulfilled}
+				<p class="wish-state" role="alert">{m.wish_error_load_fulfilled()}</p>
+			{:else if visibleWishes.length === 0}
+				<div class="wish-state">
+					{#if activeTab === 'fulfilled'}
+						<strong>{m.wish_fulfilled_empty_title()}</strong>
+						<span>{m.wish_fulfilled_empty_body()}</span>
+					{:else}
+						<strong>{m.wish_empty_title()}</strong>
+						<span>{m.wish_empty_body()}</span>
+					{/if}
+				</div>
+			{:else}
+				<div class="wish-list">
+					{#each visibleWishes as wish (wish.id)}
+						{@const fulfilled = wish.status === 'fulfilled'}
+						<article
+							class="wish-card"
+							class:is-new={justCreatedId === wish.id}
+							class:is-fulfilled={fulfilled}
+						>
+							<img class="wish-card-frame" src="{base}/wishpool/card-frame.svg" alt="" />
+							<span class="wish-card-meta">
+								<span class="wish-card-category" data-category={wish.category}
+									>{categoryLabel(wish.category)}</span
+								>
+								{#if fulfilled}
+									<span class="wish-card-badge">
+										<span aria-hidden="true">✓</span>
+										{m.wish_fulfilled_badge()}
+									</span>
+								{:else}
+									<time class="wish-card-time" datetime={wish.createdAt}
+										>{relativeTime(wish.createdAt)}</time
+									>
+								{/if}
+							</span>
+							<strong class="wish-card-title">{wish.title}</strong>
+							{#if wish.reply}
+								<div class="wish-reply">
+									<span class="wish-reply-label">
+										<span class="wish-reply-mark" aria-hidden="true">N</span>
+										{m.wish_reply_label()}
+									</span>
+									<p>{wish.reply}</p>
+								</div>
+							{/if}
+							<div class="wish-card-actions">
+								{#if fulfilled}
+									<span class="wish-support-count">{supportCountLabel(wish.supportCount)}</span>
+									{#if formatDate(wish.fulfilledAt)}
+										<time class="wish-card-fulfilled-on" datetime={wish.fulfilledAt}
+											>{m.wish_fulfilled_on({ date: formatDate(wish.fulfilledAt) })}</time
+										>
+									{/if}
+								{:else}
+									<button
+										type="button"
+										class="wish-support"
+										class:supported={wish.supportedByMe}
+										aria-pressed={wish.supportedByMe}
+										aria-label={`${m.wish_support()}：${wish.title}，${wish.supportCount}`}
+										disabled={supportingId === wish.id}
+										onclick={() => toggleSupport(wish)}
+									>
+										<span class="wish-support-art" aria-hidden="true">
+											<img
+												class="wish-support-default"
+												src="{base}/wishpool/support-default.svg"
+												alt=""
+											/>
+											<img
+												class="wish-support-active"
+												src="{base}/wishpool/support-active.svg"
+												alt=""
+											/>
+										</span>
+										<span class="wish-support-label">{wish.supportedByMe ? '✓ ' : ''}+1</span>
+									</button>
+									<span class="wish-support-count">{supportCountLabel(wish.supportCount)}</span>
+								{/if}
+							</div>
+						</article>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	</section>
 </section>
 
@@ -915,6 +1079,10 @@
 	.wish-card {
 		position: relative;
 		isolation: isolate;
+		/* A column flexbox lets the footer's auto margin pin it to the bottom when a row is
+		   stretched by a neighbour with a team reply. */
+		display: flex;
+		flex-direction: column;
 		min-height: 11.5rem;
 		gap: 0.7rem;
 		border: 0;
@@ -1024,6 +1192,127 @@
 		color: #536489;
 	}
 
+	/* Wishes / Fulfilled tabs — a segmented control in the same blue-outline language
+	   as the category filters. */
+	.wish-board-head {
+		flex-wrap: wrap;
+	}
+	.wish-tabs {
+		display: inline-flex;
+		gap: 0.25rem;
+		margin-left: auto;
+		border: 1.5px solid #2462ff;
+		border-radius: 999px;
+		padding: 0.25rem;
+		background: #fff;
+	}
+	.wish-tabs button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.3rem;
+		min-height: 2.5rem;
+		border: 0;
+		border-radius: 999px;
+		padding: 0.4rem 1.1rem;
+		background: transparent;
+		color: #123cff;
+		font: 650 0.9rem var(--font-sans);
+		white-space: nowrap;
+		cursor: pointer;
+		transition:
+			background-color 0.15s ease,
+			color 0.15s ease;
+	}
+	.wish-tabs button:hover:not(.active) {
+		background: rgba(36, 98, 255, 0.1);
+	}
+	.wish-tabs button.active {
+		background: #3136ff;
+		color: #fff;
+	}
+	.wish-tabs button:focus-visible {
+		outline: 2px solid #123cff;
+		outline-offset: 2px;
+	}
+	.wish-tab-mark {
+		font-size: 0.85em;
+	}
+	.wish-panel {
+		display: grid;
+		gap: 1.2rem;
+		outline: 0;
+	}
+	.wish-board-lede {
+		margin: -0.35rem 0 0;
+		color: var(--ink-soft);
+		font-size: 0.92rem;
+		line-height: 1.6;
+	}
+
+	/* Fulfilled cards and team replies. Cards keep their white designer frame in both
+	   themes, so the reply bubble uses fixed light colours as well. */
+	.wish-card-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		border-radius: 999px;
+		padding: 0.25rem 0.65rem;
+		background: #12855b;
+		color: #fff;
+		font-size: 0.74rem;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+	.wish-reply {
+		position: relative;
+		z-index: 3;
+		display: grid;
+		gap: 0.35rem;
+		margin-top: 0.1rem;
+		border: 1.5px solid #2462ff;
+		border-radius: 0.2rem 0.9rem 0.9rem 0.9rem;
+		padding: 0.7rem 0.85rem 0.75rem;
+		background: #eef0ff;
+		color: #182744;
+	}
+	.wish-reply-label {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		color: #123cff;
+		font-size: 0.74rem;
+		font-weight: 750;
+		letter-spacing: 0.02em;
+	}
+	.wish-reply-mark {
+		display: inline-grid;
+		place-items: center;
+		width: 1.25rem;
+		height: 1.25rem;
+		border-radius: 50%;
+		background: #3136ff;
+		color: #fff;
+		font-size: 0.66rem;
+		font-weight: 800;
+	}
+	.wish-reply p {
+		margin: 0;
+		font-size: 0.86rem;
+		line-height: 1.6;
+		white-space: pre-line;
+		overflow-wrap: anywhere;
+	}
+	.wish-card-fulfilled-on {
+		margin-left: auto;
+		color: #536489;
+		font-size: 0.78rem;
+		white-space: nowrap;
+	}
+	.wish-card.is-fulfilled .wish-card-actions {
+		min-height: 2.35rem;
+	}
+
 	:global(:root[data-theme='dark']) .wish-pool {
 		color: #eef4ff;
 	}
@@ -1087,6 +1376,13 @@
 		.wish-board-head {
 			gap: 0.35rem;
 		}
+		.wish-tabs {
+			width: 100%;
+			margin-left: 0;
+		}
+		.wish-tabs button {
+			flex: 1;
+		}
 		.wish-list {
 			grid-template-columns: 1fr;
 		}
@@ -1099,7 +1395,8 @@
 	@media (prefers-reduced-motion: reduce) {
 		.wish-card,
 		.wish-card.is-new,
-		.wish-filter button {
+		.wish-filter button,
+		.wish-tabs button {
 			animation: none;
 			transition: none;
 		}

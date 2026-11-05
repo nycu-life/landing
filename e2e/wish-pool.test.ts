@@ -39,6 +39,46 @@ const seedWishes = [
 	}
 ] as const;
 
+const fulfilledWishes = [
+	{
+		id: 'wish-bus-live',
+		title: '希望校車可以看到即時位置',
+		detail: '',
+		category: 'transport',
+		status: 'fulfilled',
+		reply: '校車即時位置已經在 NYCU LIFE App 上線！打開「交通」分頁就能看到每一班車的位置。',
+		repliedAt: '2026-10-02T04:00:00Z',
+		fulfilledAt: '2026-10-01T08:00:00Z',
+		supportCount: 128,
+		supportedByMe: true,
+		createdAt: '2026-08-12T10:00:00Z'
+	},
+	{
+		id: 'wish-calendar',
+		title: '希望可以把課表匯出到手機行事曆',
+		detail: '',
+		category: 'learning',
+		status: 'fulfilled',
+		reply: '',
+		repliedAt: null,
+		fulfilledAt: '2026-09-02T12:00:00Z',
+		supportCount: 37,
+		supportedByMe: false,
+		createdAt: '2026-07-28T03:20:00Z'
+	}
+] as const;
+
+const openWishWithReply = {
+	...seedWishes[0],
+	status: 'open',
+	reply: '我們正在和體育室討論人流資料的串接方式。',
+	repliedAt: '2026-08-30T02:00:00Z',
+	fulfilledAt: null
+} as const;
+
+const routeByStatus = (url: URL) =>
+	url.searchParams.get('status') === 'fulfilled' ? fulfilledWishes : seedWishes;
+
 test('wish pool publishes and supports directly from wish cards', async ({ page }) => {
 	await page.clock.setFixedTime(new Date('2026-08-30T01:00:00Z'));
 	let supportCount = seedWishes[0].supportCount;
@@ -106,6 +146,69 @@ test('wish pool publishes and supports directly from wish cards', async ({ page 
 	await expect(pool.getByText('希望圖書館座位更好找')).toBeVisible();
 });
 
+test('fulfilled tab shows completed wishes with team replies inside the same page', async ({
+	page
+}) => {
+	const listRequests: string[] = [];
+	await page.route('**/api/wishes**', async (route) => {
+		const url = new URL(route.request().url());
+		if (url.pathname !== '/api/wishes') return route.abort();
+		listRequests.push(url.search);
+		const data =
+			url.searchParams.get('status') === 'fulfilled' ? fulfilledWishes : [openWishWithReply];
+		await route.fulfill({ json: { data } });
+	});
+
+	await page.goto('/wishpool/');
+	const pool = page.locator('#wishes');
+	const tabs = pool.getByRole('tablist', { name: '切換願望列表' });
+	await expect(tabs.getByRole('tab', { name: '願望池' })).toHaveAttribute('aria-selected', 'true');
+
+	// Open wishes with a team reply show it too.
+	const openCard = pool.locator('.wish-card').filter({ hasText: openWishWithReply.title });
+	await expect(openCard.getByText('NYCU LIFE 團隊回覆')).toBeVisible();
+	await expect(openCard.getByText(openWishWithReply.reply)).toBeVisible();
+	await expect(openCard.getByRole('button', { name: /我也想要/ })).toBeVisible();
+	expect(listRequests).toEqual(['?status=open']);
+
+	await tabs.getByRole('tab', { name: '已實現' }).click();
+	await expect(page).toHaveURL('/wishpool/');
+	await expect(pool.getByRole('heading', { level: 2, name: '已經實現的願望' })).toBeVisible();
+	await expect(tabs.getByRole('tab', { name: '已實現' })).toHaveAttribute('aria-selected', 'true');
+	const fulfilledCard = pool.locator('.wish-card').filter({ hasText: fulfilledWishes[0].title });
+	await expect(fulfilledCard.getByText('128 人有共鳴')).toBeVisible();
+	await expect(fulfilledCard.getByText('2026年10月1日 實現')).toBeVisible();
+	await expect(fulfilledCard.locator('.wish-reply')).toContainText('NYCU LIFE 團隊回覆');
+	await expect(fulfilledCard.locator('.wish-reply')).toContainText(fulfilledWishes[0].reply);
+	await expect(fulfilledCard.getByRole('button')).toHaveCount(0);
+	const silentCard = pool.locator('.wish-card').filter({ hasText: fulfilledWishes[1].title });
+	await expect(silentCard.locator('.wish-reply')).toHaveCount(0);
+	await expect(pool.getByText(openWishWithReply.title)).toHaveCount(0);
+	expect(listRequests).toEqual(['?status=open', '?status=fulfilled']);
+
+	// Arrow keys move between tabs without refetching an already loaded list.
+	await tabs.getByRole('tab', { name: '已實現' }).press('ArrowLeft');
+	await expect(tabs.getByRole('tab', { name: '願望池' })).toBeFocused();
+	await expect(pool.getByText(openWishWithReply.title)).toBeVisible();
+	expect(listRequests).toEqual(['?status=open', '?status=fulfilled']);
+});
+
+test('fulfilled tab explains an empty list in English', async ({ page }) => {
+	await page.route('**/api/wishes**', (route) => {
+		const url = new URL(route.request().url());
+		return route.fulfill({
+			json: { data: url.searchParams.get('status') === 'fulfilled' ? [] : [seedWishes[0]] }
+		});
+	});
+	await page.goto('/wishpool/');
+	await page.evaluate(() => (document.cookie = 'PARAGLIDE_LOCALE=en; path=/'));
+	await page.reload();
+	const pool = page.locator('#wishes');
+	await pool.getByRole('tab', { name: 'Fulfilled' }).click();
+	await expect(pool.getByText('No fulfilled wishes yet')).toBeVisible();
+	await expect(pool.getByRole('tab', { name: 'Wishes' })).toHaveAttribute('aria-selected', 'false');
+});
+
 test('category filters appear only when the pool has more than 20 wishes', async ({ page }) => {
 	let items = [...seedWishes];
 	await page.route('**/api/wishes**', (route) => route.fulfill({ json: { data: items } }));
@@ -163,7 +266,9 @@ test('wish pool stays readable in the 12 locale, appearance, and viewport states
 	page
 }) => {
 	test.slow();
-	await page.route('**/api/wishes**', (route) => route.fulfill({ json: { data: seedWishes } }));
+	await page.route('**/api/wishes**', (route) =>
+		route.fulfill({ json: { data: routeByStatus(new URL(route.request().url())) } })
+	);
 	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
 	for (const viewport of [
 		{ name: 'desktop', width: 1440, height: 900 },
@@ -185,37 +290,50 @@ test('wish pool stays readable in the 12 locale, appearance, and viewport states
 				const pool = page.locator('#wishes');
 				await pool.evaluate((element) => element.scrollIntoView({ block: 'start' }));
 				await expect(pool.getByText(seedWishes[0].title)).toBeVisible();
-				const result = await pool.evaluate((element) => {
-					const bounds = element.getBoundingClientRect();
-					const heading = element.querySelector('h1')?.getBoundingClientRect();
-					const banner = document.querySelector('.topbar')?.getBoundingClientRect();
-					return {
-						centerOffset: Math.abs(bounds.left - (innerWidth - bounds.right)),
-						outside: Array.from(
-							element.querySelectorAll<HTMLElement>('.page-head, .wish-composer, .wish-list')
-						).filter((child) => {
-							const rect = child.getBoundingClientRect();
-							return rect.left < bounds.left - 2 || rect.right > bounds.right + 2;
-						}).length,
-						clippedCards: Array.from(element.querySelectorAll<HTMLElement>('.wish-card')).filter(
-							(card) =>
-								card.scrollWidth > card.clientWidth + 2 || card.scrollHeight > card.clientHeight + 2
-						).length,
-						headingObscured: Boolean(heading && banner && heading.top < banner.bottom - 2),
-						overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
-					};
-				});
-				const label = `${viewport.name}/${locale}/${theme}`;
-				expect.soft(result.centerOffset, `${label}: centred page`).toBeLessThanOrEqual(1);
-				expect.soft(result.outside, `${label}: section bounds`).toBe(0);
-				expect.soft(result.clippedCards, `${label}: clipped cards`).toBe(0);
-				expect.soft(result.headingObscured, `${label}: sticky header overlap`).toBe(false);
-				expect.soft(result.overflow, `${label}: horizontal overflow`).toBe(0);
-				if (screenshotDirectory) {
-					await pool.screenshot({
-						path: `${screenshotDirectory}/wish-pool-${viewport.name}-${locale}-${theme}.png`,
-						animations: 'disabled'
+				for (const tab of ['open', 'fulfilled'] as const) {
+					if (tab === 'fulfilled') {
+						await pool.locator('#wish-tab-fulfilled').click();
+						await expect(pool.getByText(fulfilledWishes[0].title)).toBeVisible();
+					}
+					const result = await pool.evaluate((element) => {
+						const bounds = element.getBoundingClientRect();
+						const heading = element.querySelector('h1')?.getBoundingClientRect();
+						const banner = document.querySelector('.topbar')?.getBoundingClientRect();
+						return {
+							centerOffset: Math.abs(bounds.left - (innerWidth - bounds.right)),
+							outside: Array.from(
+								element.querySelectorAll<HTMLElement>('.page-head, .wish-composer, .wish-list')
+							).filter((child) => {
+								const rect = child.getBoundingClientRect();
+								return rect.left < bounds.left - 2 || rect.right > bounds.right + 2;
+							}).length,
+							clippedCards: Array.from(element.querySelectorAll<HTMLElement>('.wish-card')).filter(
+								(card) =>
+									card.scrollWidth > card.clientWidth + 2 ||
+									card.scrollHeight > card.clientHeight + 2
+							).length,
+							tabsOutside: Array.from(element.querySelectorAll<HTMLElement>('.wish-tabs')).filter(
+								(tabs) =>
+									tabs.getBoundingClientRect().right > bounds.right + 2 ||
+									tabs.scrollWidth > tabs.clientWidth + 2
+							).length,
+							headingObscured: Boolean(heading && banner && heading.top < banner.bottom - 2),
+							overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+						};
 					});
+					const label = `${viewport.name}/${locale}/${theme}/${tab}`;
+					expect.soft(result.centerOffset, `${label}: centred page`).toBeLessThanOrEqual(1);
+					expect.soft(result.outside, `${label}: section bounds`).toBe(0);
+					expect.soft(result.clippedCards, `${label}: clipped cards`).toBe(0);
+					expect.soft(result.tabsOutside, `${label}: tab control fits`).toBe(0);
+					expect.soft(result.headingObscured, `${label}: sticky header overlap`).toBe(false);
+					expect.soft(result.overflow, `${label}: horizontal overflow`).toBe(0);
+					if (screenshotDirectory) {
+						await pool.screenshot({
+							path: `${screenshotDirectory}/wish-pool-${tab}-${viewport.name}-${locale}-${theme}.png`,
+							animations: 'disabled'
+						});
+					}
 				}
 			}
 		}
