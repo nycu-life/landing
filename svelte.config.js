@@ -18,6 +18,14 @@ const config = {
 		}),
 		paths: {
 			base: dev ? '' : base
+		},
+		prerender: {
+			// The Ghost media mirror has no entries when the build falls back to
+			// placeholder comics (no GHOST_URL). Every other unseen route still fails.
+			handleUnseenRoutes: ({ routes, message }) => {
+				if (routes.every((id) => id === '/comics/media/[...path]')) return;
+				throw new Error(message);
+			}
 		}
 	}
 };

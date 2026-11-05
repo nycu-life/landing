@@ -7,19 +7,44 @@ as being indexed — report only what Search Console actually shows.
 
 ## Indexable pages
 
-`static/sitemap.xml` (served at `https://nycu.life/sitemap.xml`, advertised in
-`static/robots.txt`) lists exactly three URLs:
+`/sitemap.xml` (served at `https://nycu.life/sitemap.xml`, advertised in
+`static/robots.txt`) is **generated at build time** by
+`src/routes/sitemap.xml/+server.ts`, which writes `build/sitemap.xml`. It
+combines two sources of truth:
 
-| URL                           | Status | Canonical                            | robots |
-| ----------------------------- | ------ | ------------------------------------ | ------ |
-| `https://nycu.life/`          | 200    | `https://nycu.life/` (self)          | —      |
-| `https://nycu.life/about/`    | 200    | `https://nycu.life/about/` (self)    | —      |
-| `https://nycu.life/wishpool/` | 200    | `https://nycu.life/wishpool/` (self) | —      |
+1. `src/lib/seo/pages.ts` → `indexablePages`: the static pages, in order. To
+   add a page, add one line there.
+2. Comic episodes read from Ghost at build time (`docs/ghost.md`), as
+   `/comics/<slug>/`, in episode order. They are listed **only** when the build
+   actually read them from Ghost.
 
-All are prerendered (full HTML without JS). `/wishpool/admin/` is reachable but
-`noindex,nofollow` and intentionally absent from the sitemap. English copy is a
-cookie-selected locale on the same URLs (Paraglide `cookie` strategy), so there
-are no `/en/` URLs and no hreflang alternates.
+| URL                                | Status | Canonical | robots                        |
+| ---------------------------------- | ------ | --------- | ----------------------------- |
+| `https://nycu.life/`               | 200    | self      | —                             |
+| `https://nycu.life/about/`         | 200    | self      | —                             |
+| `https://nycu.life/wishpool/`      | 200    | self      | —                             |
+| `https://nycu.life/comics/`        | 200    | self      | —                             |
+| `https://nycu.life/comics/<slug>/` | 200    | self      | — (Ghost-backed)              |
+| `/comics/ep-01/` … (placeholder)   | 200    | self      | `noindex`, not in the sitemap |
+
+All of these are prerendered (full HTML without JS). `/wishpool/admin/` is
+reachable but `noindex,nofollow` and intentionally absent from the sitemap.
+English copy is a cookie-selected locale on the same URLs (Paraglide `cookie`
+strategy), so there are no `/en/` URLs and no hreflang alternates.
+
+Placeholder comics: a build without Ghost (local dev, PR checks) renders the 10
+placeholder episodes from `src/lib/content/comics.ts`. Those pages are
+`noindex` and never in the sitemap. Production images are built with
+`GHOST_REQUIRED=1`, so placeholders cannot ship to nycu.life.
+
+`/comics/media/<path>` holds the images mirrored from Ghost at build time.
+They are plain static files and not pages.
+
+nginx needs no rule for any of this: prerendered routes resolve through
+`try_files $uri $uri/ =404`, unknown `/comics/...` slugs and media paths get a
+real 404, and `sitemap.xml` is served as `text/xml` by extension. This was
+verified on the `nginx:1.30.6-alpine` image built from this Dockerfile against
+a Ghost-backed build.
 
 ## Retired URLs
 
@@ -79,8 +104,11 @@ Defects found and fixed:
 The retired URLs above already answered 410 since 2026-09-04 and nothing on
 the site links to them; they were kept as 410 on purpose.
 
-Verification lives in `e2e/seo.test.ts` (sitemap contents, self-canonicals,
-noindex error page with a real 404). The nginx status codes were checked by
+Verification lives in `e2e/seo.test.ts`: sitemap contents (the static pages
+from `src/lib/seo/pages.ts` first, then only `/comics/<slug>/` entries),
+self-canonicals on every sitemap URL, noindex placeholder episodes, and the
+noindex error page with a real 404. `e2e/comics.test.ts` covers the comics
+pages themselves. The nginx status codes were checked by
 running `docker/nginx.conf` on `nginx:1.30.6-alpine` against the build.
 
 ### Deployment

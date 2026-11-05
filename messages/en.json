@@ -449,5 +449,23 @@
 	"footer_back_to_top": "Back to top",
 
 	"not_found_title": "Page not found",
-	"not_found_lede": "This address does not exist, or the page has been retired. Head back home to browse our products, or tell us what you need in the Wish Pool."
+	"not_found_lede": "This address does not exist, or the page has been retired. Head back home to browse our products, or tell us what you need in the Wish Pool.",
+
+	"comics_title": "Xiao Gong's Campus Days",
+	"comics_lede": "Follow Xiao Gong into campus life at NYCU, one episode at a time. Pick any episode to start reading.",
+	"comics_count": "{count} episodes",
+	"comics_sort_oldest": "Oldest first",
+	"comics_sort_newest": "Newest first",
+	"comics_sort_aria": "Sort order: {order}. Activate to switch.",
+	"comics_episode_label": "Episode {number}",
+	"comics_latest": "Latest",
+	"comics_placeholder_title": "[Episode title]",
+	"comics_read_aria": "Read {label}: {title}",
+	"comics_list_aria": "Comic episodes",
+	"comics_back": "Back to all episodes",
+	"comics_prev": "Previous episode",
+	"comics_next": "Next episode",
+	"comics_episode_nav_aria": "Episode navigation",
+	"comics_published": "Published {date}",
+	"comics_placeholder_body": "This episode is coming soon. Stay tuned."
 }

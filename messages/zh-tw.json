@@ -449,5 +449,23 @@
 	"footer_back_to_top": "回到頂端",
 
 	"not_found_title": "找不到這個頁面",
-	"not_found_lede": "這個網址不存在，或頁面已經下架。可以從首頁看看我們的產品，或到許願池告訴我們你想要的功能。"
+	"not_found_lede": "這個網址不存在，或頁面已經下架。可以從首頁看看我們的產品，或到許願池告訴我們你想要的功能。",
+
+	"comics_title": "小貢的校園日常",
+	"comics_lede": "跟著小貢，一集一集走進陽明交大的校園生活。點選任一集開始閱讀。",
+	"comics_count": "共 {count} 集",
+	"comics_sort_oldest": "舊到新",
+	"comics_sort_newest": "新到舊",
+	"comics_sort_aria": "目前排序：{order}，點一下切換",
+	"comics_episode_label": "第{number}集",
+	"comics_latest": "最新集數",
+	"comics_placeholder_title": "[本集標題]",
+	"comics_read_aria": "閱讀 {label}｜{title}",
+	"comics_list_aria": "漫畫集數",
+	"comics_back": "回到漫畫列表",
+	"comics_prev": "上一集",
+	"comics_next": "下一集",
+	"comics_episode_nav_aria": "集數導覽",
+	"comics_published": "發布於 {date}",
+	"comics_placeholder_body": "本集漫畫即將上線，敬請期待。"
 }
