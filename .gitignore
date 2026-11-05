@@ -29,3 +29,6 @@ project.inlang/cache/
 
 *storybook.log
 storybook-static
+
+# Local Ghost API keys / owner credentials written by docker/ghost/seed.mjs
+.env.ghost.local
