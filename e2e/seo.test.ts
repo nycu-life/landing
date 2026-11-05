@@ -1,7 +1,16 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
+import { indexablePages, SITE_ORIGIN as siteOrigin } from '../src/lib/seo/pages';
 
-const siteOrigin = 'https://nycu.life';
-const publicRoutes = ['/', '/wishpool/'];
+const publicRoutes = [...indexablePages];
+const comicEpisodeRoute = /^\/comics\/[^/]+\/$/;
+
+/** Sitemap paths, in order. Comic episodes appear only when the build read them from Ghost. */
+const sitemapPaths = async (request: APIRequestContext) => {
+	const sitemap = await (await request.get('/sitemap.xml')).text();
+	return [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) =>
+		match[1].replace(siteOrigin, '')
+	);
+};
 
 test('publishes a complete production sitemap and advertises it to crawlers', async ({
 	request
@@ -13,7 +22,12 @@ test('publishes a complete production sitemap and advertises it to crawlers', as
 	const sitemapLocations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
 	const expectedLocations = publicRoutes.map((route) => `${siteOrigin}${route}`);
 
-	expect(sitemapLocations).toEqual(expectedLocations);
+	// Static pages first, in source order, then only Ghost-backed comic episodes.
+	expect(sitemapLocations.slice(0, expectedLocations.length)).toEqual(expectedLocations);
+	expect(new Set(sitemapLocations).size).toBe(sitemapLocations.length);
+	for (const location of sitemapLocations.slice(expectedLocations.length)) {
+		expect(location.replace(siteOrigin, '')).toMatch(comicEpisodeRoute);
+	}
 	for (const withdrawnRoute of ['/about/', '/courses/', '/products/', '/devlog/']) {
 		expect(sitemap).not.toContain(withdrawnRoute);
 	}
@@ -37,8 +51,10 @@ test('serves unknown URLs a noindex error page without a canonical', async ({ pa
 	}
 });
 
-test('keeps a self-referencing canonical on every sitemap page', async ({ page }) => {
-	for (const route of publicRoutes) {
+test('keeps a self-referencing canonical on every sitemap page', async ({ page, request }) => {
+	const routes = await sitemapPaths(request);
+	expect(routes).toEqual(expect.arrayContaining(publicRoutes));
+	for (const route of routes) {
 		const response = await page.goto(route);
 		expect(response?.status()).toBe(200);
 		await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
@@ -47,4 +63,25 @@ test('keeps a self-referencing canonical on every sitemap page', async ({ page }
 		);
 		await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
 	}
+});
+
+test('keeps placeholder comic episodes out of the index', async ({ page, request }) => {
+	await page.goto('/comics/');
+	const episodeRoutes = await page
+		.locator('#comics-grid .ep-card')
+		.evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
+	expect(episodeRoutes.length).toBeGreaterThan(0);
+	const listed = new Set(await sitemapPaths(request));
+	for (const route of episodeRoutes) {
+		await page.goto(route);
+		if (listed.has(route)) {
+			// Ghost-backed: indexable (checked with the other sitemap pages above).
+			await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+		} else {
+			await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+		}
+	}
+	// Ghost builds list every episode; placeholder builds list none.
+	const listedEpisodes = episodeRoutes.filter((route) => listed.has(route));
+	expect([0, episodeRoutes.length]).toContain(listedEpisodes.length);
 });
