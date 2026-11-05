@@ -50,9 +50,14 @@ services:
       security__staffDeviceVerification: 'false'
     volumes:
       - ghost-content:/var/lib/ghost/content
+    # The forwarded-proto header keeps the probe working when GHOST_PUBLIC_URL is
+    # https (behind a TLS proxy); Ghost would otherwise 301 plain-HTTP requests.
     healthcheck:
       test:
-        ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:2368/ghost/api/admin/site/ || exit 1']
+        [
+          'CMD-SHELL',
+          "wget -q -O /dev/null --header='X-Forwarded-Proto: https' http://127.0.0.1:2368/ghost/api/admin/site/ || exit 1"
+        ]
       interval: 5s
       timeout: 5s
       retries: 60
