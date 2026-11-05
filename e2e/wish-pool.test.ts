@@ -209,6 +209,23 @@ test('fulfilled tab explains an empty list in English', async ({ page }) => {
 	await expect(pool.getByRole('tab', { name: 'Wishes' })).toHaveAttribute('aria-selected', 'false');
 });
 
+test('wish cards reveal their public detail on demand', async ({ page }) => {
+	await page.route('**/api/wishes**', (route) => route.fulfill({ json: { data: seedWishes } }));
+	await page.goto('/wishpool/');
+	const pool = page.locator('#wishes');
+	const gym = pool.locator('.wish-card', { hasText: seedWishes[0].title });
+	const detail = gym.getByText(seedWishes[0].detail);
+	await expect(detail).toBeHidden();
+	await gym.getByText('顯示詳情').click();
+	await expect(detail).toBeVisible();
+	await expect(gym.getByText('收起詳情')).toBeVisible();
+	await gym.getByText('收起詳情').click();
+	await expect(detail).toBeHidden();
+
+	const withoutDetail = pool.locator('.wish-card', { hasText: seedWishes[1].title });
+	await expect(withoutDetail.locator('.wish-card-detail')).toHaveCount(0);
+});
+
 test('category filters appear only when the pool has more than 20 wishes', async ({ page }) => {
 	let items = [...seedWishes];
 	await page.route('**/api/wishes**', (route) => route.fulfill({ json: { data: items } }));

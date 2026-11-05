@@ -463,6 +463,15 @@
 								{/if}
 							</span>
 							<strong class="wish-card-title">{wish.title}</strong>
+							{#if wish.detail}
+								<details class="wish-card-detail">
+									<summary>
+										<span class="wish-card-detail-show">{m.wish_card_detail_show()}</span>
+										<span class="wish-card-detail-hide">{m.wish_card_detail_hide()}</span>
+									</summary>
+									<p>{wish.detail}</p>
+								</details>
+							{/if}
 							{#if wish.reply}
 								<div class="wish-reply">
 									<span class="wish-reply-label">
@@ -1264,6 +1273,67 @@
 		font-weight: 700;
 		white-space: nowrap;
 	}
+	.wish-card-detail {
+		position: relative;
+		z-index: 3;
+		margin-top: -0.2rem;
+	}
+	.wish-card-detail summary {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		min-height: 1.75rem;
+		color: #123cff;
+		font-size: 0.8rem;
+		font-weight: 700;
+		cursor: pointer;
+		list-style: none;
+	}
+	.wish-card-detail summary::-webkit-details-marker {
+		display: none;
+	}
+	.wish-card-detail summary::after {
+		content: '';
+		width: 0.42rem;
+		height: 0.42rem;
+		border-right: 1.5px solid currentColor;
+		border-bottom: 1.5px solid currentColor;
+		transform: translateY(-0.12rem) rotate(45deg);
+		transition: transform 0.15s ease;
+	}
+	.wish-card-detail[open] summary::after {
+		transform: translateY(0.1rem) rotate(-135deg);
+	}
+	.wish-card-detail summary:hover {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+	.wish-card-detail summary:focus-visible {
+		outline: 2px solid #2462ff;
+		outline-offset: 2px;
+		border-radius: 0.3rem;
+	}
+	.wish-card-detail-hide,
+	.wish-card-detail[open] .wish-card-detail-show {
+		display: none;
+	}
+	.wish-card-detail[open] .wish-card-detail-hide {
+		display: inline;
+	}
+	.wish-card-detail p {
+		margin: 0.3rem 0 0;
+		color: #2c3b5c;
+		font-size: 0.86rem;
+		line-height: 1.6;
+		white-space: pre-line;
+		overflow-wrap: anywhere;
+	}
+	/* Opening the detail also reveals the full title, which is clamped to two lines. */
+	.wish-card:has(.wish-card-detail[open]) .wish-card-title {
+		display: block;
+		-webkit-line-clamp: unset;
+		line-clamp: unset;
+	}
 	.wish-reply {
 		position: relative;
 		z-index: 3;
@@ -1393,6 +1463,7 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.wish-card-detail summary::after,
 		.wish-card,
 		.wish-card.is-new,
 		.wish-filter button,
