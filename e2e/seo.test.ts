@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const siteOrigin = 'https://nycu.life';
-const publicRoutes = ['/', '/wishpool/'];
+const publicRoutes = ['/', '/about/', '/wishpool/'];
 
 test('publishes a complete production sitemap and advertises it to crawlers', async ({
 	request
@@ -14,7 +14,7 @@ test('publishes a complete production sitemap and advertises it to crawlers', as
 	const expectedLocations = publicRoutes.map((route) => `${siteOrigin}${route}`);
 
 	expect(sitemapLocations).toEqual(expectedLocations);
-	for (const withdrawnRoute of ['/about/', '/courses/', '/products/', '/devlog/']) {
+	for (const withdrawnRoute of ['/courses/', '/products/', '/devlog/']) {
 		expect(sitemap).not.toContain(withdrawnRoute);
 	}
 	expect(sitemap).not.toContain('/team/');

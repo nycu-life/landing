@@ -54,3 +54,56 @@ export const aboutFolders: AboutFolder[] = [
 		state: 'ready'
 	}
 ];
+
+/* ── /about/ page (#106): vision cards, team film, milestone path ─────────────────── */
+
+export type VisionCard = {
+	id: 'integrate' | 'realtime' | 'students';
+	title: Message;
+	body: Message;
+	/** Amber's per-card animation (Lottie/video) lands here; until then a CSS motif renders. */
+	art?: string;
+};
+
+export const visionCards: VisionCard[] = [
+	{ id: 'integrate', title: m.about_vision_1_title, body: m.about_vision_1_body },
+	{ id: 'realtime', title: m.about_vision_2_title, body: m.about_vision_2_body },
+	{ id: 'students', title: m.about_vision_3_title, body: m.about_vision_3_body }
+];
+
+export const TEAM_FILM_ID = 'WbndciSLhD8';
+
+export type Milestone = {
+	id: string;
+	date: Message;
+	title: Message;
+	body: Message;
+	/** Future milestones render hollow. */
+	upcoming?: boolean;
+};
+
+/* Real milestones only, chronological. Copy is shared with the former devlog cards. */
+export const milestones: Milestone[] = [
+	{ id: 'bus-eta', date: m.devlog_1_date, title: m.devlog_1_title, body: m.devlog_1_body },
+	{ id: 'nycozu', date: m.devlog_2_date, title: m.devlog_2_title, body: m.devlog_2_body },
+	{
+		id: 'wishpool',
+		date: m.about_milestone_wish_date,
+		title: m.about_milestone_wish_title,
+		body: m.about_milestone_wish_body
+	},
+	{
+		id: 'activity',
+		date: m.devlog_3_date,
+		title: m.devlog_3_title,
+		body: m.devlog_3_body,
+		upcoming: true
+	},
+	{
+		id: 'map',
+		date: m.devlog_4_date,
+		title: m.devlog_4_title,
+		body: m.devlog_4_body,
+		upcoming: true
+	}
+];

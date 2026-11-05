@@ -190,25 +190,28 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 		'https://nycu.life/og/nycu-life.jpg'
 	);
 	await expect(page.locator('.footer-contact a[href="/wishpool/"]')).toBeAttached();
-	const wishPoolNavigation = page.locator('.topbar-actions a[href="/wishpool/"]');
+	// #105: the Wish Pool is a plain nav link; the sticker slot now belongs to the comics corner.
+	const wishPoolNavigation = page.locator('.topbar-nav a[href="/wishpool/"]');
 	await expect(wishPoolNavigation).toBeVisible();
-	await expect(page.locator('.topbar-nav a[href="/wishpool/"]')).toHaveCount(0);
 	await expect(wishPoolNavigation).toHaveAccessibleName('許願池');
+	await expect(page.locator('.topbar-actions .sticker-link')).toHaveAttribute('href', '/comics/');
 });
 
-test('phone header provides a direct wish pool button', async ({ page }) => {
+test('phone header keeps the comics sticker and moves navigation into the menu', async ({
+	page
+}) => {
 	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');
-	const button = page.locator('.mobile-wish-link');
+	const button = page.locator('.sticker-link');
 	await expect(button).toBeVisible();
-	await expect(button).toHaveText(/許願池/);
-	await expect(button).toHaveAttribute('href', '/wishpool/');
-	await expect(button.locator('.mobile-wish-face-default')).toHaveAttribute(
+	await expect(button).toHaveText(/漫畫專區/);
+	await expect(button).toHaveAttribute('href', '/comics/');
+	await expect(button.locator('.sticker-face-default')).toHaveAttribute(
 		'src',
 		'./ui/wishpool-mobile.svg'
 	);
-	await expect(button.locator('.mobile-wish-face-hover')).toHaveAttribute(
+	await expect(button.locator('.sticker-face-hover')).toHaveAttribute(
 		'src',
 		'./ui/wishpool-mobile-hover.svg'
 	);
@@ -216,15 +219,27 @@ test('phone header provides a direct wish pool button', async ({ page }) => {
 		.locator('.topbar')
 		.evaluate((element) => element.scrollWidth - element.clientWidth);
 	expect(headerOverflow).toBe(0);
+
+	const menuButton = page.getByRole('button', { name: '開啟選單' });
+	await menuButton.click();
+	const menu = page.locator('#topbar-menu');
+	await expect(menu).toBeVisible();
+	for (const name of ['認識我們', '產品', '常見問題', '夥伴徵才', '許願池', '漫畫專區']) {
+		await expect(menu.getByRole('link', { name })).toBeVisible();
+	}
+	await expect(menu.getByRole('group', { name: '語言' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(menu).toBeHidden();
+	await expect(menuButton).toBeFocused();
 	if (screenshotDirectory) {
 		const header = page.locator('.topbar');
 		await header.screenshot({
-			path: `${screenshotDirectory}/mobile-wish-button-default.png`,
+			path: `${screenshotDirectory}/mobile-sticker-default.png`,
 			animations: 'disabled'
 		});
 		await button.hover();
 		await header.screenshot({
-			path: `${screenshotDirectory}/mobile-wish-button-hover.png`,
+			path: `${screenshotDirectory}/mobile-sticker-hover.png`,
 			animations: 'disabled'
 		});
 	}
@@ -922,7 +937,10 @@ test('localized product CTA labels stay inside the designer tags', async ({ page
 test('FAQ and recruitment boards stay readable in dark mode', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/?motion=on#faq');
+	// Phones reach the appearance control through the menu (#105).
+	await page.getByRole('button', { name: '開啟選單' }).click();
 	await page.getByRole('button', { name: '切換至深色模式' }).click();
+	await page.keyboard.press('Escape');
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 	await expect(page.locator('.faq-list > strong')).toHaveCSS('color', 'rgb(23, 34, 53)');
 	await expect(page.locator('.faq-item button').first()).toHaveCSS('color', 'rgb(23, 34, 53)');
@@ -1473,13 +1491,17 @@ test('phone product copy keeps the original compact type scale', async ({ page }
 	expect(sizes.feature).toBeCloseTo(12.48, 2);
 });
 
-test('theme persists and the burger menu is gone on phones', async ({ page }) => {
+test('theme persists and the phone menu starts closed', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');
+	await page.getByRole('button', { name: '開啟選單' }).click();
 	await page.getByRole('button', { name: '切換至深色模式' }).click();
 	await page.reload();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-	await expect(page.getByRole('button', { name: '開啟選單' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: '開啟選單' })).toHaveAttribute(
+		'aria-expanded',
+		'false'
+	);
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 

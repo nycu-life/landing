@@ -8,25 +8,28 @@ as being indexed — report only what Search Console actually shows.
 ## Indexable pages
 
 `static/sitemap.xml` (served at `https://nycu.life/sitemap.xml`, advertised in
-`static/robots.txt`) lists exactly two URLs:
+`static/robots.txt`) lists exactly three URLs:
 
 | URL                           | Status | Canonical                            | robots |
 | ----------------------------- | ------ | ------------------------------------ | ------ |
 | `https://nycu.life/`          | 200    | `https://nycu.life/` (self)          | —      |
+| `https://nycu.life/about/`    | 200    | `https://nycu.life/about/` (self)    | —      |
 | `https://nycu.life/wishpool/` | 200    | `https://nycu.life/wishpool/` (self) | —      |
 
-Both are prerendered (full HTML without JS). `/wishpool/admin/` is reachable but
+All are prerendered (full HTML without JS). `/wishpool/admin/` is reachable but
 `noindex,nofollow` and intentionally absent from the sitemap. English copy is a
 cookie-selected locale on the same URLs (Paraglide `cookie` strategy), so there
 are no `/en/` URLs and no hreflang alternates.
 
 ## Retired URLs
 
+`/about/` was withdrawn (410) on 2026-09-04 and reinstated as a real page on
+2026-11-05 (#106: team vision, film, milestones). It is back in the sitemap.
+
 | URL                                                          | Response | Why                                                                                                                                                                                                                |
 | ------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `/team/<slug>/` (incl. `/team/hsuan/`, `/team/einstein706/`) | 410      | Member profile pages were deliberately withdrawn (`bc6c0fb`, 2026-09-04). No equivalent page exists and the site no longer links to them.                                                                          |
 | `/products/`                                                 | 410      | Unfinished destination page withdrawn (`a9a448c`, 2026-09-04). Products are now a chapter of the home page, not a page of their own; redirecting would be a home-page redirect, which Google treats as a soft 404. |
-| `/about/`                                                    | 410      | Same as `/products/`; the about content is a home-page chapter.                                                                                                                                                    |
 | `/courses/`                                                  | 410      | Withdrawn with no replacement.                                                                                                                                                                                     |
 | `/devlog/`                                                   | 410      | Withdrawn with no replacement.                                                                                                                                                                                     |
 | `/demo/`, `/demo/paraglide/`                                 | 404      | SvelteKit template scaffolding, removed 2026-10-23 (was publicly 200 and indexable).                                                                                                                               |
