@@ -1,13 +1,12 @@
 # Full-stack local preview
 
-Runs the production shape on one machine: the static site (prerendered against a
-local Ghost), the Go Wish API with Postgres, and a gateway that mirrors the
-production Traefik split (`/api/wishes` → API, everything else → nginx site).
+Runs the production shape on one machine: the Node site (reading a local Ghost at runtime), the Go Wish API with Postgres, and a gateway that mirrors the
+production Traefik split (`/api/wishes` → API, everything else → Node site).
 
 ```
 browser ──> gateway :18090 ──/api/wishes──> wish-api ──> postgres
-                         └──────/──────────> web (nginx, static build)
-Ghost :2368 (docker/ghost/compose.yml) ──read at build time──> web image
+                         └──────/──────────> web (Node + prerendered fixed pages)
+Ghost :2368 (docker/ghost/compose.yml) ──read at runtime──> web service
 ```
 
 ## One-time setup
@@ -25,10 +24,11 @@ Ghost :2368 (docker/ghost/compose.yml) ──read at build time──> web image
    WISH_OIDC_ISSUER=https://auth.nycu.one/application/o/wishpool-admin-dev/
    WISH_OIDC_CLIENT_ID=wishpool-admin-dev
    WISH_OIDC_REDIRECT_URL=https://<preview host>/api/wishes/auth/callback
-   # Fail the build instead of shipping placeholder comics.
-   GHOST_REQUIRED=1
-   # Ghost URL as seen from the build (defaults to GHOST_URL in .env.ghost.local).
-   PREVIEW_GHOST_URL=
+   # Ghost URL reachable from the web container (shared external Docker network).
+   PREVIEW_GHOST_URL=http://ghost:2368
+   # Use the shared HTTPS origin when sharing over Tailscale.
+   PREVIEW_ORIGIN=http://127.0.0.1:18090
+   GHOST_PUBLIC_URL=http://127.0.0.1:2368
    ```
 
 ## Run
@@ -38,8 +38,9 @@ Ghost :2368 (docker/ghost/compose.yml) ──read at build time──> web image
 docker compose -f docker/preview/compose.yml --env-file docker/preview/.env down
 ```
 
-Rerun `up.sh` after publishing in Ghost: the site is static, so new episodes
-appear only after a rebuild (the same as production).
+Publishing in Ghost appears on the next request after the 30-second catalog
+cache expires. No rebuild is needed. Start the Ghost compose stack before the
+preview: its external `nycu-life-ghost_default` network must exist.
 
 ## Sharing over Tailscale
 

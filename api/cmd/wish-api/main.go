@@ -78,6 +78,7 @@ func main() {
 		adminAuth,
 		logger,
 		wishes.WithServiceClients(serviceClients),
+		wishes.WithCMSSSOSecret(strings.TrimSpace(os.Getenv("WISH_CMS_SSO_SECRET"))),
 	)
 	if err != nil {
 		logger.Error("configure wish API", "error", err)

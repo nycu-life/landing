@@ -1,15 +1,15 @@
 # AGENTS.md — NYCU LIFE Landing
 
-The official NYCU LIFE marketing site (`官網`). A **static** SvelteKit app —
-prerendered with `adapter-static` and served from a **Docker/nginx** container.
-No backend, no runtime server.
+The official NYCU LIFE marketing site (`官網`). A SvelteKit app served by **adapter-node** in Docker. Fixed pages are
+prerendered; Ghost dev log, comics, and sitemap render on request. The Wish API
+remains a separate Go service.
 
 ## Stack
 
 - **SvelteKit 2 / Svelte 5 / TypeScript 6**, **Vite 8**, **Tailwind CSS v4**
 - **Paraglide (inlang)** i18n — `baseLocale: zh-tw`, also `en` (`project.inlang/`,
   messages in `messages/{zh-tw,en}.json`)
-- **adapter-static** (fully prerendered SPA)
+- **adapter-node** (prerendered fixed pages + runtime Ghost pages)
 - Tooling: **pnpm 10.21.0**, **ESLint 10** + Prettier, `svelte-check`
 - Tests: **Vitest** (unit + Storybook browser project) + **Playwright** e2e
 - Node **24**
@@ -19,7 +19,7 @@ No backend, no runtime server.
 ```sh
 pnpm install
 pnpm dev                 # local dev server
-pnpm build               # static build -> ./build
+pnpm build               # Node server + prerendered pages -> ./build
 pnpm check               # svelte-check (type check)
 pnpm lint                # prettier --check . && eslint .
 pnpm format              # prettier --write .
@@ -60,32 +60,29 @@ editing here, match this repo's tokens; don't import the other system.
 - **Production**: `.github/workflows/docker.yml` builds and pushes
   `harbor.nycu.one/landing/web:latest`; ArgoCD deploys
   `nycu-life/k8s-manifests/apps/landing/overlays/prod` to `nycu.life`.
-- **Docker**: `Dockerfile` serves the static output behind nginx at the root.
-  Build args `GHOST_URL` / `GHOST_REQUIRED`; the Content API key is a BuildKit
-  secret (`ghost_content_api_key`), never an ARG. `repository_dispatch`
-  `ghost-publish` rebuilds the image when Ghost content changes.
+- **Docker**: `Dockerfile` runs Node on port 3000. `GHOST_URL`,
+  `GHOST_PUBLIC_URL`, and `GHOST_CONTENT_API_KEY` are runtime environment values;
+  builds need no Ghost credentials. Catalogs refresh every 30 seconds.
+  `docker/ghost/Dockerfile` packages the NYCU One SSO adapter.
 - `svelte.config.js` reads `SITE_BASE_PATH` for optional sub-path previews.
 
 ## Gotchas
 
-- It's a **static** site: no server endpoints, no data loading at request
-  time — everything is prerendered at build. The one exception is
-  **build-time** `+page.server.ts` / `+server.ts` routes under `src/routes/devlog/`,
-  `src/routes/comics/` and `src/routes/sitemap.xml/` (`prerender = true` + `entries()`). They read
-  Ghost (`src/lib/server/ghost.ts`) only while `pnpm build` runs. Keep every
-  server route prerendered.
-- **Ghost** (`docs/ghost.md`): builds work without it (empty dev log,
-  placeholder comics; noindex, not in the sitemap). `GHOST_REQUIRED=1` makes a
-  missing or failing Ghost fatal; an empty section is still fine. CI sets it for pushed images. Variables come from `process.env`,
-  so `.env` files are not loaded automatically.
+- Fixed pages inherit `prerender = true` from `+layout.ts`. Ghost content pages,
+  sitemap, old media redirects, and the catch-all error route explicitly opt out.
+- Ghost is read only at request time (`src/lib/server/ghost.ts`). Without config,
+  local dev uses empty/placeholder content. A configured Ghost outage returns 503
+  for content pages; fixed pages keep working. Catalogs use a 30-second cache.
+- Ghost image URLs use the public `/cms/content/images/` route. The Node service
+  uses the in-cluster Ghost URL for API calls and `GHOST_PUBLIC_URL` for images.
 - The default locale is **`zh-tw`**; the unprefixed `/` renders Chinese copy.
 - Brand string "NYCU LIFE" is identical in both locales — safe to assert in tests.
 - **SEO routing** (see `docs/seo.md`): `/sitemap.xml` is generated from
-  `src/lib/seo/pages.ts` (static pages) plus Ghost dev log posts and comic episodes. nginx returns a real 404 for unknown paths (no SPA fallback to
+  `src/lib/seo/pages.ts` (static pages) plus Ghost dev log posts and comic episodes. SvelteKit returns a real 404 for unknown paths (no SPA fallback to
   the home page) and 410 for withdrawn ones (`/courses/`, `/products/`,
-  `/team/…`), both with the noindex `404.html` shell.
+  `/team/…`), both with the noindex `+error.svelte` page.
   Adding or withdrawing a page means updating the route, `src/lib/seo/pages.ts`,
-  `docker/nginx.conf`, and `e2e/seo.test.ts` together.
+  `src/routes/[...missing]/+page.server.ts`, and `e2e/seo.test.ts` together.
 
 ## Visual acceptance gate
 

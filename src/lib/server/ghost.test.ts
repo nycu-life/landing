@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+	createCatalogCache,
 	ghostBase,
 	loadComics,
 	loadDevlog,
@@ -248,5 +249,41 @@ describe('sub-path Ghost installs', () => {
 		expect(catalog.posts[0].cover?.src).toBe('/devlog/media/2026/11/a.png');
 		expect(catalog.media).toEqual(['2026/11/a.png']);
 		info.mockRestore();
+	});
+});
+
+describe('runtime content', () => {
+	it('serves public Ghost images without the former static mirror', async () => {
+		const catalog = await loadDevlog(
+			{ ...configured, GHOST_PUBLIC_URL: 'https://nycu.life/cms' },
+			postsOnly([
+				post('runtime', '2026-11-01T00:00:00Z', {
+					feature_image: `${origin}/content/images/cover.png`,
+					html: `<img src="${origin}/content/images/body.png">`
+				})
+			])
+		);
+		expect(catalog.posts[0].cover?.src).toBe('https://nycu.life/cms/content/images/cover.png');
+		expect(catalog.posts[0].html).toContain('https://nycu.life/cms/content/images/body.png');
+	});
+	it('shares concurrent refreshes, expires content and recovers after failure', async () => {
+		let now = 0;
+		const load = vi
+			.fn()
+			.mockResolvedValueOnce('published')
+			.mockResolvedValueOnce('updated')
+			.mockRejectedValueOnce(new Error('offline'))
+			.mockResolvedValueOnce('unpublished');
+		const get = createCatalogCache(load, 30_000, () => now);
+		expect(await Promise.all([get(), get()])).toEqual(['published', 'published']);
+		expect(load).toHaveBeenCalledTimes(1);
+		now = 29_999;
+		expect(await get()).toBe('published');
+		now = 30_000;
+		expect(await get()).toBe('updated');
+		now = 60_000;
+		await expect(get()).rejects.toThrow('offline');
+		expect(await get()).toBe('unpublished');
+		expect(load).toHaveBeenCalledTimes(4);
 	});
 });

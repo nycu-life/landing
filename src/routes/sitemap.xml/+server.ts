@@ -9,8 +9,8 @@ import {
 import { getComics, getDevlog } from '$lib/server/ghost';
 import type { RequestHandler } from './$types';
 
-// Generated once at build time and written to build/sitemap.xml.
-export const prerender = true;
+// Refreshes with the same catalog as the article pages.
+export const prerender = false;
 
 const escapeXml = (value: string) =>
 	value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -34,5 +34,7 @@ export const GET: RequestHandler = async () => {
 ${urls}
 </urlset>
 `;
-	return new Response(body, { headers: { 'content-type': 'application/xml; charset=utf-8' } });
+	return new Response(body, {
+		headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'no-cache' }
+	});
 };

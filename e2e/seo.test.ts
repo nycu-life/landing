@@ -100,3 +100,14 @@ test('lists the dev log and comics only when they have Ghost content', async ({
 		else await expect(robots).toHaveAttribute('content', 'noindex');
 	}
 });
+
+test('preserves retired routes and API failures on the Node server', async ({ page, request }) => {
+	for (const route of ['/courses/', '/products/', '/team/', '/team/former-member/']) {
+		expect((await page.goto(route))?.status()).toBe(410);
+		await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+		await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+	}
+	const api = await request.get('/api/not-a-service');
+	expect(api.status()).toBe(404);
+	expect(await api.json()).toEqual({ error: 'not_found' });
+});
