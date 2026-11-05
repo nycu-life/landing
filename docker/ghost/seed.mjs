@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Idempotent local Ghost bootstrap for the comics content source (docs/ghost.md).
+// Idempotent local Ghost bootstrap for the dev log + comics content (docs/ghost.md).
 //
 // 1. Runs Ghost's first-time owner setup (skipped when already set up).
 // 2. Signs in as the owner and creates (or reuses) the "NYCU LIFE landing build"
@@ -8,6 +8,8 @@
 //    need no env).
 // 3. Uploads generated SVG covers/panels and creates the 10 sample episodes,
 //    tagged `#comics` + `#ep-NN` (existing slugs are left untouched).
+// 4. Creates sample dev log posts tagged `#devlog` (existing slugs untouched).
+//    Set GHOST_SEED_COMICS=0 to skip step 3 (e.g. to preview "no comics yet").
 //
 // No dependencies; Node 24+. Environment:
 //   GHOST_ADMIN_URL      default http://127.0.0.1:2368
@@ -130,7 +132,7 @@ async function ensureIntegration() {
 				integrations: [
 					{
 						name: integrationName,
-						description: 'Build-time Content API access for nycu.life (comics).'
+						description: 'Build-time Content API access for nycu.life (dev log, comics).'
 					}
 				]
 			}
@@ -242,9 +244,91 @@ async function ensureEpisodes() {
 	}
 }
 
+function devlogCoverSvg(title, hue) {
+	return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<rect width="1600" height="900" fill="${hue}"/>
+<circle cx="1300" cy="160" r="360" fill="#ffffff" opacity="0.18"/>
+<circle cx="260" cy="760" r="140" fill="#ffffff" opacity="0.22"/>
+<text x="120" y="440" font-family="'Noto Sans TC', sans-serif" font-size="88" font-weight="700" fill="#ffffff">${escapeXml(title)}</text>
+<text x="120" y="530" font-family="Ubuntu, sans-serif" font-size="40" fill="#ffffff" opacity="0.85">NYCU LIFE · DEVLOG (sample)</text>
+</svg>`;
+}
+
+const DEVLOG = [
+	{
+		slug: 'bus-eta-launch',
+		title: '校園公車到站 ETA 上線',
+		published: '2025-09-15T10:00:00+08:00',
+		tags: ['校園公車'],
+		hue: '#0045f2',
+		excerpt: '校車與市區公車整合成一個畫面，等車不必再猜。',
+		body: `<p>（範例內容）開學第一週，校車站牌前最常聽到的一句話是「車到底什麼時候來？」。這一版把校車時刻與市區公車的即時資料整合在同一個畫面。</p>
+<h2>做了什麼</h2>
+<ul><li>校車依時刻表推算，市區公車接即時動態</li><li>到站前五分鐘提醒</li><li>常用站牌釘選</li></ul>
+<h2>接下來</h2>
+<p>我們正在收集各校區的回饋，下一步是把停駛與加班車公告直接推到首頁。</p>
+<blockquote>謝謝每一位在許願池留言的同學，這個功能就是從那裡開始的。</blockquote>`
+	},
+	{
+		slug: 'nycozu-3760-courses',
+		title: 'NYCozU 收錄 3,760+ 門課程',
+		published: '2025-12-02T10:00:00+08:00',
+		tags: ['NYCozU'],
+		hue: '#167fc4',
+		excerpt: '全校課程收錄完成，支援進階篩選與教室查詢。',
+		body: `<p>（範例內容）NYCozU 完成全校課程收錄，現在可以依學分、時段、通識向度與教室篩選。</p>
+<h2>資料怎麼來</h2>
+<p>課程資料每天同步，加退選期間會更頻繁更新。教室資料與校園地圖共用同一份來源。</p>
+<pre><code>課程 3,760+ · 教室 420+ · 每日同步</code></pre>`
+	},
+	{
+		slug: 'wishpool-fulfilled',
+		title: '許願池：看見已實現的願望',
+		published: '2026-11-05T10:00:00+08:00',
+		tags: ['許願池'],
+		hue: '#3333ff',
+		excerpt: '許願池多了「已實現」分頁，每個實現的願望都附上團隊回覆。',
+		body: `<p>（範例內容）許願池收到的每一則願望，我們都會讀。這次更新把「已經做到的」獨立成一個分頁，並附上團隊的回覆。</p>
+<p>想許願？到 <a href="/wishpool/">許願池</a> 留言就可以。</p>`
+	}
+];
+
+async function ensureDevlog() {
+	for (const entry of DEVLOG) {
+		const existing = await request('GET', `/posts/slug/${entry.slug}/`, { allow: [404] });
+		if (existing.status === 200) {
+			console.log(`• ${entry.slug} exists, skipping`);
+			continue;
+		}
+		const cover = await upload(
+			`devlog-${entry.slug}-cover.svg`,
+			devlogCoverSvg(entry.title, entry.hue)
+		);
+		await request('POST', '/posts/?source=html', {
+			json: {
+				posts: [
+					{
+						title: entry.title,
+						slug: entry.slug,
+						html: entry.body,
+						status: 'published',
+						published_at: new Date(entry.published).toISOString(),
+						feature_image: cover,
+						feature_image_alt: entry.title,
+						custom_excerpt: entry.excerpt,
+						tags: [{ name: '#devlog' }, ...entry.tags.map((name) => ({ name }))]
+					}
+				]
+			}
+		});
+		console.log(`• Created dev log ${entry.slug}`);
+	}
+}
+
 await waitForGhost();
 await ensureOwner();
 await signIn();
 await ensureIntegration();
-await ensureEpisodes();
+if (process.env.GHOST_SEED_COMICS !== '0') await ensureEpisodes();
+await ensureDevlog();
 console.log(`Done. Ghost Admin: ${adminUrl}/ghost/  (owner ${email})`);

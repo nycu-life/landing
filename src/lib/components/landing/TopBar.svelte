@@ -24,13 +24,14 @@
 	const pathname = $derived(page.url.pathname);
 	const isActive = (prefix: string) => pathname.startsWith(`${base}${prefix}`);
 
-	/* #105 navigation order. Home chapters stay in-page anchors; the rest are their own pages. */
+	/* #105 navigation order. Home chapters stay in-page anchors; the rest are their own pages.
+	   The Wish Pool keeps the sticker slot until the comics corner (#107) has episodes. */
 	const links = [
 		{ href: '/about/', label: m.menu_about, page: '/about' },
 		{ href: '/#products', label: m.nav_products },
 		{ href: '/#faq', label: m.nav_faq },
 		{ href: '/#join', label: m.nav_join },
-		{ href: '/wishpool/', label: m.nav_wishpool, page: '/wishpool' }
+		{ href: '/devlog/', label: m.nav_devlog, page: '/devlog' }
 	];
 
 	afterNavigate(() => {
@@ -60,12 +61,11 @@
 		{/each}
 	</nav>
 	<div class="topbar-actions">
-		<!-- #105: the comics corner keeps the designer's sticker treatment; the face art is the
-		     shared blob sticker with the baked label erased and replaced by live, translated text. -->
+		<!-- Designer's blob sticker; the baked label is erased and replaced by live, translated text. -->
 		<a
 			class="sticker-link"
-			href="{base}/comics/"
-			aria-current={isActive('/comics') ? 'page' : undefined}
+			href="{base}/wishpool/"
+			aria-current={isActive('/wishpool') ? 'page' : undefined}
 		>
 			<span class="sticker-art" aria-hidden="true">
 				<img class="sticker-face sticker-face-default" src="{base}/ui/wishpool-mobile.svg" alt="" />
@@ -76,7 +76,7 @@
 				/>
 			</span>
 			<span class="sticker-erase" aria-hidden="true"></span>
-			<span class="sticker-label">{m.nav_comics()} <span aria-hidden="true">✦</span></span>
+			<span class="sticker-label">{m.nav_wishpool()} <span aria-hidden="true">✦</span></span>
 		</a>
 		<div class="topbar-controls">
 			<LocaleSwitch />
@@ -117,9 +117,9 @@
 				>
 			{/each}
 			<a
-				href="{base}/comics/"
-				aria-current={isActive('/comics') ? 'page' : undefined}
-				onclick={() => (menuOpen = false)}>{m.nav_comics()}</a
+				href="{base}/wishpool/"
+				aria-current={isActive('/wishpool') ? 'page' : undefined}
+				onclick={() => (menuOpen = false)}>{m.nav_wishpool()}</a
 			>
 		</nav>
 		<div class="menu-controls">
@@ -346,7 +346,7 @@
 	}
 
 	/* Five text links + sticker + controls need ~1060px; below that the links and the
-	   locale/theme controls move into the burger menu, the comics sticker stays visible. */
+	   locale/theme controls move into the burger menu, the Wish Pool sticker stays visible. */
 	@media (max-width: 1080px) {
 		.topbar-nav,
 		.topbar-controls {

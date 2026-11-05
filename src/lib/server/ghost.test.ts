@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
 	loadComics,
+	loadDevlog,
+	mapDevlogPosts,
 	mapGhostPosts,
 	parseEpisodeNumber,
 	rewriteGhostMedia,
@@ -129,6 +131,90 @@ describe('loadComics', () => {
 		expect(catalog.source).toBe('ghost');
 		expect(catalog.episodes[0].cover?.src).toBe('/comics/media/c.png');
 		expect(catalog.media).toEqual(['c.png']);
+		info.mockRestore();
+	});
+});
+
+const configured = { GHOST_URL: origin, GHOST_CONTENT_API_KEY: 'k', GHOST_REQUIRED: '1' };
+
+const postsOnly = (posts: GhostPost[]) =>
+	vi.fn<typeof fetch>(async (input) =>
+		new URL(String(input)).pathname.endsWith('/settings/')
+			? jsonResponse({ settings: {} })
+			: jsonResponse({ posts })
+	);
+
+describe('empty sections', () => {
+	it('keeps comics placeholder when Ghost has no #comics posts, even with GHOST_REQUIRED=1', async () => {
+		const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+		const catalog = await loadComics(configured, postsOnly([]), media);
+		expect(catalog.source).toBe('placeholder');
+		info.mockRestore();
+	});
+
+	it('returns an empty dev log without Ghost, and fails when required', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		expect(await loadDevlog({}, vi.fn<typeof fetch>(), '/devlog/media/')).toEqual({
+			source: 'empty',
+			posts: [],
+			media: []
+		});
+		warn.mockRestore();
+		await expect(loadDevlog({ GHOST_REQUIRED: '1' }, vi.fn<typeof fetch>())).rejects.toThrow(
+			/GHOST_REQUIRED=1/
+		);
+	});
+});
+
+describe('dev log', () => {
+	const devlogPost = (slug: string, publishedAt: string | null, extra: Partial<GhostPost> = {}) =>
+		post(slug, publishedAt as string, {
+			tags: [{ slug: 'hash-devlog' }, { slug: 'devlog', name: 'devlog' }],
+			...extra
+		});
+
+	it('orders newest first, exposes only public labels and mirrors images', () => {
+		const catalog = mapDevlogPosts(
+			[
+				devlogPost('old', '2025-01-01T00:00:00Z'),
+				devlogPost('new', '2026-11-01T00:00:00Z', {
+					reading_time: 3,
+					feature_image: `${origin}/content/images/2026/11/cover.png`,
+					html: `<p><img src="${origin}/content/images/2026/11/inline.png"></p>`,
+					tags: [
+						{ slug: 'hash-devlog' },
+						{ slug: 'bus', name: '校園公車' },
+						{ slug: 'hash-internal', name: '#internal' }
+					]
+				}),
+				devlogPost('draft-ish', null)
+			],
+			[origin],
+			'/devlog/media/'
+		);
+		expect(catalog.source).toBe('ghost');
+		expect(catalog.posts.map((entry) => entry.slug)).toEqual(['new', 'old']);
+		expect(catalog.posts[0]).toMatchObject({
+			readingTime: 3,
+			tags: [{ slug: 'bus', name: '校園公車' }],
+			cover: { src: '/devlog/media/2026/11/cover.png', alt: 'NEW' }
+		});
+		expect(catalog.posts[1].tags).toEqual([]);
+		expect(catalog.posts[0].html).toContain('src="/devlog/media/2026/11/inline.png"');
+		expect(catalog.media).toEqual(['2026/11/cover.png', '2026/11/inline.png']);
+	});
+
+	it('queries #devlog posts newest first', async () => {
+		const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+		const fetchFn = vi.fn<typeof fetch>(async (input) => {
+			const url = new URL(String(input));
+			if (url.pathname.endsWith('/settings/')) return jsonResponse({ settings: {} });
+			expect(url.searchParams.get('filter')).toBe('tag:[devlog,hash-devlog]');
+			expect(url.searchParams.get('order')).toBe('published_at desc');
+			return jsonResponse({ posts: [devlogPost('one', '2026-11-01T00:00:00Z')] });
+		});
+		const catalog = await loadDevlog(configured, fetchFn, '/devlog/media/');
+		expect(catalog.posts.map((entry) => entry.slug)).toEqual(['one']);
 		info.mockRestore();
 	});
 });

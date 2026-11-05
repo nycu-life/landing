@@ -20,10 +20,11 @@ const config = {
 			base: dev ? '' : base
 		},
 		prerender: {
-			// The Ghost media mirror has no entries when the build falls back to
-			// placeholder comics (no GHOST_URL). Every other unseen route still fails.
+			// The Ghost media mirrors and the dev log post route have no entries when
+			// Ghost has nothing for them (or no GHOST_URL). Every other unseen route still fails.
 			handleUnseenRoutes: ({ routes, message }) => {
-				if (routes.every((id) => id === '/comics/media/[...path]')) return;
+				const optional = ['/comics/media/[...path]', '/devlog/media/[...path]', '/devlog/[slug]'];
+				if (routes.every((id) => optional.includes(id))) return;
 				throw new Error(message);
 			}
 		}

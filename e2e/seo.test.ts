@@ -2,9 +2,10 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
 import { indexablePages, SITE_ORIGIN as siteOrigin } from '../src/lib/seo/pages';
 
 const publicRoutes = [...indexablePages];
-const comicEpisodeRoute = /^\/comics\/[^/]+\/$/;
+/** Ghost-backed sections the sitemap may append after the static pages. */
+const ghostRoute = /^\/(devlog|comics)\/([^/]+\/)?$/;
 
-/** Sitemap paths, in order. Comic episodes appear only when the build read them from Ghost. */
+/** Sitemap paths, in order. Dev log / comics pages appear only when the build read them from Ghost. */
 const sitemapPaths = async (request: APIRequestContext) => {
 	const sitemap = await (await request.get('/sitemap.xml')).text();
 	return [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) =>
@@ -22,13 +23,13 @@ test('publishes a complete production sitemap and advertises it to crawlers', as
 	const sitemapLocations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
 	const expectedLocations = publicRoutes.map((route) => `${siteOrigin}${route}`);
 
-	// Static pages first, in source order, then only Ghost-backed comic episodes.
+	// Static pages first, in source order, then only Ghost-backed dev log / comics pages.
 	expect(sitemapLocations.slice(0, expectedLocations.length)).toEqual(expectedLocations);
 	expect(new Set(sitemapLocations).size).toBe(sitemapLocations.length);
 	for (const location of sitemapLocations.slice(expectedLocations.length)) {
-		expect(location.replace(siteOrigin, '')).toMatch(comicEpisodeRoute);
+		expect(location.replace(siteOrigin, '')).toMatch(ghostRoute);
 	}
-	for (const withdrawnRoute of ['/courses/', '/products/', '/devlog/']) {
+	for (const withdrawnRoute of ['/courses/', '/products/']) {
 		expect(sitemap).not.toContain(withdrawnRoute);
 	}
 	expect(sitemap).not.toContain('/team/');
@@ -84,4 +85,18 @@ test('keeps placeholder comic episodes out of the index', async ({ page, request
 	// Ghost builds list every episode; placeholder builds list none.
 	const listedEpisodes = episodeRoutes.filter((route) => listed.has(route));
 	expect([0, episodeRoutes.length]).toContain(listedEpisodes.length);
+});
+
+test('lists the dev log and comics only when they have Ghost content', async ({
+	page,
+	request
+}) => {
+	const listed = new Set(await sitemapPaths(request));
+	for (const index of ['/devlog/', '/comics/']) {
+		const response = await page.goto(index);
+		expect(response?.status()).toBe(200);
+		const robots = page.locator('meta[name="robots"]');
+		if (listed.has(index)) await expect(robots).toHaveCount(0);
+		else await expect(robots).toHaveAttribute('content', 'noindex');
+	}
 });

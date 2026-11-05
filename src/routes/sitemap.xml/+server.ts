@@ -1,5 +1,12 @@
-import { comicEpisodePath, indexablePages, SITE_ORIGIN } from '$lib/seo/pages';
-import { getComics } from '$lib/server/ghost';
+import {
+	COMICS_INDEX,
+	comicEpisodePath,
+	DEVLOG_INDEX,
+	devlogPostPath,
+	indexablePages,
+	SITE_ORIGIN
+} from '$lib/seo/pages';
+import { getComics, getDevlog } from '$lib/server/ghost';
 import type { RequestHandler } from './$types';
 
 // Generated once at build time and written to build/sitemap.xml.
@@ -9,13 +16,17 @@ const escapeXml = (value: string) =>
 	value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export const GET: RequestHandler = async () => {
-	const catalog = await getComics();
-	// Placeholder episodes are noindex and must never be advertised to crawlers.
-	const episodePaths =
-		catalog.source === 'ghost'
-			? catalog.episodes.map((episode) => comicEpisodePath(episode.slug))
+	const [devlog, comics] = await Promise.all([getDevlog(), getComics()]);
+	// Empty / placeholder sections are noindex and must never be advertised to crawlers.
+	const devlogPaths =
+		devlog.source === 'ghost'
+			? [DEVLOG_INDEX, ...devlog.posts.map((post) => devlogPostPath(post.slug))]
 			: [];
-	const urls = [...indexablePages, ...episodePaths]
+	const comicPaths =
+		comics.source === 'ghost'
+			? [COMICS_INDEX, ...comics.episodes.map((episode) => comicEpisodePath(episode.slug))]
+			: [];
+	const urls = [...indexablePages, ...devlogPaths, ...comicPaths]
 		.map((path) => `  <url><loc>${escapeXml(`${SITE_ORIGIN}${path}`)}</loc></url>`)
 		.join('\n');
 	const body = `<?xml version="1.0" encoding="UTF-8"?>

@@ -467,5 +467,21 @@
 	"comics_next": "下一集",
 	"comics_episode_nav_aria": "集數導覽",
 	"comics_published": "發布於 {date}",
-	"comics_placeholder_body": "本集漫畫即將上線，敬請期待。"
+	"comics_placeholder_body": "本集漫畫即將上線，敬請期待。",
+
+	"devlog_page_title": "開發日誌",
+	"devlog_page_lede": "我們把校園生活的小麻煩，一個個解開的紀錄：功能上線、設計取捨，還有一路踩過的坑。",
+	"devlog_count": "共 {count} 篇",
+	"devlog_list_aria": "開發日誌文章",
+	"devlog_read_aria": "閱讀：{title}",
+	"devlog_reading_time": "約 {minutes} 分鐘",
+	"devlog_language_note": "文章以繁體中文撰寫。",
+	"devlog_empty_title": "第一篇日誌整理中",
+	"devlog_empty_body": "在那之前，可以先到「認識我們」看看我們走過的里程碑。",
+	"devlog_empty_cta": "看里程碑",
+	"devlog_back": "回到開發日誌",
+	"devlog_post_nav_aria": "更多日誌",
+	"devlog_newer": "較新的日誌",
+	"devlog_older": "較舊的日誌",
+	"about_milestone_devlog_link": "看完整開發日誌"
 }

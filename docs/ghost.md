@@ -1,9 +1,14 @@
-# Ghost CMS — headless content for 漫畫專區 (comics)
+# Ghost CMS — headless content for 開發日誌 (dev log) and 漫畫專區 (comics)
 
-The comics section (`/comics/`, `/comics/<slug>/`, issue #107) is authored in
-[Ghost](https://ghost.org) and **read only at build time**. `pnpm build`
-prerenders every page from the Ghost Content API and mirrors the images into
-`build/comics/media/`. The deployed site is still plain static files behind nginx:
+Two sections are authored in [Ghost](https://ghost.org) and **read only at
+build time**:
+
+- the dev log, `/devlog/` and `/devlog/<slug>/` (posts tagged `#devlog`);
+- the comics corner, `/comics/` and `/comics/<slug>/` (issue #107, posts tagged
+  `#comics`). It is not linked from the navigation until episodes exist (#105).
+
+`pnpm build` prerenders every page from the Ghost Content API and mirrors the
+images into `build/devlog/media/` and `build/comics/media/`. The deployed site is still plain static files behind nginx:
 browsers never contact Ghost, and a Ghost outage never takes nycu.life down.
 It only blocks the next content rebuild.
 
@@ -20,30 +25,38 @@ editor ──(SSO: auth.nycu.one)──▶ Ghost Admin (cms.nycu.life/ghost/)
 
 ## Build-time contract
 
-| Variable                | Where                                                  | Meaning                                                                                                      |
-| ----------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `GHOST_URL`             | env / Docker build arg / repo **variable** `GHOST_URL` | Ghost base URL reachable from the build, e.g. `https://cms.nycu.life`.                                       |
-| `GHOST_CONTENT_API_KEY` | env / BuildKit secret / repo **secret**                | Content API key of the "NYCU LIFE landing build" Custom Integration (read-only).                             |
-| `GHOST_REQUIRED`        | env / Docker build arg                                 | `1` = fail the build if Ghost is unset, unreachable, or has no comics. CI sets it for every image it pushes. |
+| Variable                | Where                                                  | Meaning                                                                                      |
+| ----------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `GHOST_URL`             | env / Docker build arg / repo **variable** `GHOST_URL` | Ghost base URL reachable from the build, e.g. `https://cms.nycu.life`.                       |
+| `GHOST_CONTENT_API_KEY` | env / BuildKit secret / repo **secret**                | Content API key of the "NYCU LIFE landing build" Custom Integration (read-only).             |
+| `GHOST_REQUIRED`        | env / Docker build arg                                 | `1` = fail the build if Ghost is unset or unreachable. CI sets it for every image it pushes. |
 
 Without Ghost (the default for local dev, PR checks, and forks) the build logs a
-warning and uses the placeholder catalog in `src/lib/content/comics.ts`. That is
-10 episodes from the design: EP.01 "小貢上大學了", the rest "[本集標題]", with CSS
-covers. Placeholder episode pages are `noindex` and left out of the sitemap.
-Ghost-backed episodes are indexable and listed in `/sitemap.xml`.
+warning and falls back:
+
+- `/devlog/` renders an empty state ("第一篇日誌整理中") that links to the
+  milestones on `/about/`. No post pages are built.
+- `/comics/` uses the placeholder catalog in `src/lib/content/comics.ts`: 10
+  episodes from the design (EP.01 "小貢上大學了", the rest "[本集標題]") with
+  CSS covers.
+
+The same fallback applies when Ghost answers but nothing is published for that
+section yet, even with `GHOST_REQUIRED=1`: an empty section is a normal state,
+an unreachable Ghost is not. Fallback pages are `noindex` and left out of the
+sitemap. Ghost-backed pages are indexable and listed in `/sitemap.xml`.
 
 The loader lives in `src/lib/server/ghost.ts`. It makes one memoised fetch per
-build, shared by `/comics/`, every episode page, the media mirror, and the
-sitemap. The variables come from `process.env` because SvelteKit 2 forbids
+section per build, shared by the list, every post page, the media mirror, and
+the sitemap. The variables come from `process.env` because SvelteKit 2 forbids
 `$env/dynamic/*` while prerendering. Vite does **not** load `.env*` files into
 `process.env`, so export them, e.g. `set -a; . ./.env.ghost.local; set +a`.
 
 ### Images
 
 Image URLs under Ghost's `/content/images/` (covers, `src`, `srcset`) are
-rewritten to `/comics/media/<path>`, and
-`src/routes/comics/media/[...path]/+server.ts` downloads each file once at
-build time. The match uses both `GHOST_URL` and Ghost's own public `url` setting.
+rewritten to `/devlog/media/<path>` or `/comics/media/<path>`, and the
+matching `src/routes/{devlog,comics}/media/[...path]/+server.ts` downloads each
+file once at build time. The match uses both `GHOST_URL` and Ghost's own public `url` setting.
 Images hosted anywhere else are left as they are, which means they are
 hot-linked; avoid them.
 
@@ -57,6 +70,22 @@ or **Author** role. Only Administrators can add code injection or integrations
 (we don't render Ghost code injection anyway).
 
 ## Editor conventions
+
+### 開發日誌 (dev log)
+
+| What            | How in Ghost                                                                                                                                 |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mark a post     | Add the **internal tag `#devlog`** (a public `devlog` tag also works). Only **published** posts are used, newest first.                      |
+| Labels          | Any other **public** tag (e.g. `校園公車`, `NYCozU`) shows as a label on the card and the post. Internal `#tags` are never shown.            |
+| Title / excerpt | Post title → card title and `<h1>`. Custom excerpt → card summary, lede, and meta description.                                               |
+| Cover           | Optional post **feature image**, **16:9** (e.g. 1600×900). Without one the card shows a brand gradient.                                      |
+| Body            | Normal Ghost editor: headings, lists, quotes, code, image / gallery / callout / bookmark cards. Upload images to Ghost so they get mirrored. |
+| Language        | Posts are single-language (Traditional Chinese); the English UI says so.                                                                     |
+| URL             | Post **slug** → `https://nycu.life/devlog/<slug>/`. Changing a slug after publishing breaks the old URL.                                     |
+
+The newest post is shown as the large card at the top of `/devlog/`.
+
+### 漫畫專區 (comics)
 
 | What                | How in Ghost                                                                                                                                                                                      |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

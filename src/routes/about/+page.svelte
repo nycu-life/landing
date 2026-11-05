@@ -101,6 +101,7 @@
 
 	<section
 		bind:this={milestoneEl}
+		id="milestones"
 		class="page about-section milestones"
 		class:drawn={milestonesIn}
 		aria-labelledby="milestone-title"
@@ -133,6 +134,9 @@
 				{/each}
 			</ol>
 		</div>
+		<p class="milestone-more">
+			<a href="{base}/devlog/">{m.about_milestone_devlog_link()} →</a>
+		</p>
 	</section>
 
 	<section class="page about-section about-wish" aria-labelledby="about-wish-title">
@@ -370,6 +374,17 @@
 	}
 
 	/* ── Milestone ──────────────────────────────────────────── */
+	.milestone-more {
+		margin: clamp(1rem, 2.5vw, 1.75rem) 0 0;
+		text-align: center;
+		font-weight: 700;
+	}
+	.milestone-more a {
+		color: var(--brand);
+	}
+	.milestone-more a:hover {
+		text-decoration: underline;
+	}
 	.milestone-track {
 		position: relative;
 		margin-top: clamp(1.5rem, 3vw, 2rem);

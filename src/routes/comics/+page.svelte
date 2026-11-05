@@ -22,6 +22,10 @@
 	<meta property="og:description" content={m.comics_lede()} />
 	<meta name="twitter:title" content={pageTitle} />
 	<meta name="twitter:description" content={m.comics_lede()} />
+	{#if data.source === 'placeholder'}
+		<!-- No episodes published in Ghost yet: the layout preview stays out of the index. -->
+		<meta name="robots" content="noindex" />
+	{/if}
 </svelte:head>
 
 <div id="comics" class="page comics-page">

@@ -14,16 +14,18 @@ combines two sources of truth:
 
 1. `src/lib/seo/pages.ts` → `indexablePages`: the static pages, in order. To
    add a page, add one line there.
-2. Comic episodes read from Ghost at build time (`docs/ghost.md`), as
-   `/comics/<slug>/`, in episode order. They are listed **only** when the build
-   actually read them from Ghost.
+2. Ghost content read at build time (`docs/ghost.md`): `/devlog/` and its
+   posts (newest first), then `/comics/` and its episodes (episode order).
+   They are listed **only** when the build actually read them from Ghost.
 
 | URL                                | Status | Canonical | robots                        |
 | ---------------------------------- | ------ | --------- | ----------------------------- |
 | `https://nycu.life/`               | 200    | self      | —                             |
 | `https://nycu.life/about/`         | 200    | self      | —                             |
 | `https://nycu.life/wishpool/`      | 200    | self      | —                             |
-| `https://nycu.life/comics/`        | 200    | self      | —                             |
+| `https://nycu.life/devlog/`        | 200    | self      | — (`noindex` while empty)     |
+| `https://nycu.life/devlog/<slug>/` | 200    | self      | — (Ghost-backed)              |
+| `https://nycu.life/comics/`        | 200    | self      | — (`noindex` while empty)     |
 | `https://nycu.life/comics/<slug>/` | 200    | self      | — (Ghost-backed)              |
 | `/comics/ep-01/` … (placeholder)   | 200    | self      | `noindex`, not in the sitemap |
 
@@ -32,16 +34,25 @@ reachable but `noindex,nofollow` and intentionally absent from the sitemap.
 English copy is a cookie-selected locale on the same URLs (Paraglide `cookie`
 strategy), so there are no `/en/` URLs and no hreflang alternates.
 
-Placeholder comics: a build without Ghost (local dev, PR checks) renders the 10
-placeholder episodes from `src/lib/content/comics.ts`. Those pages are
-`noindex` and never in the sitemap. Production images are built with
-`GHOST_REQUIRED=1`, so placeholders cannot ship to nycu.life.
+Ghost-backed sections (`docs/ghost.md`) join the sitemap only when Ghost
+supplied content at build time:
 
-`/comics/media/<path>` holds the images mirrored from Ghost at build time.
-They are plain static files and not pages.
+- `/devlog/` and `/devlog/<slug>/` once at least one `#devlog` post is
+  published. Without posts (or without Ghost) `/devlog/` is an empty-state page
+  with `noindex`.
+- `/comics/` and `/comics/<slug>/` once at least one `#comics` post is
+  published. Until then the 10 placeholder episodes from
+  `src/lib/content/comics.ts` render with `noindex`, and the comics corner is
+  not linked from the navigation.
+
+Production images are built with `GHOST_REQUIRED=1`, so an unreachable Ghost
+fails the build instead of shipping empty sections; an empty section is fine.
+
+`/devlog/media/<path>` and `/comics/media/<path>` hold the images mirrored from
+Ghost at build time. They are plain static files and not pages.
 
 nginx needs no rule for any of this: prerendered routes resolve through
-`try_files $uri $uri/ =404`, unknown `/comics/...` slugs and media paths get a
+`try_files $uri $uri/ =404`, unknown `/devlog/...` and `/comics/...` slugs and media paths get a
 real 404, and `sitemap.xml` is served as `text/xml` by extension. This was
 verified on the `nginx:1.30.6-alpine` image built from this Dockerfile against
 a Ghost-backed build.
@@ -50,13 +61,14 @@ a Ghost-backed build.
 
 `/about/` was withdrawn (410) on 2026-09-04 and reinstated as a real page on
 2026-11-05 (#106: team vision, film, milestones). It is back in the sitemap.
+`/devlog/` was withdrawn on the same day and reinstated on 2026-11-05 as the
+Ghost-backed dev log (in the sitemap once a post is published).
 
 | URL                                                          | Response | Why                                                                                                                                                                                                                |
 | ------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `/team/<slug>/` (incl. `/team/hsuan/`, `/team/einstein706/`) | 410      | Member profile pages were deliberately withdrawn (`bc6c0fb`, 2026-09-04). No equivalent page exists and the site no longer links to them.                                                                          |
 | `/products/`                                                 | 410      | Unfinished destination page withdrawn (`a9a448c`, 2026-09-04). Products are now a chapter of the home page, not a page of their own; redirecting would be a home-page redirect, which Google treats as a soft 404. |
 | `/courses/`                                                  | 410      | Withdrawn with no replacement.                                                                                                                                                                                     |
-| `/devlog/`                                                   | 410      | Withdrawn with no replacement.                                                                                                                                                                                     |
 | `/demo/`, `/demo/paraglide/`                                 | 404      | SvelteKit template scaffolding, removed 2026-10-23 (was publicly 200 and indexable).                                                                                                                               |
 | any other unknown path                                       | 404      | Real 404 (see below).                                                                                                                                                                                              |
 
@@ -105,10 +117,11 @@ The retired URLs above already answered 410 since 2026-09-04 and nothing on
 the site links to them; they were kept as 410 on purpose.
 
 Verification lives in `e2e/seo.test.ts`: sitemap contents (the static pages
-from `src/lib/seo/pages.ts` first, then only `/comics/<slug>/` entries),
+from `src/lib/seo/pages.ts` first, then only Ghost-backed `/devlog/` and
+`/comics/` entries),
 self-canonicals on every sitemap URL, noindex placeholder episodes, and the
-noindex error page with a real 404. `e2e/comics.test.ts` covers the comics
-pages themselves. The nginx status codes were checked by
+noindex error page with a real 404. `e2e/devlog.test.ts` and
+`e2e/comics.test.ts` cover those pages themselves. The nginx status codes were checked by
 running `docker/nginx.conf` on `nginx:1.30.6-alpine` against the build.
 
 ### Deployment

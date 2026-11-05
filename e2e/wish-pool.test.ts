@@ -117,7 +117,7 @@ test('wish pool publishes and supports directly from wish cards', async ({ page 
 	).toBeVisible();
 	await expect(page.getByRole('heading', { level: 2, name: '大家正在敲碗' })).toBeVisible();
 	await expect(page.locator('.topbar-brand')).toBeVisible();
-	await expect(page.locator('.topbar-nav a[href="/wishpool/"]')).toHaveAttribute(
+	await expect(page.locator('.topbar .sticker-link[href="/wishpool/"]')).toHaveAttribute(
 		'aria-current',
 		'page'
 	);

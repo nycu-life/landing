@@ -190,14 +190,16 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 		'https://nycu.life/og/nycu-life.jpg'
 	);
 	await expect(page.locator('.footer-contact a[href="/wishpool/"]')).toBeAttached();
-	// #105: the Wish Pool is a plain nav link; the sticker slot now belongs to the comics corner.
-	const wishPoolNavigation = page.locator('.topbar-nav a[href="/wishpool/"]');
+	// The Wish Pool keeps the sticker slot until the comics corner has episodes (#105).
+	const wishPoolNavigation = page.locator('.topbar-actions .sticker-link');
 	await expect(wishPoolNavigation).toBeVisible();
+	await expect(wishPoolNavigation).toHaveAttribute('href', '/wishpool/');
 	await expect(wishPoolNavigation).toHaveAccessibleName('許願池');
-	await expect(page.locator('.topbar-actions .sticker-link')).toHaveAttribute('href', '/comics/');
+	await expect(page.locator('.topbar-nav a[href="/devlog/"]')).toHaveText('開發日誌');
+	await expect(page.locator('.topbar a[href="/comics/"]')).toHaveCount(0);
 });
 
-test('phone header keeps the comics sticker and moves navigation into the menu', async ({
+test('phone header keeps the Wish Pool sticker and moves navigation into the menu', async ({
 	page
 }) => {
 	const screenshotDirectory = process.env.VISUAL_AUDIT_SCREENSHOTS;
@@ -205,8 +207,8 @@ test('phone header keeps the comics sticker and moves navigation into the menu',
 	await page.goto('/');
 	const button = page.locator('.sticker-link');
 	await expect(button).toBeVisible();
-	await expect(button).toHaveText(/漫畫專區/);
-	await expect(button).toHaveAttribute('href', '/comics/');
+	await expect(button).toHaveText(/許願池/);
+	await expect(button).toHaveAttribute('href', '/wishpool/');
 	await expect(button.locator('.sticker-face-default')).toHaveAttribute(
 		'src',
 		'./ui/wishpool-mobile.svg'
@@ -224,7 +226,7 @@ test('phone header keeps the comics sticker and moves navigation into the menu',
 	await menuButton.click();
 	const menu = page.locator('#topbar-menu');
 	await expect(menu).toBeVisible();
-	for (const name of ['認識我們', '產品', '常見問題', '夥伴徵才', '許願池', '漫畫專區']) {
+	for (const name of ['認識我們', '產品', '常見問題', '夥伴徵才', '開發日誌', '許願池']) {
 		await expect(menu.getByRole('link', { name })).toBeVisible();
 	}
 	await expect(menu.getByRole('group', { name: '語言' })).toBeVisible();

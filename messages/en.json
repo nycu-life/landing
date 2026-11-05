@@ -467,5 +467,21 @@
 	"comics_next": "Next episode",
 	"comics_episode_nav_aria": "Episode navigation",
 	"comics_published": "Published {date}",
-	"comics_placeholder_body": "This episode is coming soon. Stay tuned."
+	"comics_placeholder_body": "This episode is coming soon. Stay tuned.",
+
+	"devlog_page_title": "Dev log",
+	"devlog_page_lede": "A record of untangling campus life one small annoyance at a time: launches, design trade-offs, and the potholes along the way.",
+	"devlog_count": "{count} posts",
+	"devlog_list_aria": "Dev log posts",
+	"devlog_read_aria": "Read: {title}",
+	"devlog_reading_time": "{minutes} min read",
+	"devlog_language_note": "Posts are written in Traditional Chinese.",
+	"devlog_empty_title": "The first entry is on its way",
+	"devlog_empty_body": "Until then, see the milestones we have reached so far on the About page.",
+	"devlog_empty_cta": "See our milestones",
+	"devlog_back": "Back to the dev log",
+	"devlog_post_nav_aria": "More posts",
+	"devlog_newer": "Newer post",
+	"devlog_older": "Older post",
+	"about_milestone_devlog_link": "Read the full dev log"
 }
