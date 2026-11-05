@@ -30,16 +30,23 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 	return nil
 }
 
-func (s *PostgresStore) List(ctx context.Context, actorHash []byte, limit int) ([]Wish, error) {
+// wishColumns is the shared projection for scanWish; callers append the
+// support count and supportedByMe expressions.
+const wishColumns = `w.id::text, w.title, w.detail, w.category, w.visibility,
+		       w.status, w.reply, w.replied_at, w.fulfilled_at,
+		       w.created_at, w.updated_at`
+
+func (s *PostgresStore) List(ctx context.Context, actorHash []byte, status Status, limit int) ([]Wish, error) {
+	// Fulfilled wishes are listed by when they were fulfilled; open ones by age.
 	rows, err := s.pool.Query(ctx, `
-		SELECT w.id::text, w.title, w.detail, w.category, w.visibility,
-		       w.created_at, w.updated_at,
+		SELECT `+wishColumns+`,
 		       (SELECT count(*) FROM wish_supports s WHERE s.wish_id = w.id)::int,
 		       EXISTS(SELECT 1 FROM wish_supports s WHERE s.wish_id = w.id AND s.actor_hash = $1)
 		FROM wishes w
-		WHERE w.visibility = 'published'
-		ORDER BY w.created_at DESC
-		LIMIT $2`, actorHash, limit)
+		WHERE w.visibility = 'published' AND w.status = $2::text
+		ORDER BY CASE WHEN $2::text = 'fulfilled' THEN w.fulfilled_at END DESC NULLS LAST,
+		         w.created_at DESC
+		LIMIT $3`, actorHash, status, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -70,10 +77,12 @@ func (s *PostgresStore) Create(ctx context.Context, input CreateInput) (Wish, er
 		INSERT INTO wishes (id, title, detail, category, visibility, actor_hash)
 		VALUES ($1::uuid, $2, $3, $4, $5, $6)
 		RETURNING id::text, title, detail, category, visibility,
+		          status, reply, replied_at, fulfilled_at,
 		          created_at, updated_at`,
 		input.ID, input.Title, input.Detail, input.Category, input.Visibility, input.ActorHash,
 	).Scan(
 		&wish.ID, &wish.Title, &wish.Detail, &wish.Category, &wish.Visibility,
+		&wish.Status, &wish.Reply, &wish.RepliedAt, &wish.FulfilledAt,
 		&wish.CreatedAt, &wish.UpdatedAt,
 	)
 	if err != nil {
@@ -137,16 +146,19 @@ func (s *PostgresStore) ToggleSupport(ctx context.Context, id string, actorHash 
 	return result, nil
 }
 
-func (s *PostgresStore) AdminList(ctx context.Context, visibility Visibility, limit int) ([]Wish, error) {
+func (s *PostgresStore) AdminList(ctx context.Context, visibility Visibility, status Status, limit int) ([]Wish, error) {
+	var statusFilter any
+	if status != "" {
+		statusFilter = status
+	}
 	rows, err := s.pool.Query(ctx, `
-		SELECT w.id::text, w.title, w.detail, w.category, w.visibility,
-		       w.created_at, w.updated_at,
+		SELECT `+wishColumns+`,
 		       (SELECT count(*) FROM wish_supports s WHERE s.wish_id = w.id)::int,
 		       false
 		FROM wishes w
-		WHERE w.visibility = $1
+		WHERE w.visibility = $1 AND ($2::text IS NULL OR w.status = $2::text)
 		ORDER BY w.created_at DESC
-		LIMIT $2`, visibility, limit)
+		LIMIT $3`, visibility, statusFilter, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -155,23 +167,40 @@ func (s *PostgresStore) AdminList(ctx context.Context, visibility Visibility, li
 }
 
 func (s *PostgresStore) AdminUpdate(ctx context.Context, id string, input UpdateInput) (Wish, error) {
-	var visibility any
+	var visibility, status, reply any
 	if input.Visibility != nil {
 		visibility = *input.Visibility
 	}
-	var wish Wish
-	err := s.pool.QueryRow(ctx, `
-		UPDATE wishes SET
-			visibility = COALESCE($2::text, visibility),
+	if input.Status != nil {
+		status = *input.Status
+	}
+	if input.Reply != nil {
+		reply = *input.Reply
+	}
+	// Right-hand sides see the row's previous values, so fulfilled_at keeps its
+	// first timestamp on repeated "fulfilled" updates and replied_at only moves
+	// when the reply text actually changes.
+	wish, err := scanWish(s.pool.QueryRow(ctx, `
+		UPDATE wishes AS w SET
+			visibility = COALESCE($2::text, w.visibility),
+			status = COALESCE($3::text, w.status),
+			fulfilled_at = CASE
+				WHEN $3::text IS NULL THEN w.fulfilled_at
+				WHEN $3::text = 'fulfilled' THEN COALESCE(w.fulfilled_at, now())
+				ELSE NULL
+			END,
+			reply = COALESCE($4::text, w.reply),
+			replied_at = CASE
+				WHEN $4::text IS NULL THEN w.replied_at
+				WHEN $4::text = '' THEN NULL
+				WHEN $4::text = w.reply THEN w.replied_at
+				ELSE now()
+			END,
 			updated_at = now()
-		WHERE id = $1::uuid
-		RETURNING id::text, title, detail, category, visibility,
-		          created_at, updated_at,
-		          (SELECT count(*) FROM wish_supports s WHERE s.wish_id = wishes.id)::int,
-		          false`, id, visibility).Scan(
-		&wish.ID, &wish.Title, &wish.Detail, &wish.Category, &wish.Visibility,
-		&wish.CreatedAt, &wish.UpdatedAt, &wish.SupportCount, &wish.SupportedByMe,
-	)
+		WHERE w.id = $1::uuid
+		RETURNING `+wishColumns+`,
+		          (SELECT count(*) FROM wish_supports s WHERE s.wish_id = w.id)::int,
+		          false`, id, visibility, status, reply))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Wish{}, ErrNotFound
 	}
@@ -192,6 +221,7 @@ func scanWish(row rowScanner) (Wish, error) {
 	var wish Wish
 	err := row.Scan(
 		&wish.ID, &wish.Title, &wish.Detail, &wish.Category, &wish.Visibility,
+		&wish.Status, &wish.Reply, &wish.RepliedAt, &wish.FulfilledAt,
 		&wish.CreatedAt, &wish.UpdatedAt, &wish.SupportCount, &wish.SupportedByMe,
 	)
 	return wish, err

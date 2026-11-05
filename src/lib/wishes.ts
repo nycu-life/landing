@@ -1,11 +1,20 @@
 export const wishCategories = ['life', 'transport', 'learning', 'space', 'other'] as const;
 export type WishCategory = (typeof wishCategories)[number];
 
+export const wishStatuses = ['open', 'fulfilled'] as const;
+export type WishStatus = (typeof wishStatuses)[number];
+
 export type Wish = {
 	id: string;
 	title: string;
 	detail: string;
 	category: WishCategory;
+	/** Processing status; older API responses omit it, which means `open`. */
+	status?: WishStatus;
+	/** Team reply; an empty string (or absent) means no reply yet. */
+	reply?: string;
+	repliedAt?: string | null;
+	fulfilledAt?: string | null;
 	supportCount: number;
 	supportedByMe: boolean;
 	createdAt: string;
@@ -38,8 +47,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	return payload as T;
 }
 
-export async function listWishes(signal?: AbortSignal): Promise<Wish[]> {
-	const response = await request<WishListResponse>('/api/wishes?limit=24', { signal });
+export async function listWishes(
+	status: WishStatus = 'open',
+	signal?: AbortSignal
+): Promise<Wish[]> {
+	const response = await request<WishListResponse>(
+		`/api/wishes?status=${encodeURIComponent(status)}`,
+		{ signal }
+	);
 	return response.data;
 }
 

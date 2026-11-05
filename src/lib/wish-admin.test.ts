@@ -4,6 +4,7 @@ import {
 	getAdminSession,
 	listAdminWishes,
 	logoutAdmin,
+	updateAdminWish,
 	updateAdminWishVisibility
 } from './wish-admin';
 
@@ -74,6 +75,31 @@ describe('wish admin API', () => {
 		const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
 		expect(url).toBe('/api/wishes/admin/wish-1');
 		expect(init.body).toBe('{"visibility":"hidden"}');
+	});
+
+	it('filters by status and patches status and reply together', async () => {
+		const ok = () =>
+			new Response(JSON.stringify({ data: [] }), {
+				status: 200,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		const fetchMock = vi.fn().mockImplementation(async () => ok());
+		vi.stubGlobal('fetch', fetchMock);
+
+		await listAdminWishes('published', { status: 'fulfilled' });
+		await updateAdminWish('wish-1', { status: 'fulfilled', reply: '已上線' });
+		await updateAdminWish('wish-1', { reply: '' });
+
+		const calls = fetchMock.mock.calls as Array<[string, RequestInit]>;
+		expect(calls[0][0]).toBe('/api/wishes/admin?visibility=published&status=fulfilled');
+		expect(calls[1][1]).toEqual(
+			expect.objectContaining({
+				method: 'PATCH',
+				body: '{"status":"fulfilled","reply":"已上線"}',
+				credentials: 'same-origin'
+			})
+		);
+		expect(calls[2][1].body).toBe('{"reply":""}');
 	});
 
 	it('logs out through a same-origin POST', async () => {

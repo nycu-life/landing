@@ -60,12 +60,24 @@ func main() {
 		os.Exit(1)
 	}
 
+	serviceClients, err := wishes.ParseServiceClients(os.Getenv("WISH_SERVICE_CLIENTS"))
+	if err != nil {
+		logger.Error("configure Wish Pool service clients", "error", err)
+		os.Exit(1)
+	}
+	serviceNames := make([]string, 0, len(serviceClients))
+	for _, client := range serviceClients {
+		serviceNames = append(serviceNames, client.Name)
+	}
+	logger.Info("wish API service clients configured", "clients", serviceNames)
+
 	handler, err := wishes.NewHandler(
 		wishes.NewPostgresStore(pool),
 		os.Getenv("WISH_COOKIE_SECRET"),
 		os.Getenv("WISH_ADMIN_TOKEN"),
 		adminAuth,
 		logger,
+		wishes.WithServiceClients(serviceClients),
 	)
 	if err != nil {
 		logger.Error("configure wish API", "error", err)

@@ -180,6 +180,11 @@ func (h *Handler) authLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) adminIdentity(r *http.Request) (AdminIdentity, bool) {
+	// A service (BFF) token never grants admin access, even alongside a
+	// browser admin session cookie.
+	if _, _, isService := h.serviceClient(r); isService {
+		return AdminIdentity{}, false
+	}
 	if h.adminToken != "" {
 		provided := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if len(provided) == len(h.adminToken) &&

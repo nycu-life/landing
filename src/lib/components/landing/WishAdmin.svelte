@@ -8,15 +8,20 @@
 		getAdminSession,
 		listAdminWishes,
 		logoutAdmin,
-		updateAdminWishVisibility,
+		maxWishReplyLength,
+		updateAdminWish,
 		type AdminSessionUser,
 		type AdminWish,
+		type AdminWishUpdate,
 		type WishVisibility
 	} from '$lib/wish-admin';
-	import type { WishCategory } from '$lib/wishes';
+	import type { WishCategory, WishStatus } from '$lib/wishes';
 
 	let identity = $state<AdminSessionUser | null>(null);
 	let visibility = $state<WishVisibility>('pending');
+	let statusFilter = $state<WishStatus | 'all'>('all');
+	let editingId = $state('');
+	let replyDraft = $state('');
 	let wishes = $state<AdminWish[]>([]);
 	let query = $state('');
 	let checkingSession = $state(true);
@@ -50,6 +55,13 @@
 			space: m.wish_category_space,
 			other: m.wish_category_other
 		})[value]();
+	const statusLabel = (value: WishStatus | 'all') =>
+		({
+			all: m.wish_admin_status_all,
+			open: m.wish_admin_status_open,
+			fulfilled: m.wish_admin_status_fulfilled
+		})[value]();
+	const replyLength = $derived([...replyDraft].length);
 	const supportCountLabel = (count: number) =>
 		count === 1 ? m.wish_support_one() : m.wish_support_count({ count });
 	const formatCreatedAt = (value: string) => {
@@ -85,19 +97,24 @@
 		notice = '';
 		loading = false;
 		updatingId = '';
+		editingId = '';
 		error = message;
 	}
 
-	async function load(nextVisibility: WishVisibility) {
+	async function load(nextVisibility: WishVisibility, nextStatus = statusFilter) {
 		if (!identity) return;
 		const version = ++requestVersion;
 		loading = true;
 		error = '';
 		notice = '';
 		try {
-			const items = await listAdminWishes(nextVisibility);
+			const items = await listAdminWishes(nextVisibility, {
+				status: nextStatus === 'all' ? undefined : nextStatus
+			});
 			if (version !== requestVersion) return;
 			visibility = nextVisibility;
+			statusFilter = nextStatus;
+			editingId = '';
 			wishes = items;
 			query = '';
 		} catch (caught) {
@@ -151,27 +168,61 @@
 		}
 	}
 
-	async function updateVisibility(wish: AdminWish, nextVisibility: WishVisibility) {
-		if (!identity || updatingId) return;
+	/** Sends an admin PATCH and keeps the current list consistent with its filters. */
+	async function patchWish(wish: AdminWish, update: AdminWishUpdate, successNotice: () => string) {
+		if (!identity || updatingId) return false;
 		updatingId = wish.id;
 		error = '';
 		notice = '';
 		try {
-			await updateAdminWishVisibility(wish.id, nextVisibility);
-			wishes = wishes.filter((item) => item.id !== wish.id);
-			notice =
-				nextVisibility === 'hidden'
-					? m.wish_admin_notice_hidden()
-					: m.wish_admin_notice_published();
+			const updated = { ...wish, ...(await updateAdminWish(wish.id, update)) };
+			const leavesList =
+				update.visibility !== undefined ||
+				(statusFilter !== 'all' && (updated.status ?? 'open') !== statusFilter);
+			wishes = leavesList
+				? wishes.filter((item) => item.id !== wish.id)
+				: wishes.map((item) => (item.id === wish.id ? updated : item));
+			notice = successNotice();
+			return true;
 		} catch (caught) {
 			if (caught instanceof WishAdminRequestError && caught.status === 401) {
 				clearIdentity(m.wish_admin_error_session_expired());
 			} else {
 				error = m.wish_admin_error_update();
 			}
+			return false;
 		} finally {
 			updatingId = '';
 		}
+	}
+
+	function updateVisibility(wish: AdminWish, nextVisibility: WishVisibility) {
+		return patchWish(wish, { visibility: nextVisibility }, () =>
+			nextVisibility === 'hidden' ? m.wish_admin_notice_hidden() : m.wish_admin_notice_published()
+		);
+	}
+
+	function updateStatus(wish: AdminWish, nextStatus: WishStatus) {
+		return patchWish(wish, { status: nextStatus }, () =>
+			nextStatus === 'fulfilled' ? m.wish_admin_notice_fulfilled() : m.wish_admin_notice_reopened()
+		);
+	}
+
+	function startReply(wish: AdminWish) {
+		editingId = wish.id;
+		replyDraft = wish.reply ?? '';
+	}
+
+	async function saveReply(wish: AdminWish, nextReply: string) {
+		const reply = nextReply.trim();
+		if (reply === (wish.reply ?? '')) {
+			editingId = '';
+			return;
+		}
+		const saved = await patchWish(wish, { reply }, () =>
+			reply ? m.wish_admin_notice_reply_saved() : m.wish_admin_notice_reply_cleared()
+		);
+		if (saved) editingId = '';
 	}
 
 	onMount(() => {
@@ -243,6 +294,18 @@
 					</button>
 				{/each}
 			</div>
+			<label class="status-filter">
+				<span>{m.wish_admin_status_filter_label()}</span>
+				<select
+					value={statusFilter}
+					disabled={loading}
+					onchange={(event) => load(visibility, event.currentTarget.value as WishStatus | 'all')}
+				>
+					{#each ['all', 'open', 'fulfilled'] as option (option)}
+						<option value={option}>{statusLabel(option as WishStatus | 'all')}</option>
+					{/each}
+				</select>
+			</label>
 			<label class="admin-search">
 				<span class="sr-only">{m.wish_admin_search_label()}</span>
 				<svg aria-hidden="true" viewBox="0 0 24 24">
@@ -277,17 +340,101 @@
 				{#each filteredWishes as wish (wish.id)}
 					<article class="admin-card">
 						<div class="card-meta">
-							<span class="category-chip">{categoryLabel(wish.category)}</span>
+							<span class="card-chips">
+								<span class="category-chip">{categoryLabel(wish.category)}</span>
+								{#if wish.status === 'fulfilled'}
+									<span class="status-chip">✓ {m.wish_admin_status_fulfilled()}</span>
+								{/if}
+							</span>
 							<time datetime={wish.createdAt}>{formatCreatedAt(wish.createdAt)}</time>
 						</div>
 						<h3>{wish.title}</h3>
 						{#if wish.detail}<p class="wish-detail">{wish.detail}</p>{/if}
+						{#if editingId === wish.id}
+							<form
+								class="reply-editor"
+								onsubmit={(event) => {
+									event.preventDefault();
+									void saveReply(wish, replyDraft);
+								}}
+							>
+								<label for="reply-{wish.id}">{m.wish_admin_reply_label()}</label>
+								<textarea
+									id="reply-{wish.id}"
+									bind:value={replyDraft}
+									rows="4"
+									maxlength={maxWishReplyLength}
+									placeholder={m.wish_admin_reply_placeholder()}
+									disabled={Boolean(updatingId)}
+								></textarea>
+								<div class="reply-editor-footer">
+									<span class="reply-note"
+										>{m.wish_admin_reply_public_note()}
+										<span class="reply-count"
+											>{m.wish_admin_reply_count({
+												count: replyLength,
+												max: maxWishReplyLength
+											})}</span
+										></span
+									>
+									<div class="reply-editor-actions">
+										<button
+											class="action-button secondary"
+											type="button"
+											disabled={Boolean(updatingId)}
+											onclick={() => (editingId = '')}>{m.wish_admin_reply_cancel()}</button
+										>
+										{#if wish.reply}
+											<button
+												class="action-button danger"
+												type="button"
+												disabled={Boolean(updatingId)}
+												onclick={() => saveReply(wish, '')}>{m.wish_admin_reply_clear()}</button
+											>
+										{/if}
+										<button
+											class="action-button primary"
+											type="submit"
+											disabled={Boolean(updatingId) || replyLength > maxWishReplyLength}
+											>{updatingId === wish.id
+												? m.wish_admin_updating()
+												: m.wish_admin_reply_save()}</button
+										>
+									</div>
+								</div>
+							</form>
+						{:else if wish.reply}
+							<div class="reply-preview">
+								<span>{m.wish_admin_reply_label()}</span>
+								<p>{wish.reply}</p>
+							</div>
+						{/if}
 						<div class="card-footer">
 							<div class="wish-facts">
 								<span>{supportCountLabel(wish.supportCount)}</span>
 								<code title={wish.id}>{wish.id}</code>
 							</div>
 							<div class="card-actions">
+								{#if editingId !== wish.id}
+									<button
+										class="action-button secondary"
+										type="button"
+										disabled={Boolean(updatingId)}
+										onclick={() => startReply(wish)}
+										>{wish.reply ? m.wish_admin_reply_edit() : m.wish_admin_reply_write()}</button
+									>
+								{/if}
+								<button
+									class="action-button secondary"
+									class:fulfil={wish.status !== 'fulfilled'}
+									type="button"
+									disabled={Boolean(updatingId)}
+									onclick={() =>
+										updateStatus(wish, wish.status === 'fulfilled' ? 'open' : 'fulfilled')}
+									>{wish.status === 'fulfilled'
+										? m.wish_admin_reopen()
+										: m.wish_admin_mark_fulfilled()}</button
+								>
 								{#if visibility === 'pending'}
 									<button
 										class="action-button secondary"
@@ -442,6 +589,10 @@
 	.card-actions {
 		gap: 0.55rem;
 	}
+	.card-actions {
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
 	.toolbar-button,
 	.visibility-tabs button,
 	.action-button {
@@ -493,6 +644,32 @@
 	.admin-search {
 		position: relative;
 		width: min(100%, 20rem);
+	}
+	.status-filter {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-left: auto;
+		color: var(--ink-soft);
+		font-size: 0.8rem;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+	.status-filter select {
+		height: 2.75rem;
+		border: 1px solid var(--line-strong);
+		border-radius: 999px;
+		padding: 0 0.95rem;
+		background: var(--surface);
+		color: var(--ink);
+		font: inherit;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.status-filter select:focus-visible {
+		border-color: var(--brand);
+		outline: 0;
+		box-shadow: 0 0 0 3px var(--brand-soft);
 	}
 	.admin-search svg {
 		position: absolute;
@@ -575,6 +752,85 @@
 	.card-meta {
 		justify-content: space-between;
 		gap: 1rem;
+	}
+	.card-chips {
+		display: inline-flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+	.status-chip {
+		padding: 0.3rem 0.58rem;
+		border-radius: 999px;
+		background: var(--ok-soft);
+		color: var(--lime-ink);
+		font-size: 0.72rem;
+		font-weight: 700;
+	}
+	.reply-preview,
+	.reply-editor {
+		display: grid;
+		gap: 0.45rem;
+		padding: 0.8rem 0.95rem;
+		border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line));
+		border-radius: 0.3rem 0.95rem 0.95rem 0.95rem;
+		background: var(--brand-soft);
+	}
+	.reply-preview > span,
+	.reply-editor label {
+		color: var(--brand);
+		font-size: 0.74rem;
+		font-weight: 750;
+	}
+	.reply-preview p {
+		color: var(--ink);
+		font-size: 0.88rem;
+		line-height: 1.6;
+		white-space: pre-line;
+		overflow-wrap: anywhere;
+	}
+	.reply-editor textarea {
+		width: 100%;
+		min-height: 6.5rem;
+		border: 1px solid var(--line-strong);
+		border-radius: 0.7rem;
+		padding: 0.7rem 0.85rem;
+		background: var(--surface);
+		color: var(--ink);
+		font: inherit;
+		font-size: 0.9rem;
+		line-height: 1.6;
+		resize: vertical;
+		outline: 0;
+	}
+	.reply-editor textarea:focus-visible {
+		border-color: var(--brand);
+		box-shadow: 0 0 0 3px var(--brand-soft);
+	}
+	.reply-editor-footer {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.6rem;
+	}
+	.reply-note {
+		color: var(--muted);
+		font-size: 0.74rem;
+		line-height: 1.5;
+	}
+	.reply-count {
+		margin-left: 0.4rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.reply-editor-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-left: auto;
+	}
+	.action-button.secondary.fulfil {
+		border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+		color: var(--lime-ink);
 	}
 	.category-chip {
 		padding: 0.3rem 0.58rem;
@@ -688,6 +944,11 @@
 		overflow: hidden;
 		white-space: nowrap;
 	}
+	/* --lime-ink has no dark-theme value, so lift the green status text locally. */
+	:global(html[data-theme='dark']) .status-chip,
+	:global(html[data-theme='dark']) .action-button.secondary.fulfil {
+		color: #71d5aa;
+	}
 	:global(html[data-theme='dark']) .toolbar-button.danger,
 	:global(html[data-theme='dark']) .admin-message.error,
 	:global(html[data-theme='dark']) .action-button.danger {
@@ -722,8 +983,31 @@
 		}
 		.toolbar-actions > *,
 		.visibility-tabs > *,
-		.card-actions > * {
+		.card-actions > *,
+		.reply-editor-actions > * {
 			flex: 1;
+		}
+		/* Up to four card actions: two even columns keep labels on one line, and an odd
+		   final (primary) action spans the row. */
+		.card-actions {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.card-actions > :last-child:nth-child(odd) {
+			grid-column: 1 / -1;
+		}
+		.action-button {
+			white-space: nowrap;
+		}
+		.status-filter {
+			justify-content: space-between;
+			margin-left: 0;
+		}
+		.status-filter select {
+			flex: 1;
+		}
+		.reply-editor-actions {
+			width: 100%;
 		}
 		.wish-facts {
 			justify-content: space-between;
