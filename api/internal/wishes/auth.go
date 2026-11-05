@@ -17,8 +17,13 @@ const (
 	adminSessionCookie = "nycu_wish_admin"
 	oauthStateCookie   = "nycu_wish_oauth_state"
 	adminReturnPath    = "/wishpool/admin/"
-	adminSessionTTL    = 8 * time.Hour
-	oauthStateTTL      = 10 * time.Minute
+	// The CMS (Ghost under /cms/) is gated by Traefik forwardAuth against
+	// /api/wishes/auth/gate. Browsers only send this copy of the admin session
+	// to /cms/, so the gate can see it without widening the API cookie's path.
+	cmsSessionCookie = "nycu_cms_session"
+	cmsPath          = "/cms"
+	adminSessionTTL  = 8 * time.Hour
+	oauthStateTTL    = 10 * time.Minute
 )
 
 type oauthState struct {
@@ -26,6 +31,8 @@ type oauthState struct {
 	Nonce    string `json:"nonce"`
 	Verifier string `json:"verifier"`
 	Expires  int64  `json:"expires"`
+	// Return is a validated same-site path to land on after sign-in.
+	Return string `json:"return,omitempty"`
 }
 
 type adminSession struct {
@@ -59,6 +66,7 @@ func (h *Handler) authLogin(w http.ResponseWriter, r *http.Request) {
 		Nonce:    nonce,
 		Verifier: verifier,
 		Expires:  h.now().Add(oauthStateTTL).Unix(),
+		Return:   safeReturnPath(r.URL.Query().Get("return")),
 	}
 	encoded, err := h.encodeSignedCookie("oauth-state", login)
 	if err != nil {
@@ -134,19 +142,29 @@ func (h *Handler) authCallback(w http.ResponseWriter, r *http.Request) {
 		h.internalError(w, r, err)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     adminSessionCookie,
-		Value:    encoded,
-		Path:     "/api/wishes",
-		MaxAge:   int(adminSessionTTL.Seconds()),
-		Expires:  h.now().Add(adminSessionTTL),
-		HttpOnly: true,
-		Secure:   requestIsHTTPS(r),
-		SameSite: http.SameSiteLaxMode,
-	})
+	for _, path := range []string{"/api/wishes", cmsPath} {
+		name := adminSessionCookie
+		if path == cmsPath {
+			name = cmsSessionCookie
+		}
+		http.SetCookie(w, &http.Cookie{
+			Name:     name,
+			Value:    encoded,
+			Path:     path,
+			MaxAge:   int(adminSessionTTL.Seconds()),
+			Expires:  h.now().Add(adminSessionTTL),
+			HttpOnly: true,
+			Secure:   requestIsHTTPS(r),
+			SameSite: http.SameSiteLaxMode,
+		})
+	}
 	h.logger.Info("wish admin signed in", "subject", identity.Subject)
 	w.Header().Set("Cache-Control", "no-store")
-	http.Redirect(w, r, adminReturnPath, http.StatusFound)
+	destination := adminReturnPath
+	if login.Return != "" {
+		destination = login.Return
+	}
+	http.Redirect(w, r, destination, http.StatusFound)
 }
 
 func (h *Handler) authMe(w http.ResponseWriter, r *http.Request) {
@@ -180,6 +198,11 @@ func (h *Handler) authLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) adminIdentity(r *http.Request) (AdminIdentity, bool) {
+	// A service (BFF) token never grants admin access, even alongside a
+	// browser admin session cookie.
+	if _, _, isService := h.serviceClient(r); isService {
+		return AdminIdentity{}, false
+	}
 	if h.adminToken != "" {
 		provided := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if len(provided) == len(h.adminToken) &&
@@ -190,8 +213,53 @@ func (h *Handler) adminIdentity(r *http.Request) (AdminIdentity, bool) {
 	return h.sessionIdentity(r)
 }
 
+// authGate is the Traefik forwardAuth target for /cms/ (Ghost). Any 2xx lets
+// the original request through; a signed-out browser navigation is sent to the
+// same auth.nycu.one sign-in as the Wish Pool admin and returned afterwards.
+// Traefik always calls it with GET and passes the original request in the
+// X-Forwarded-* headers and its cookies.
+func (h *Handler) authGate(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if identity, ok := h.cookieIdentity(r, cmsSessionCookie); ok {
+		w.Header().Set("X-Wish-Admin-Subject", identity.Subject)
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	method := r.Header.Get("X-Forwarded-Method")
+	if h.adminAuth != nil && (method == "" || method == http.MethodGet || method == http.MethodHead) {
+		login := url.URL{Path: "/api/wishes/auth/login"}
+		if target := safeReturnPath(r.Header.Get("X-Forwarded-Uri")); target != "" {
+			login.RawQuery = url.Values{"return": {target}}.Encode()
+		}
+		http.Redirect(w, r, login.String(), http.StatusFound)
+		return
+	}
+	writeError(w, http.StatusUnauthorized, "sign in at /api/wishes/auth/login first")
+}
+
+// safeReturnPath accepts only local paths under /cms/ (the gated CMS); anything
+// else (absolute or scheme-relative URLs, other paths) yields "".
+func safeReturnPath(raw string) string {
+	if raw == "" || strings.ContainsAny(raw, "\\\r\n") || strings.HasPrefix(raw, "//") {
+		return ""
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Scheme != "" || parsed.Host != "" || parsed.User != nil {
+		return ""
+	}
+	if parsed.Path != cmsPath && !strings.HasPrefix(parsed.Path, cmsPath+"/") ||
+		strings.Contains(parsed.Path, "/../") || strings.HasSuffix(parsed.Path, "/..") {
+		return ""
+	}
+	return parsed.RequestURI()
+}
+
 func (h *Handler) sessionIdentity(r *http.Request) (AdminIdentity, bool) {
-	cookie, err := r.Cookie(adminSessionCookie)
+	return h.cookieIdentity(r, adminSessionCookie)
+}
+
+func (h *Handler) cookieIdentity(r *http.Request, name string) (AdminIdentity, bool) {
+	cookie, err := r.Cookie(name)
 	if err != nil {
 		return AdminIdentity{}, false
 	}
@@ -239,16 +307,18 @@ func (h *Handler) clearOAuthState(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) clearAdminSession(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     adminSessionCookie,
-		Value:    "",
-		Path:     "/api/wishes",
-		MaxAge:   -1,
-		Expires:  time.Unix(1, 0),
-		HttpOnly: true,
-		Secure:   requestIsHTTPS(r),
-		SameSite: http.SameSiteLaxMode,
-	})
+	for name, path := range map[string]string{adminSessionCookie: "/api/wishes", cmsSessionCookie: cmsPath} {
+		http.SetCookie(w, &http.Cookie{
+			Name:     name,
+			Value:    "",
+			Path:     path,
+			MaxAge:   -1,
+			Expires:  time.Unix(1, 0),
+			HttpOnly: true,
+			Secure:   requestIsHTTPS(r),
+			SameSite: http.SameSiteLaxMode,
+		})
+	}
 }
 
 func (h *Handler) redirectAdminAuthError(w http.ResponseWriter, r *http.Request, code string) {

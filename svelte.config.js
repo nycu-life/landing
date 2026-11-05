@@ -18,6 +18,15 @@ const config = {
 		}),
 		paths: {
 			base: dev ? '' : base
+		},
+		prerender: {
+			// The Ghost media mirrors and the dev log post route have no entries when
+			// Ghost has nothing for them (or no GHOST_URL). Every other unseen route still fails.
+			handleUnseenRoutes: ({ routes, message }) => {
+				const optional = ['/comics/media/[...path]', '/devlog/media/[...path]', '/devlog/[slug]'];
+				if (routes.every((id) => optional.includes(id))) return;
+				throw new Error(message);
+			}
 		}
 	}
 };

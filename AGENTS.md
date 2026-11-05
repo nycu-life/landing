@@ -35,8 +35,11 @@ Keep all of them green — don't merge a red gate.
 ## Layout
 
 - `src/routes/` — public pages: `/` (scroll story: hero, about, products, FAQ,
-  join) and `/wishpool/`; `/wishpool/admin/` is noindex. `+error.svelte` is the
-  404/410 page. Navigation is the `TopBar` (home-section anchors + Wish Pool).
+  join), `/about/`, `/wishpool/`, `/devlog/` + `/devlog/<slug>/` (開發日誌) and
+  `/comics/` + `/comics/<slug>/` (漫畫專區, not linked until episodes exist);
+  both are Ghost content, see `docs/ghost.md`. `/wishpool/admin/` is noindex.
+  `+error.svelte` is the 404/410 page. Navigation is the `TopBar` (About,
+  home-section anchors, dev log, Wish Pool sticker).
 - `src/lib/content/` — **page copy lives here as data** (`landing.ts`, `about.ts`,
   `team.ts`, `departments.ts`), wired to Paraglide messages. Edit content here,
   not inline in components.
@@ -58,19 +61,30 @@ editing here, match this repo's tokens; don't import the other system.
   `harbor.nycu.one/landing/web:latest`; ArgoCD deploys
   `nycu-life/k8s-manifests/apps/landing/overlays/prod` to `nycu.life`.
 - **Docker**: `Dockerfile` serves the static output behind nginx at the root.
+  Build args `GHOST_URL` / `GHOST_REQUIRED`; the Content API key is a BuildKit
+  secret (`ghost_content_api_key`), never an ARG. `repository_dispatch`
+  `ghost-publish` rebuilds the image when Ghost content changes.
 - `svelte.config.js` reads `SITE_BASE_PATH` for optional sub-path previews.
 
 ## Gotchas
 
-- It's a **static** site: no server endpoints, no `+page.server.ts` data loading
-  at request time — everything is prerendered at build.
+- It's a **static** site: no server endpoints, no data loading at request
+  time — everything is prerendered at build. The one exception is
+  **build-time** `+page.server.ts` / `+server.ts` routes under `src/routes/devlog/`,
+  `src/routes/comics/` and `src/routes/sitemap.xml/` (`prerender = true` + `entries()`). They read
+  Ghost (`src/lib/server/ghost.ts`) only while `pnpm build` runs. Keep every
+  server route prerendered.
+- **Ghost** (`docs/ghost.md`): builds work without it (empty dev log,
+  placeholder comics; noindex, not in the sitemap). `GHOST_REQUIRED=1` makes a
+  missing or failing Ghost fatal; an empty section is still fine. CI sets it for pushed images. Variables come from `process.env`,
+  so `.env` files are not loaded automatically.
 - The default locale is **`zh-tw`**; the unprefixed `/` renders Chinese copy.
 - Brand string "NYCU LIFE" is identical in both locales — safe to assert in tests.
-- **SEO routing** (see `docs/seo.md`): `static/sitemap.xml` lists exactly the
-  indexable pages. nginx returns a real 404 for unknown paths (no SPA fallback to
-  the home page) and 410 for withdrawn ones (`/about/`, `/courses/`,
-  `/products/`, `/devlog/`, `/team/…`), both with the noindex `404.html` shell.
-  Adding or withdrawing a page means updating the route, the sitemap,
+- **SEO routing** (see `docs/seo.md`): `/sitemap.xml` is generated from
+  `src/lib/seo/pages.ts` (static pages) plus Ghost dev log posts and comic episodes. nginx returns a real 404 for unknown paths (no SPA fallback to
+  the home page) and 410 for withdrawn ones (`/courses/`, `/products/`,
+  `/team/…`), both with the noindex `404.html` shell.
+  Adding or withdrawing a page means updating the route, `src/lib/seo/pages.ts`,
   `docker/nginx.conf`, and `e2e/seo.test.ts` together.
 
 ## Visual acceptance gate

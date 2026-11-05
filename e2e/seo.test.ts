@@ -1,7 +1,17 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
+import { indexablePages, SITE_ORIGIN as siteOrigin } from '../src/lib/seo/pages';
 
-const siteOrigin = 'https://nycu.life';
-const publicRoutes = ['/', '/wishpool/'];
+const publicRoutes = [...indexablePages];
+/** Ghost-backed sections the sitemap may append after the static pages. */
+const ghostRoute = /^\/(devlog|comics)\/([^/]+\/)?$/;
+
+/** Sitemap paths, in order. Dev log / comics pages appear only when the build read them from Ghost. */
+const sitemapPaths = async (request: APIRequestContext) => {
+	const sitemap = await (await request.get('/sitemap.xml')).text();
+	return [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) =>
+		match[1].replace(siteOrigin, '')
+	);
+};
 
 test('publishes a complete production sitemap and advertises it to crawlers', async ({
 	request
@@ -13,8 +23,13 @@ test('publishes a complete production sitemap and advertises it to crawlers', as
 	const sitemapLocations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
 	const expectedLocations = publicRoutes.map((route) => `${siteOrigin}${route}`);
 
-	expect(sitemapLocations).toEqual(expectedLocations);
-	for (const withdrawnRoute of ['/about/', '/courses/', '/products/', '/devlog/']) {
+	// Static pages first, in source order, then only Ghost-backed dev log / comics pages.
+	expect(sitemapLocations.slice(0, expectedLocations.length)).toEqual(expectedLocations);
+	expect(new Set(sitemapLocations).size).toBe(sitemapLocations.length);
+	for (const location of sitemapLocations.slice(expectedLocations.length)) {
+		expect(location.replace(siteOrigin, '')).toMatch(ghostRoute);
+	}
+	for (const withdrawnRoute of ['/courses/', '/products/']) {
 		expect(sitemap).not.toContain(withdrawnRoute);
 	}
 	expect(sitemap).not.toContain('/team/');
@@ -37,8 +52,10 @@ test('serves unknown URLs a noindex error page without a canonical', async ({ pa
 	}
 });
 
-test('keeps a self-referencing canonical on every sitemap page', async ({ page }) => {
-	for (const route of publicRoutes) {
+test('keeps a self-referencing canonical on every sitemap page', async ({ page, request }) => {
+	const routes = await sitemapPaths(request);
+	expect(routes).toEqual(expect.arrayContaining(publicRoutes));
+	for (const route of routes) {
 		const response = await page.goto(route);
 		expect(response?.status()).toBe(200);
 		await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
@@ -46,5 +63,40 @@ test('keeps a self-referencing canonical on every sitemap page', async ({ page }
 			`${siteOrigin}${route}`
 		);
 		await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+	}
+});
+
+test('keeps placeholder comic episodes out of the index', async ({ page, request }) => {
+	await page.goto('/comics/');
+	const episodeRoutes = await page
+		.locator('#comics-grid .ep-card')
+		.evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
+	expect(episodeRoutes.length).toBeGreaterThan(0);
+	const listed = new Set(await sitemapPaths(request));
+	for (const route of episodeRoutes) {
+		await page.goto(route);
+		if (listed.has(route)) {
+			// Ghost-backed: indexable (checked with the other sitemap pages above).
+			await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+		} else {
+			await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+		}
+	}
+	// Ghost builds list every episode; placeholder builds list none.
+	const listedEpisodes = episodeRoutes.filter((route) => listed.has(route));
+	expect([0, episodeRoutes.length]).toContain(listedEpisodes.length);
+});
+
+test('lists the dev log and comics only when they have Ghost content', async ({
+	page,
+	request
+}) => {
+	const listed = new Set(await sitemapPaths(request));
+	for (const index of ['/devlog/', '/comics/']) {
+		const response = await page.goto(index);
+		expect(response?.status()).toBe(200);
+		const robots = page.locator('meta[name="robots"]');
+		if (listed.has(index)) await expect(robots).toHaveCount(0);
+		else await expect(robots).toHaveAttribute('content', 'noindex');
 	}
 });

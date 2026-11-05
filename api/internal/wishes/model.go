@@ -38,12 +38,38 @@ func (v Visibility) Valid() bool {
 	}
 }
 
+// Status is the team's processing state for a wish. It is independent of
+// moderation visibility: only published wishes are ever public, whatever their
+// status.
+type Status string
+
+const (
+	StatusOpen      Status = "open"
+	StatusFulfilled Status = "fulfilled"
+)
+
+func (s Status) Valid() bool {
+	switch s {
+	case StatusOpen, StatusFulfilled:
+		return true
+	default:
+		return false
+	}
+}
+
+// MaxReplyLength bounds the team reply in Unicode code points.
+const MaxReplyLength = 1000
+
 type Wish struct {
 	ID            string     `json:"id"`
 	Title         string     `json:"title"`
 	Detail        string     `json:"detail"`
 	Category      Category   `json:"category"`
 	Visibility    Visibility `json:"-"`
+	Status        Status     `json:"status"`
+	Reply         string     `json:"reply"`
+	RepliedAt     *time.Time `json:"repliedAt"`
+	FulfilledAt   *time.Time `json:"fulfilledAt"`
 	SupportCount  int        `json:"supportCount"`
 	SupportedByMe bool       `json:"supportedByMe"`
 	CreatedAt     time.Time  `json:"createdAt"`
@@ -59,8 +85,16 @@ type CreateInput struct {
 	Visibility Visibility
 }
 
+// UpdateInput is the admin PATCH body. Every field is optional; an empty
+// reply string clears the team reply.
 type UpdateInput struct {
 	Visibility *Visibility `json:"visibility"`
+	Status     *Status     `json:"status"`
+	Reply      *string     `json:"reply"`
+}
+
+func (u UpdateInput) Empty() bool {
+	return u.Visibility == nil && u.Status == nil && u.Reply == nil
 }
 
 type SupportResult struct {
@@ -88,4 +122,14 @@ var MigrationStatements = []string{
 		created_at timestamptz NOT NULL DEFAULT now(),
 		PRIMARY KEY (wish_id, actor_hash)
 	)`,
+	// Processing status and team reply (issue #99). ADD COLUMN IF NOT EXISTS keeps
+	// the statements idempotent; existing rows become open wishes without a reply.
+	`ALTER TABLE wishes ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'open'
+		CHECK (status IN ('open','fulfilled'))`,
+	`ALTER TABLE wishes ADD COLUMN IF NOT EXISTS reply text NOT NULL DEFAULT ''
+		CHECK (char_length(reply) <= 1000)`,
+	`ALTER TABLE wishes ADD COLUMN IF NOT EXISTS replied_at timestamptz`,
+	`ALTER TABLE wishes ADD COLUMN IF NOT EXISTS fulfilled_at timestamptz`,
+	`CREATE INDEX IF NOT EXISTS wishes_public_status_created_idx
+		ON wishes (status, created_at DESC) WHERE visibility = 'published'`,
 }

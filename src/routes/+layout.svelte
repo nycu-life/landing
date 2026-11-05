@@ -1,6 +1,5 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
 	import { afterNavigate, onNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
@@ -63,7 +62,6 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
 	<!-- Error pages are served at arbitrary unknown/withdrawn URLs; never canonicalise those. -->
 	{#if !page.error}
 		<link rel="canonical" href={pageUrl} />

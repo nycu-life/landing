@@ -20,7 +20,12 @@ type fakeStore struct {
 	created       CreateInput
 	createErr     error
 	supportResult SupportResult
+	supportActor  []byte
 	updated       UpdateInput
+	updatedWish   *Wish
+	listActor     []byte
+	listStatus    Status
+	adminStatus   Status
 }
 
 type fakeAdminAuthenticator struct {
@@ -54,7 +59,9 @@ func (f *fakeAdminAuthenticator) Exchange(
 }
 
 func (f *fakeStore) Ping(context.Context) error { return nil }
-func (f *fakeStore) List(context.Context, []byte, int) ([]Wish, error) {
+func (f *fakeStore) List(_ context.Context, actorHash []byte, status Status, _ int) ([]Wish, error) {
+	f.listActor = actorHash
+	f.listStatus = status
 	return f.items, nil
 }
 func (f *fakeStore) Create(_ context.Context, input CreateInput) (Wish, error) {
@@ -73,15 +80,24 @@ func (f *fakeStore) Create(_ context.Context, input CreateInput) (Wish, error) {
 		CreatedAt:     time.Unix(1_700_000_000, 0).UTC(),
 	}, nil
 }
-func (f *fakeStore) ToggleSupport(context.Context, string, []byte) (SupportResult, error) {
+func (f *fakeStore) ToggleSupport(_ context.Context, _ string, actorHash []byte) (SupportResult, error) {
+	f.supportActor = actorHash
 	return f.supportResult, nil
 }
-func (f *fakeStore) AdminList(context.Context, Visibility, int) ([]Wish, error) {
+func (f *fakeStore) AdminList(_ context.Context, _ Visibility, status Status, _ int) ([]Wish, error) {
+	f.adminStatus = status
 	return f.items, nil
 }
 func (f *fakeStore) AdminUpdate(_ context.Context, _ string, input UpdateInput) (Wish, error) {
 	f.updated = input
-	return Wish{ID: "00000000-0000-4000-8000-000000000001", Visibility: *input.Visibility}, nil
+	if f.updatedWish != nil {
+		return *f.updatedWish, nil
+	}
+	wish := Wish{ID: "00000000-0000-4000-8000-000000000001", Visibility: VisibilityPublished, Status: StatusOpen}
+	if input.Visibility != nil {
+		wish.Visibility = *input.Visibility
+	}
+	return wish, nil
 }
 
 func testHandler(t *testing.T, store *fakeStore) http.Handler {
@@ -466,5 +482,77 @@ func TestValidation(t *testing.T) {
 	}
 	if !errors.Is(ErrNotFound, ErrNotFound) {
 		t.Fatal("sentinel errors should be comparable")
+	}
+}
+
+func TestCMSGateUsesTheAdminSignIn(t *testing.T) {
+	auth := &fakeAdminAuthenticator{identity: AdminIdentity{Subject: "editor", Name: "編輯", Method: "oidc"}}
+	handler := testHandlerWithAuth(t, &fakeStore{}, auth)
+
+	gate := func(cookie *http.Cookie, method string) *httptest.ResponseRecorder {
+		request := httptest.NewRequest(http.MethodGet, "/api/wishes/auth/gate", nil)
+		request.Header.Set("X-Forwarded-Method", method)
+		request.Header.Set("X-Forwarded-Uri", "/cms/ghost/#/dashboard")
+		if cookie != nil {
+			request.AddCookie(cookie)
+		}
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, request)
+		return recorder
+	}
+
+	signedOut := gate(nil, http.MethodGet)
+	if signedOut.Code != http.StatusFound ||
+		signedOut.Header().Get("Location") != "/api/wishes/auth/login?return=%2Fcms%2Fghost%2F" {
+		t.Fatalf("signed-out navigation returned %d → %q", signedOut.Code, signedOut.Header().Get("Location"))
+	}
+	if api := gate(nil, http.MethodPost); api.Code != http.StatusUnauthorized {
+		t.Fatalf("signed-out API call returned %d", api.Code)
+	}
+
+	loginRequest := httptest.NewRequest(http.MethodGet, "/api/wishes/auth/login?return=%2Fcms%2Fghost%2F", nil)
+	login := httptest.NewRecorder()
+	handler.ServeHTTP(login, loginRequest)
+	callbackRequest := httptest.NewRequest(
+		http.MethodGet,
+		"/api/wishes/auth/callback?state="+url.QueryEscape(auth.state)+"&code=c",
+		nil,
+	)
+	callbackRequest.AddCookie(responseCookie(t, login, oauthStateCookie))
+	callback := httptest.NewRecorder()
+	handler.ServeHTTP(callback, callbackRequest)
+	if callback.Header().Get("Location") != "/cms/ghost/" {
+		t.Fatalf("callback returned to %q", callback.Header().Get("Location"))
+	}
+	cms := responseCookie(t, callback, cmsSessionCookie)
+	if cms.Path != cmsPath || !cms.HttpOnly || cms.SameSite != http.SameSiteLaxMode {
+		t.Fatalf("CMS cookie is not scoped/hardened: %#v", cms)
+	}
+	if allowed := gate(cms, http.MethodPost); allowed.Code != http.StatusNoContent {
+		t.Fatalf("signed-in gate returned %d", allowed.Code)
+	}
+	// The API-scoped cookie is never sent to /cms/, and a forged value is rejected.
+	if forged := gate(&http.Cookie{Name: cmsSessionCookie, Value: "e30.bad"}, http.MethodGet); forged.Code != http.StatusFound {
+		t.Fatalf("forged cookie returned %d", forged.Code)
+	}
+}
+
+func TestSafeReturnPath(t *testing.T) {
+	for raw, want := range map[string]string{
+		"/cms/ghost/":           "/cms/ghost/",
+		"/cms":                  "/cms",
+		"/cms/ghost/?a=1":       "/cms/ghost/?a=1",
+		"/cmsx/":                "",
+		"/wishpool/admin/":      "",
+		"//evil.example/cms/":   "",
+		"https://evil.example/": "",
+		"/cms/../wishpool/":     "",
+		"/cms/%2e%2e/wishpool/": "",
+		"/cms/\\evil":           "",
+		"":                      "",
+	} {
+		if got := safeReturnPath(raw); got != want {
+			t.Errorf("safeReturnPath(%q) = %q, want %q", raw, got, want)
+		}
 	}
 }

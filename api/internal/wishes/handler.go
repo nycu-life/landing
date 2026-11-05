@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -21,18 +22,29 @@ import (
 )
 
 const (
-	deviceCookieName = "nycu_wish_device"
-	maxBodyBytes     = 4096
+	deviceCookieName  = "nycu_wish_device"
+	maxBodyBytes      = 4096
+	maxAdminBodyBytes = 16 << 10
+	publicListLimit   = 24
 )
 
 type Handler struct {
-	store        Store
-	cookieSecret []byte
-	adminToken   string
-	adminAuth    AdminAuthenticator
-	logger       *slog.Logger
-	now          func() time.Time
-	changes      *changeBroker
+	store          Store
+	cookieSecret   []byte
+	adminToken     string
+	adminAuth      AdminAuthenticator
+	serviceClients []ServiceClient
+	logger         *slog.Logger
+	now            func() time.Time
+	changes        *changeBroker
+}
+
+// HandlerOption configures optional Handler features.
+type HandlerOption func(*Handler)
+
+// WithServiceClients enables server-to-server (BFF) access for the given clients.
+func WithServiceClients(clients []ServiceClient) HandlerOption {
+	return func(h *Handler) { h.serviceClients = clients }
 }
 
 func NewHandler(
@@ -40,6 +52,7 @@ func NewHandler(
 	cookieSecret, adminToken string,
 	adminAuth AdminAuthenticator,
 	logger *slog.Logger,
+	options ...HandlerOption,
 ) (*Handler, error) {
 	if store == nil {
 		return nil, errors.New("wish store is required")
@@ -50,7 +63,7 @@ func NewHandler(
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Handler{
+	handler := &Handler{
 		store:        store,
 		cookieSecret: []byte(cookieSecret),
 		adminToken:   adminToken,
@@ -58,7 +71,19 @@ func NewHandler(
 		logger:       logger,
 		now:          time.Now,
 		changes:      newChangeBroker(),
-	}, nil
+	}
+	for _, option := range options {
+		option(handler)
+	}
+	if adminToken != "" {
+		adminDigest := sha256.Sum256([]byte(adminToken))
+		for _, client := range handler.serviceClients {
+			if subtle.ConstantTimeCompare(adminDigest[:], client.digest[:]) == 1 {
+				return nil, fmt.Errorf("WISH_SERVICE_CLIENTS client %q must not reuse WISH_ADMIN_TOKEN", client.Name)
+			}
+		}
+	}
+	return handler, nil
 }
 
 func (h *Handler) Routes() http.Handler {
@@ -71,6 +96,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("GET /api/wishes/auth/login", h.authLogin)
 	mux.HandleFunc("GET /api/wishes/auth/callback", h.authCallback)
 	mux.HandleFunc("GET /api/wishes/auth/me", h.authMe)
+	mux.HandleFunc("/api/wishes/auth/gate", h.authGate)
 	mux.HandleFunc("POST /api/wishes/auth/logout", h.authLogout)
 	mux.HandleFunc("GET /api/wishes/admin", h.adminList)
 	mux.HandleFunc("PATCH /api/wishes/admin/{id}", h.adminUpdate)
@@ -88,12 +114,20 @@ func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
-	actorHash, err := h.actorHash(w, r)
-	if err != nil {
-		h.internalError(w, r, err)
+	status := Status(r.URL.Query().Get("status"))
+	if status == "" {
+		status = StatusOpen
+	}
+	if !status.Valid() {
+		writeError(w, http.StatusBadRequest, "invalid status")
 		return
 	}
-	items, err := h.store.List(r.Context(), actorHash, 24)
+	actor, code, err := h.resolveActor(w, r, false)
+	if err != nil {
+		h.writeActorError(w, r, code, err)
+		return
+	}
+	items, err := h.store.List(r.Context(), actor.hash, status, publicListLimit)
 	if err != nil {
 		h.internalError(w, r, err)
 		return
@@ -135,16 +169,28 @@ func (h *Handler) events(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
-	if !sameOrigin(r) {
+// writeActor resolves the actor for a public write. Cookie-based (browser)
+// writes must be same-origin; service requests authenticate with a bearer
+// token instead and carry no Origin.
+func (h *Handler) writeActor(w http.ResponseWriter, r *http.Request) (requestActor, bool) {
+	if r.Header.Get("Authorization") == "" && !sameOrigin(r) {
 		writeError(w, http.StatusForbidden, "cross-origin writes are not allowed")
-		return
+		return requestActor{}, false
 	}
-	actorHash, err := h.actorHash(w, r)
+	actor, code, err := h.resolveActor(w, r, true)
 	if err != nil {
-		h.internalError(w, r, err)
+		h.writeActorError(w, r, code, err)
+		return requestActor{}, false
+	}
+	return actor, true
+}
+
+func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.writeActor(w, r)
+	if !ok {
 		return
 	}
+	var err error
 	var input CreateInput
 	if err := decodeJSON(w, r, &input); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -161,7 +207,7 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		h.internalError(w, r, err)
 		return
 	}
-	input.ActorHash = actorHash
+	input.ActorHash = actor.hash
 	// Every wish waits for an administrator to approve it before it becomes
 	// public, so user-submitted content is never served without review.
 	input.Visibility = VisibilityPending
@@ -183,8 +229,8 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) support(w http.ResponseWriter, r *http.Request) {
-	if !sameOrigin(r) {
-		writeError(w, http.StatusForbidden, "cross-origin writes are not allowed")
+	actor, ok := h.writeActor(w, r)
+	if !ok {
 		return
 	}
 	id := r.PathValue("id")
@@ -192,12 +238,7 @@ func (h *Handler) support(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "wish not found")
 		return
 	}
-	actorHash, err := h.actorHash(w, r)
-	if err != nil {
-		h.internalError(w, r, err)
-		return
-	}
-	result, err := h.store.ToggleSupport(r.Context(), id, actorHash)
+	result, err := h.store.ToggleSupport(r.Context(), id, actor.hash)
 	if errors.Is(err, ErrNotFound) {
 		writeError(w, http.StatusNotFound, "wish not found")
 		return
@@ -223,7 +264,12 @@ func (h *Handler) adminList(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid visibility")
 		return
 	}
-	items, err := h.store.AdminList(r.Context(), visibility, 100)
+	status := Status(r.URL.Query().Get("status"))
+	if status != "" && !status.Valid() {
+		writeError(w, http.StatusBadRequest, "invalid status")
+		return
+	}
+	items, err := h.store.AdminList(r.Context(), visibility, status, 100)
 	if err != nil {
 		h.internalError(w, r, err)
 		return
@@ -247,12 +293,12 @@ func (h *Handler) adminUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var input UpdateInput
-	if err := decodeJSON(w, r, &input); err != nil {
+	if err := decodeJSONLimit(w, r, &input, maxAdminBodyBytes); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if input.Visibility != nil && !input.Visibility.Valid() {
-		writeError(w, http.StatusBadRequest, "invalid visibility")
+	if err := normalizeUpdate(&input); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	wish, err := h.store.AdminUpdate(r.Context(), id, input)
@@ -266,12 +312,47 @@ func (h *Handler) adminUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"data": wish})
 	h.logger.Info(
-		"wish admin visibility changed",
+		"wish admin update",
 		"subject", identity.Subject,
 		"wish_id", wish.ID,
 		"visibility", wish.Visibility,
+		"status", wish.Status,
+		"visibility_changed", input.Visibility != nil,
+		"status_changed", input.Status != nil,
+		"reply_changed", input.Reply != nil,
 	)
-	h.changes.publish()
+	// Public lists only contain published wishes, so status or reply edits on
+	// an unpublished wish do not need to wake browsers. A visibility change may
+	// have just removed a wish from the public list, so it always notifies.
+	if wish.Visibility == VisibilityPublished || input.Visibility != nil {
+		h.changes.publish()
+	}
+}
+
+// normalizeUpdate validates an admin PATCH body and normalizes the reply text,
+// keeping line breaks but trimming surrounding whitespace.
+func normalizeUpdate(input *UpdateInput) error {
+	if input.Empty() {
+		return errors.New("request must change visibility, status, or reply")
+	}
+	if input.Visibility != nil && !input.Visibility.Valid() {
+		return errors.New("invalid visibility")
+	}
+	if input.Status != nil && !input.Status.Valid() {
+		return errors.New("invalid status")
+	}
+	if input.Reply != nil {
+		reply := strings.ReplaceAll(*input.Reply, "\r\n", "\n")
+		reply = strings.TrimSpace(strings.ReplaceAll(reply, "\r", "\n"))
+		if utf8.RuneCountInString(reply) > MaxReplyLength {
+			return fmt.Errorf("reply must contain at most %d characters", MaxReplyLength)
+		}
+		if !utf8.ValidString(reply) || containsUnsafeControl(reply) {
+			return errors.New("reply contains unsupported characters")
+		}
+		input.Reply = &reply
+	}
+	return nil
 }
 
 func (h *Handler) actorHash(w http.ResponseWriter, r *http.Request) ([]byte, error) {
@@ -398,7 +479,11 @@ func sameOrigin(r *http.Request) bool {
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, destination any) error {
-	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+	return decodeJSONLimit(w, r, destination, maxBodyBytes)
+}
+
+func decodeJSONLimit(w http.ResponseWriter, r *http.Request, destination any, limit int64) error {
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(destination); err != nil {

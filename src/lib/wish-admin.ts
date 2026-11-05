@@ -1,8 +1,17 @@
-import type { Wish } from './wishes';
+import type { Wish, WishStatus } from './wishes';
 
 export const wishVisibilities = ['pending', 'published', 'hidden'] as const;
 export type WishVisibility = (typeof wishVisibilities)[number];
 export type AdminWish = Wish;
+/** Maximum team reply length, matching the API's limit (code points). */
+export const maxWishReplyLength = 1000;
+
+/** Admin PATCH body: any combination of fields; `reply: ''` clears the reply. */
+export type AdminWishUpdate = {
+	visibility?: WishVisibility;
+	status?: WishStatus;
+	reply?: string;
+};
 
 type AdminWishListResponse = { data: AdminWish[] };
 type AdminWishResponse = { data: AdminWish };
@@ -63,22 +72,27 @@ export async function logoutAdmin(): Promise<void> {
 
 export async function listAdminWishes(
 	visibility: WishVisibility,
-	signal?: AbortSignal
+	options: { status?: WishStatus; signal?: AbortSignal } = {}
 ): Promise<AdminWish[]> {
-	const response = await request<AdminWishListResponse>(
-		`/api/wishes/admin?visibility=${encodeURIComponent(visibility)}`,
-		{ signal }
-	);
+	const params = new URLSearchParams({ visibility });
+	if (options.status) params.set('status', options.status);
+	const response = await request<AdminWishListResponse>(`/api/wishes/admin?${params}`, {
+		signal: options.signal
+	});
 	return response.data;
 }
 
-export async function updateAdminWishVisibility(
+export async function updateAdminWish(id: string, update: AdminWishUpdate): Promise<AdminWish> {
+	const response = await request<AdminWishResponse>(`/api/wishes/admin/${encodeURIComponent(id)}`, {
+		method: 'PATCH',
+		body: JSON.stringify(update)
+	});
+	return response.data;
+}
+
+export function updateAdminWishVisibility(
 	id: string,
 	visibility: WishVisibility
 ): Promise<AdminWish> {
-	const response = await request<AdminWishResponse>(`/api/wishes/admin/${encodeURIComponent(id)}`, {
-		method: 'PATCH',
-		body: JSON.stringify({ visibility })
-	});
-	return response.data;
+	return updateAdminWish(id, { visibility });
 }

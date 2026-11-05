@@ -1,0 +1,103 @@
+# Local Ghost CMS for the 漫畫專區 (comics) content source. See docs/ghost.md.
+#
+#   docker compose -f docker/ghost/compose.yml up -d --wait
+#   node docker/ghost/seed.mjs
+#
+# Standalone, and includable from a root compose file via `include:`. Ghost is
+# bound to 127.0.0.1 only. Nothing here is used in production (k8s-manifests).
+name: nycu-life-ghost
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${GHOST_DB_ROOT_PASSWORD:-ghost-local-root}
+      MYSQL_DATABASE: ghost
+      MYSQL_USER: ghost
+      MYSQL_PASSWORD: ${GHOST_DB_PASSWORD:-ghost-local}
+    volumes:
+      - ghost-mysql:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -u root -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  ghost:
+    # Official image, Ghost 6 major line on Alpine (6.75.x as of 2026-11).
+    image: ghost:6-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:${GHOST_PORT:-2368}:2368'
+    environment:
+      # Public URL Ghost puts in links and image URLs. The landing build rewrites
+      # image URLs under this origin to its static /comics/media/ mirror.
+      url: ${GHOST_PUBLIC_URL:-http://127.0.0.1:2368}
+      database__client: mysql
+      database__connection__host: db
+      database__connection__user: ghost
+      database__connection__password: ${GHOST_DB_PASSWORD:-ghost-local}
+      database__connection__database: ghost
+      # Local only: emails are not delivered (the stub transport drops them), so
+      # turn off Ghost 6's emailed staff-device verification code. Production must
+      # configure real SMTP and keep device verification on.
+      mail__transport: stub
+      security__staffDeviceVerification: 'false'
+    volumes:
+      - ghost-content:/var/lib/ghost/content
+    # The forwarded-proto header keeps the probe working when GHOST_PUBLIC_URL is
+    # https (behind a TLS proxy); Ghost would otherwise 301 plain-HTTP requests.
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          "wget -q -O /dev/null --header='X-Forwarded-Proto: https' http://127.0.0.1:2368/ghost/api/admin/site/ || exit 1"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
+  # Optional: Ghost behind oauth2-proxy (OIDC via Authentik, auth.nycu.one) on
+  # 127.0.0.1:4180, mirroring the production forward-auth gate. Enable with
+  # `--profile sso`; set GHOST_PUBLIC_URL=http://127.0.0.1:4180 so Ghost Admin
+  # links point at the proxy. Secrets come from the environment, never this file.
+  ghost-sso:
+    profiles: [sso]
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.5
+    restart: unless-stopped
+    depends_on:
+      ghost:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:${GHOST_SSO_PORT:-4180}:4180'
+    environment:
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: NYCU LIFE (auth.nycu.one)
+      OAUTH2_PROXY_OIDC_ISSUER_URL: ${GHOST_OIDC_ISSUER_URL:-https://auth.nycu.one/application/o/nycu-life-cms/}
+      OAUTH2_PROXY_CLIENT_ID: ${GHOST_OIDC_CLIENT_ID:-}
+      OAUTH2_PROXY_CLIENT_SECRET: ${GHOST_OIDC_CLIENT_SECRET:-}
+      # 32 random bytes, e.g. `openssl rand -base64 32 | tr -- '+/' '-_'`
+      OAUTH2_PROXY_COOKIE_SECRET: ${GHOST_SSO_COOKIE_SECRET:-}
+      OAUTH2_PROXY_COOKIE_SECURE: 'false'
+      OAUTH2_PROXY_REDIRECT_URL: http://127.0.0.1:${GHOST_SSO_PORT:-4180}/oauth2/callback
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_UPSTREAMS: http://ghost:2368/
+      OAUTH2_PROXY_EMAIL_DOMAINS: '*'
+      OAUTH2_PROXY_SCOPE: openid email profile
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_PASS_HOST_HEADER: 'true'
+      OAUTH2_PROXY_REVERSE_PROXY: 'false'
+      # Ghost Admin needs SSO; the key-gated Content API, uploaded images and the
+      # members API stay reachable without it. Ghost runs headless (nycu.life is
+      # the public site), so its theme front end may stay behind SSO too.
+      OAUTH2_PROXY_SKIP_AUTH_ROUTES: '^/ghost/api/content/,^/content/images/,^/members/api/'
+
+volumes:
+  ghost-mysql:
+  ghost-content:
