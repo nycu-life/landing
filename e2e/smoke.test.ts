@@ -175,15 +175,15 @@ test('home renders the published-prototype chapter structure', async ({ page }) 
 	await expect(wishInvite.getByRole('link')).toHaveAttribute('href', '/wishpool/');
 	await expect(wishInvite.locator('.wish-machine')).toHaveAttribute(
 		'src',
-		'./story/designer/wishpool/machine.svg'
+		'/story/designer/wishpool/machine.svg'
 	);
 	await expect(wishInvite.locator('.wish-sticker')).toHaveAttribute(
 		'src',
-		'./story/designer/wishpool/sticker.svg'
+		'/story/designer/wishpool/sticker.svg'
 	);
 	await expect(wishInvite.locator('.wish-hand')).toHaveAttribute(
 		'src',
-		'./story/designer/wishpool/hand-ball.svg'
+		'/story/designer/wishpool/hand-ball.svg'
 	);
 	await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
 		'content',
@@ -211,11 +211,11 @@ test('phone header keeps the Wish Pool sticker and moves navigation into the men
 	await expect(button).toHaveAttribute('href', '/wishpool/');
 	await expect(button.locator('.sticker-face-default')).toHaveAttribute(
 		'src',
-		'./ui/wishpool-mobile.svg'
+		'/ui/wishpool-mobile.svg'
 	);
 	await expect(button.locator('.sticker-face-hover')).toHaveAttribute(
 		'src',
-		'./ui/wishpool-mobile-hover.svg'
+		'/ui/wishpool-mobile-hover.svg'
 	);
 	const headerOverflow = await page
 		.locator('.topbar')
@@ -1162,15 +1162,15 @@ test('wish pool entrance stays readable in the 12 locale, appearance, and viewpo
 				await expect(wishInvite.getByRole('link')).toBeVisible();
 				await expect(wishInvite.locator('.wish-machine')).toHaveAttribute(
 					'src',
-					'./story/designer/wishpool/machine.svg'
+					'/story/designer/wishpool/machine.svg'
 				);
 				await expect(wishInvite.locator('.wish-sticker')).toHaveAttribute(
 					'src',
-					'./story/designer/wishpool/sticker.svg'
+					'/story/designer/wishpool/sticker.svg'
 				);
 				await expect(wishInvite.locator('.wish-hand')).toHaveAttribute(
 					'src',
-					'./story/designer/wishpool/hand-ball.svg'
+					'/story/designer/wishpool/hand-ball.svg'
 				);
 				await expect
 					.poll(() =>

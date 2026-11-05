@@ -581,3 +581,49 @@ func TestSafeReturnPath(t *testing.T) {
 		}
 	}
 }
+
+// cmsSSOVector is shared with docker/ghost/adapters/sso/NycuOneSSO/index.test.mjs,
+// which must verify it: the Go signer and the JS verifier agree on the format.
+const cmsSSOVector = "v1.eyJzdWIiOiJlZGl0b3IiLCJuYW1lIjoi57eo6LyvIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE3MDAwMDAxMjB9.g4gf_kZiXmqnsn2Uu0sljVTV3KX7At_c6RFKJlEuZT8"
+
+func TestCMSGateVouchesForSignedInAdminsToGhost(t *testing.T) {
+	now := time.Unix(1_700_000_000, 0).UTC()
+	newGate := func(options ...HandlerOption) (*Handler, http.Handler) {
+		handler, err := NewHandler(&fakeStore{}, "0123456789abcdef0123456789abcdef", "admin-token-for-tests",
+			&fakeAdminAuthenticator{}, slog.New(slog.NewTextHandler(io.Discard, nil)), options...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		handler.now = func() time.Time { return now }
+		return handler, handler.Routes()
+	}
+	handler, routes := newGate(WithCMSSSOSecret("cms-sso-secret-for-tests"))
+	cookie, err := handler.encodeSignedCookie("admin-session",
+		adminSession{Subject: "editor", Name: "編輯", Expires: now.Add(time.Hour).Unix()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	gate := func(routes http.Handler, withCookie bool) *httptest.ResponseRecorder {
+		request := httptest.NewRequest(http.MethodGet, "/api/wishes/auth/gate", nil)
+		request.Header.Set("X-Forwarded-Method", http.MethodGet)
+		request.Header.Set("X-Forwarded-Uri", "/cms/ghost/")
+		if withCookie {
+			request.AddCookie(&http.Cookie{Name: cmsSessionCookie, Value: cookie})
+		}
+		recorder := httptest.NewRecorder()
+		routes.ServeHTTP(recorder, request)
+		return recorder
+	}
+
+	allowed := gate(routes, true)
+	if allowed.Code != http.StatusNoContent || allowed.Header().Get(cmsIdentityHeader) != cmsSSOVector {
+		t.Fatalf("signed-in gate returned %d with identity %q", allowed.Code, allowed.Header().Get(cmsIdentityHeader))
+	}
+	if signedOut := gate(routes, false); signedOut.Header().Get(cmsIdentityHeader) != "" {
+		t.Fatal("a signed-out request must not carry an identity")
+	}
+	_, withoutSecret := newGate()
+	if plain := gate(withoutSecret, true); plain.Code != http.StatusNoContent || plain.Header().Get(cmsIdentityHeader) != "" {
+		t.Fatalf("without a secret the gate returned %d with identity %q", plain.Code, plain.Header().Get(cmsIdentityHeader))
+	}
+}

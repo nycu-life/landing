@@ -41,6 +41,11 @@ export default defineConfig(
 		}
 	},
 	{
+		// Ghost loads installed adapters through CommonJS require().
+		files: ['docker/ghost/adapters/**/*.js'],
+		rules: { '@typescript-eslint/no-require-imports': 'off' }
+	},
+	{
 		// This site intentionally navigates with base-prefixed links
 		// (`{base}/products/`, `{base}/team/<slug>/`) rather than resolve(), so the
 		// same markup works under optional sub-path previews and the container's

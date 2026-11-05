@@ -1,15 +1,10 @@
 import { error } from '@sveltejs/kit';
 import { toSummary } from '$lib/comics';
 import { getComics } from '$lib/server/ghost';
-import type { EntryGenerator, PageServerLoad } from './$types';
+import type { PageServerLoad } from './$types';
 
-// Runs only while prerendering (`pnpm build`); every episode becomes static HTML.
-export const prerender = true;
-
-export const entries: EntryGenerator = async () => {
-	const catalog = await getComics();
-	return catalog.episodes.map(({ slug }) => ({ slug }));
-};
+// New slugs resolve immediately after the shared Ghost catalog refreshes.
+export const prerender = false;
 
 export const load: PageServerLoad = async ({ params }) => {
 	const catalog = await getComics();

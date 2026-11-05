@@ -5,8 +5,7 @@
 	import SiteFooter from '$lib/components/landing/SiteFooter.svelte';
 </script>
 
-<!-- nginx serves this shell (`404.html`) for unknown and withdrawn URLs with a real
-     404/410 status, so it must never be indexed or claim a canonical URL. -->
+<!-- Unknown and withdrawn URLs retain their real 404/410 status and stay noindex. -->
 <svelte:head>
 	<title>{m.not_found_title()}｜NYCU LIFE</title>
 	<meta name="robots" content="noindex" />

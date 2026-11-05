@@ -2,8 +2,8 @@ import { toSummary } from '$lib/comics';
 import { getComics } from '$lib/server/ghost';
 import type { PageServerLoad } from './$types';
 
-// Runs only while prerendering (`pnpm build`); the result is baked into static HTML.
-export const prerender = true;
+// Render on request; the Ghost catalog is shared for 30 seconds.
+export const prerender = false;
 
 export const load: PageServerLoad = async () => {
 	const catalog = await getComics();

@@ -1,26 +1,12 @@
-import { fetchGhostMedia, getDevlog } from '$lib/server/ghost';
-import type { EntryGenerator, RequestHandler } from './$types';
+import { error, redirect } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 
-/**
- * Build-time mirror of the Ghost images used by dev log posts, written to
- * `build/devlog/media/<path>` (same as the comics mirror). No posts, no entries.
- */
-export const prerender = true;
-
-export const entries: EntryGenerator = async () => {
-	const catalog = await getDevlog();
-	return catalog.media.map((path) => ({ path }));
-};
-
-export const GET: RequestHandler = async ({ params }) => {
-	const catalog = await getDevlog();
-	if (!catalog.media.includes(params.path)) {
-		return new Response('Not found', { status: 404 });
-	}
-	const upstream = await fetchGhostMedia(params.path);
-	return new Response(await upstream.arrayBuffer(), {
-		headers: {
-			'content-type': upstream.headers.get('content-type') ?? 'application/octet-stream'
-		}
-	});
+// Preserve links to images from the former static mirror. The upstream prefix
+// is controlled by configuration; never allow traversal or arbitrary redirects.
+export const prerender = false;
+export const GET: RequestHandler = ({ params }) => {
+	const path = params.path;
+	if (!/^[\w%./-]+$/.test(path) || /\.\.|%2e|%2f|%5c/i.test(path)) error(404);
+	const publicUrl = (process.env.GHOST_PUBLIC_URL || '/cms').replace(/\/+$/, '');
+	redirect(307, `${publicUrl}/content/images/${path}`);
 };

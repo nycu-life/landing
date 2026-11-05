@@ -8,15 +8,15 @@ as being indexed — report only what Search Console actually shows.
 ## Indexable pages
 
 `/sitemap.xml` (served at `https://nycu.life/sitemap.xml`, advertised in
-`static/robots.txt`) is **generated at build time** by
-`src/routes/sitemap.xml/+server.ts`, which writes `build/sitemap.xml`. It
-combines two sources of truth:
+`static/robots.txt`) is generated on request by
+`src/routes/sitemap.xml/+server.ts`, using the shared 30-second Ghost catalog.
+It combines two sources of truth:
 
 1. `src/lib/seo/pages.ts` → `indexablePages`: the static pages, in order. To
    add a page, add one line there.
-2. Ghost content read at build time (`docs/ghost.md`): `/devlog/` and its
+2. Ghost content read at runtime (`docs/ghost.md`): `/devlog/` and its
    posts (newest first), then `/comics/` and its episodes (episode order).
-   They are listed **only** when the build actually read them from Ghost.
+   They are listed **only** when Ghost has published content.
 
 | URL                                | Status | Canonical | robots                        |
 | ---------------------------------- | ------ | --------- | ----------------------------- |
@@ -29,13 +29,13 @@ combines two sources of truth:
 | `https://nycu.life/comics/<slug>/` | 200    | self      | — (Ghost-backed)              |
 | `/comics/ep-01/` … (placeholder)   | 200    | self      | `noindex`, not in the sitemap |
 
-All of these are prerendered (full HTML without JS). `/wishpool/admin/` is
+All return full HTML without JS. Fixed pages are prerendered; Ghost pages use SSR. `/wishpool/admin/` is
 reachable but `noindex,nofollow` and intentionally absent from the sitemap.
 English copy is a cookie-selected locale on the same URLs (Paraglide `cookie`
 strategy), so there are no `/en/` URLs and no hreflang alternates.
 
 Ghost-backed sections (`docs/ghost.md`) join the sitemap only when Ghost
-supplied content at build time:
+supplies published content:
 
 - `/devlog/` and `/devlog/<slug>/` once at least one `#devlog` post is
   published. Without posts (or without Ghost) `/devlog/` is an empty-state page
@@ -45,17 +45,17 @@ supplied content at build time:
   `src/lib/content/comics.ts` render with `noindex`, and the comics corner is
   not linked from the navigation.
 
-Production images are built with `GHOST_REQUIRED=1`, so an unreachable Ghost
-fails the build instead of shipping empty sections; an empty section is fine.
+Builds do not contact Ghost. A configured Ghost outage returns 503 on content
+pages and the sitemap after the cache expires, while prerendered pages stay
+available. Published/edited/withdrawn articles and their sitemap entries refresh
+within 30 seconds, without a new deployment.
 
-`/devlog/media/<path>` and `/comics/media/<path>` hold the images mirrored from
-Ghost at build time. They are plain static files and not pages.
+Images use Ghost's public `/cms/content/images/` route. Former
+`/devlog/media/<path>` and `/comics/media/<path>` URLs redirect there.
 
-nginx needs no rule for any of this: prerendered routes resolve through
-`try_files $uri $uri/ =404`, unknown `/devlog/...` and `/comics/...` slugs and media paths get a
-real 404, and `sitemap.xml` is served as `text/xml` by extension. This was
-verified on the `nginx:1.30.6-alpine` image built from this Dockerfile against
-a Ghost-backed build.
+The Node server returns a real 404 for unknown article slugs. Dynamic responses
+use `private, no-cache` so HTTP caches do not prolong the catalog TTL or share
+cookie-selected locale HTML.
 
 ## Retired URLs
 
@@ -76,8 +76,7 @@ Search Console groups 410 under "Not found (404)"; that is expected and those
 entries age out on their own. Only add a 301 when a page has a genuine
 equivalent replacement — never a blanket redirect to `/`.
 
-All 404/410 responses carry the SvelteKit error shell (`build/404.html`, from
-adapter-static `fallback`), which renders `src/routes/+error.svelte` with
+The catch-all route returns 404/410 and renders `src/routes/+error.svelte` with
 `noindex`, no canonical, no `og:url`, and links back to the home page, the
 products chapter, and the Wish Pool. `/api/*` misses stay a JSON 404.
 
@@ -107,7 +106,7 @@ Defects found and fixed:
 
 - **Soft 404s.** nginx fell back to `/index.html` for every unknown path, so
   e.g. `/en/` or `/anything/` answered 200 with the home page (canonical `/`).
-  Now `try_files $uri $uri/ =404` plus `error_page 404 410 /404.html`.
+  Fixed in nginx originally; the Node catch-all now preserves the same statuses.
 - **Indexable template pages.** `/demo/` and `/demo/paraglide/` were 200 with
   self-canonicals. Removed.
 - **Error-page metadata.** The root layout emitted a canonical / `og:url` for
@@ -121,8 +120,7 @@ from `src/lib/seo/pages.ts` first, then only Ghost-backed `/devlog/` and
 `/comics/` entries),
 self-canonicals on every sitemap URL, noindex placeholder episodes, and the
 noindex error page with a real 404. `e2e/devlog.test.ts` and
-`e2e/comics.test.ts` cover those pages themselves. The nginx status codes were checked by
-running `docker/nginx.conf` on `nginx:1.30.6-alpine` against the build.
+`e2e/comics.test.ts` cover those pages themselves. Playwright runs the built adapter-node server and verifies real 404/410 status codes.
 
 ### Deployment
 

@@ -222,6 +222,9 @@ func (h *Handler) authGate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	if identity, ok := h.cookieIdentity(r, cmsSessionCookie); ok {
 		w.Header().Set("X-Wish-Admin-Subject", identity.Subject)
+		if len(h.cmsSSOSecret) > 0 {
+			w.Header().Set(cmsIdentityHeader, signCMSIdentity(h.cmsSSOSecret, identity, h.now()))
+		}
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}

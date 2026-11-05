@@ -41,7 +41,7 @@ test('the dev log is linked from the nav and lists posts or an honest empty stat
 	for (const src of await page
 		.locator('article img')
 		.evaluateAll((images) => images.map((image) => image.getAttribute('src') ?? ''))) {
-		if (src.startsWith('/')) expect(src).toMatch(/^\/devlog\/media\//);
+		expect(new URL(src, page.url()).pathname).toMatch(/\/content\/images\//);
 	}
 	await page.getByRole('link', { name: '回到開發日誌' }).first().click();
 	await expect(page).toHaveURL(/\/devlog\/$/);

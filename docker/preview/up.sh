@@ -12,14 +12,7 @@ set -a
 . ./.env.ghost.local
 . docker/preview/.env
 set +a
-# Build-side Ghost URL; defaults to the seed's value.
-GHOST_URL="${PREVIEW_GHOST_URL:-$GHOST_URL}"
-
-docker build --network host \
-	--build-arg GHOST_URL="$GHOST_URL" \
-	--build-arg GHOST_REQUIRED="${GHOST_REQUIRED:-}" \
-	--build-arg CONTENT_REVISION="$(date +%s)" \
-	--secret id=ghost_content_api_key,env=GHOST_CONTENT_API_KEY \
-	-t landing-preview-web:latest .
+# Content is fetched at runtime; no CMS secrets enter the image build.
+docker build -t landing-preview-web:latest .
 
 docker compose -f docker/preview/compose.yml --env-file docker/preview/.env up -d --build --remove-orphans

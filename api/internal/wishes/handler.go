@@ -34,6 +34,7 @@ type Handler struct {
 	adminToken     string
 	adminAuth      AdminAuthenticator
 	serviceClients []ServiceClient
+	cmsSSOSecret   []byte
 	logger         *slog.Logger
 	now            func() time.Time
 	changes        *changeBroker
@@ -45,6 +46,17 @@ type HandlerOption func(*Handler)
 // WithServiceClients enables server-to-server (BFF) access for the given clients.
 func WithServiceClients(clients []ServiceClient) HandlerOption {
 	return func(h *Handler) { h.serviceClients = clients }
+}
+
+// WithCMSSSOSecret makes the CMS gate vouch for signed-in admins to Ghost: every
+// allowed request carries a short-lived signed identity token (cmssso.go) that
+// the Ghost SSO adapter turns into a staff session. Empty disables it.
+func WithCMSSSOSecret(secret string) HandlerOption {
+	return func(h *Handler) {
+		if secret != "" {
+			h.cmsSSOSecret = []byte(secret)
+		}
+	}
 }
 
 func NewHandler(

@@ -88,14 +88,14 @@ test('renders the comics chrome in English', async ({ page }) => {
 	await expect(page.locator('.latest-badge')).toHaveText('Latest');
 });
 
-test('mirrors Ghost images into the static build', async ({ page, request }) => {
+test('serves Ghost images from their public content route', async ({ page, request }) => {
 	await page.goto('/comics/');
 	const imageSources = await page
 		.locator('#comics-grid img')
 		.evaluateAll((images) => images.map((image) => image.getAttribute('src') ?? ''));
 	test.skip(imageSources.length === 0, 'placeholder build: no Ghost covers');
 	for (const src of imageSources) {
-		expect(src).toMatch(/^\/comics\/media\//);
+		expect(new URL(src, page.url()).pathname).toMatch(/\/content\/images\//);
 		const response = await request.get(src);
 		expect(response.ok(), src).toBe(true);
 		expect(response.headers()['content-type']).toMatch(/^image\//);

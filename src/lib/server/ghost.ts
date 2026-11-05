@@ -1,43 +1,19 @@
 /**
- * Build-time Ghost Content API loader for the 漫畫專區 (comics) and 開發日誌
- * (dev log) pages.
- *
- * This module only runs while SvelteKit prerenders the site (`pnpm build`); the
- * deployed site is static HTML served by nginx and browsers never talk to Ghost.
- * Ghost images referenced by posts are mirrored into the build under
- * `/comics/media/` and `/devlog/media/` (the `media/[...path]/+server.ts` routes).
- *
- * Environment (read from `process.env` at build time — SvelteKit 2 forbids
- * `$env/dynamic/*` during prerendering, and `$env/static/*` would make the
- * variables mandatory):
- *
- * - `GHOST_URL`              Ghost base URL reachable from the build, e.g. https://nycu.life/cms
- * - `GHOST_CONTENT_API_KEY`  Content API key of a Ghost Custom Integration (read-only, public-grade)
- * - `GHOST_REQUIRED=1`       Fail the build when Ghost is unset or unreachable (an empty
- *                            section is still fine)
- *
- * Editor conventions (docs/ghost.md):
- * - An episode is a published post tagged `#comics` (internal tag, slug `hash-comics`)
- *   or `comics` (public tag).
- * - The episode number comes from an internal tag `#ep-NN` (e.g. `#ep-01`); posts
- *   without one are numbered by `published_at` order after the explicitly numbered ones.
- * - Feature image = 1:1 cover, post body = the panels, post slug = URL slug.
- * - A dev log post is a published post tagged `#devlog` (internal) or `devlog`
- *   (public). Other public tags are shown as labels; feature image = cover.
- *
- * Trust model: post HTML is written by authenticated Ghost staff (editors), the
- * same trust level as a commit to this repo, so it is rendered with `{@html}`
- * without sanitising. Do not feed member/comment content through this path.
+ * Runtime Ghost Content API loader. Catalogs expire after 30 seconds, with
+ * concurrent requests sharing a fetch. No Ghost request is needed at build time.
+ * Images are served by Ghost's public /cms/content/images/ route.
+ * Only trusted staff-authored HTML is rendered by the existing page components.
  */
-import { base } from '$app/paths';
-import { COMICS_MEDIA_PREFIX, type ComicEpisode, type ComicsCatalog } from '$lib/comics';
+import { error } from '@sveltejs/kit';
+import type { ComicEpisode, ComicsCatalog } from '$lib/comics';
 import { placeholderEpisodes } from '$lib/content/comics';
-import { DEVLOG_MEDIA_PREFIX, type DevlogCatalog, type DevlogPost } from '$lib/devlog';
+import type { DevlogCatalog, DevlogPost } from '$lib/devlog';
 
 export interface GhostEnv {
 	GHOST_URL?: string;
 	GHOST_CONTENT_API_KEY?: string;
 	GHOST_REQUIRED?: string;
+	GHOST_PUBLIC_URL?: string;
 }
 
 interface GhostTag {
@@ -62,7 +38,7 @@ const COMICS_TAG_FILTER = 'tag:[comics,hash-comics]';
 const DEVLOG_PUBLIC_TAG = 'devlog';
 const DEVLOG_TAG_FILTER = `tag:[${DEVLOG_PUBLIC_TAG},hash-devlog]`;
 const EPISODE_TAG = /^hash-ep-?0*(\d+)$/;
-const REQUEST_TIMEOUT_MS = 20_000;
+const REQUEST_TIMEOUT_MS = 5_000;
 
 /** Episode number from an internal `#ep-NN` tag (Ghost slug `hash-ep-nn`). */
 export function parseEpisodeNumber(tags: GhostTag[] | undefined): number | null {
@@ -208,7 +184,7 @@ interface TaggedPosts {
 	posts: GhostPost[];
 	/**
 	 * Ghost base URLs (origin + optional sub-path, e.g. `https://nycu.life/cms`) whose
-	 * `/content/images/` URLs are mirrored: the build-side URL and Ghost's public URL.
+	 * `/content/images/` URLs are mirrored: the server-side URL and Ghost's public URL.
 	 */
 	origins: string[];
 }
@@ -242,7 +218,7 @@ async function fetchTaggedPosts(
 				settings: undefined
 			}))
 		]);
-		// Images carry Ghost's public `url`, which can differ from the build-side GHOST_URL.
+		// Images carry Ghost's public `url`, which can differ from the server-side GHOST_URL.
 		const origins = [
 			...new Set(
 				[ghostUrl, settings.settings?.url]
@@ -264,7 +240,7 @@ function unavailable<T>(env: GhostEnv, error: unknown, section: string, fallback
 	const message = `[ghost] ${error.message}`;
 	if (isRequired(env))
 		throw new Error(`${message} (GHOST_REQUIRED=1, refusing a ${section} fallback)`);
-	console.warn(`${message}; building ${section} without Ghost content.`);
+	console.warn(`${message}; serving ${section} without Ghost content.`);
 	return fallback();
 }
 
@@ -277,7 +253,7 @@ function unavailable<T>(env: GhostEnv, error: unknown, section: string, fallback
 export async function loadComics(
 	env: GhostEnv,
 	fetchFn: typeof fetch = fetch,
-	mediaBase = `${base}${COMICS_MEDIA_PREFIX}`
+	mediaBase?: string
 ): Promise<ComicsCatalog> {
 	let result: TaggedPosts;
 	try {
@@ -291,7 +267,11 @@ export async function loadComics(
 		);
 		return placeholderCatalog();
 	}
-	const catalog = mapGhostPosts(result.posts, result.origins, mediaBase);
+	const catalog = mapGhostPosts(
+		result.posts,
+		result.origins,
+		mediaBase ?? `${ghostBase(env.GHOST_PUBLIC_URL || result.origins.at(-1)!)}/content/images/`
+	);
 	console.info(
 		`[ghost] loaded ${catalog.episodes.length} comic episodes (${catalog.media.length} images) from ${result.ghostUrl}`
 	);
@@ -336,7 +316,7 @@ const emptyDevlog = (): DevlogCatalog => ({ source: 'empty', posts: [], media: [
 export async function loadDevlog(
 	env: GhostEnv,
 	fetchFn: typeof fetch = fetch,
-	mediaBase = `${base}${DEVLOG_MEDIA_PREFIX}`
+	mediaBase?: string
 ): Promise<DevlogCatalog> {
 	let result: TaggedPosts;
 	try {
@@ -348,35 +328,49 @@ export async function loadDevlog(
 		console.info(`[ghost] no posts tagged #devlog at ${result.ghostUrl} yet`);
 		return emptyDevlog();
 	}
-	const catalog = mapDevlogPosts(result.posts, result.origins, mediaBase);
+	const catalog = mapDevlogPosts(
+		result.posts,
+		result.origins,
+		mediaBase ?? `${ghostBase(env.GHOST_PUBLIC_URL || result.origins.at(-1)!)}/content/images/`
+	);
 	console.info(
 		`[ghost] loaded ${catalog.posts.length} dev log posts (${catalog.media.length} images) from ${result.ghostUrl}`
 	);
 	return catalog;
 }
 
-let catalogPromise: Promise<ComicsCatalog> | undefined;
-let devlogPromise: Promise<DevlogCatalog> | undefined;
-
-/** Memoised per build: every prerendered comics route and the sitemap share one Ghost fetch. */
-export function getComics(): Promise<ComicsCatalog> {
-	catalogPromise ??= loadComics(process.env);
-	return catalogPromise;
+/** Single-flight, bounded cache. Failures never replace a successful catalog or
+ * extend its lifetime: unpublished content must disappear after the TTL. */
+export function createCatalogCache<T>(load: () => Promise<T>, ttlMs = 30_000, now = Date.now) {
+	let cached: { value: T; expires: number } | undefined;
+	let pending: Promise<T> | undefined;
+	return (): Promise<T> => {
+		if (cached && now() < cached.expires) return Promise.resolve(cached.value);
+		pending ??= load()
+			.then((value) => {
+				cached = { value, expires: now() + ttlMs };
+				return value;
+			})
+			.finally(() => {
+				pending = undefined;
+			});
+		return pending;
+	};
 }
 
-/** Memoised per build, like `getComics`. */
-export function getDevlog(): Promise<DevlogCatalog> {
-	devlogPromise ??= loadDevlog(process.env);
-	return devlogPromise;
+// Fail configured runtime requests with 503 on an outage, instead of publishing
+// a misleading empty sitemap or keeping withdrawn content alive indefinitely.
+const runtimeEnv = (): GhostEnv => ({
+	...process.env,
+	GHOST_REQUIRED: process.env.GHOST_URL ? '1' : process.env.GHOST_REQUIRED
+});
+async function available<T>(load: () => Promise<T>): Promise<T> {
+	try {
+		return await load();
+	} catch (cause) {
+		console.error('[ghost] content temporarily unavailable', cause);
+		error(503, 'Content temporarily unavailable');
+	}
 }
-
-/** Fetch one mirrored image from Ghost at build time. */
-export async function fetchGhostMedia(path: string, fetchFn: typeof fetch = fetch) {
-	const ghostUrl = process.env.GHOST_URL ? trimSlash(process.env.GHOST_URL) : '';
-	if (!ghostUrl) throw new Error('[ghost] GHOST_URL not set; cannot mirror Ghost media');
-	const response = await fetchFn(`${ghostUrl}/content/images/${path}`, {
-		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-	});
-	if (!response.ok) throw new Error(`[ghost] media ${path} → HTTP ${response.status}`);
-	return response;
-}
+export const getComics = createCatalogCache(() => available(() => loadComics(runtimeEnv())));
+export const getDevlog = createCatalogCache(() => available(() => loadDevlog(runtimeEnv())));

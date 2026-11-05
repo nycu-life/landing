@@ -1,4 +1,4 @@
-# Full local preview: static site + Wish API + Postgres behind one gateway that
+# Full local preview: Node site + Wish API + Postgres behind one gateway that
 # mimics the production Traefik split. Ghost (comics source) is included from
 # docker/ghost/compose.yml when present; see docs/preview.md.
 #
@@ -48,9 +48,13 @@ services:
         condition: service_completed_successfully
 
   web:
-    # Built by docker/preview/up.sh: the prerender needs host networking to reach
-    # Ghost, which compose's bake builder only allows with extra entitlements.
     image: landing-preview-web:latest
+    networks: [default, ghost]
+    environment:
+      ORIGIN: ${PREVIEW_ORIGIN:-http://127.0.0.1:18090}
+      GHOST_URL: ${PREVIEW_GHOST_URL:-http://ghost:2368}
+      GHOST_PUBLIC_URL: ${GHOST_PUBLIC_URL:-http://127.0.0.1:2368}
+      GHOST_CONTENT_API_KEY: ${GHOST_CONTENT_API_KEY:-}
 
   gateway:
     image: nginx:1.30.6-alpine
@@ -64,3 +68,8 @@ services:
 
 volumes:
   pgdata:
+
+networks:
+  ghost:
+    external: true
+    name: nycu-life-ghost_default
