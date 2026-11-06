@@ -46,6 +46,12 @@ FAQ、職缺和里程碑用同樣方式編輯。集合項目是獨立 Page：複
 
 Ghost 不控制 SvelteKit 的 CSS、滾動動畫、Wish Pool API、登入與權限。內文欄位會驗證連結與必要欄位，錯誤內容會暫時沿用最近成功版本並記錄伺服器錯誤；修正後等快取更新即可。
 
+Ghost 後台的登入使用 NYCU One。每位管理員都要先由 Owner 在 Ghost 的 Staff
+設定中建立或邀請自己的 NYCU One email；登入時 Ghost 會依 email 對應個人
+staff 帳號。請將 `sky` 與宗易的 Ghost 角色設為 **Administrator**，保留
+`hermes@nycu.one` 為 **Owner**，其餘需要編輯內容的成員設為 **Editor**。
+沒有對應 Ghost staff 帳號的 NYCU One 使用者不會取得 CMS 權限。
+
 編輯後用 `/`、`/about/`，再用導覽列的語系切換（語系仍使用 cookie）、手機與深色模式各看一次。若要新增一般公開頁，建立不以 `site-` 開頭且 visibility 為 Public 的 Page，它會以 `/pages/<slug>/` 顯示並列入 sitemap。
 
 ## 中文文案排版

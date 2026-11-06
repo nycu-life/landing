@@ -584,7 +584,7 @@ func TestSafeReturnPath(t *testing.T) {
 
 // cmsSSOVector is shared with docker/ghost/adapters/sso/NycuOneSSO/index.test.mjs,
 // which must verify it: the Go signer and the JS verifier agree on the format.
-const cmsSSOVector = "v1.eyJzdWIiOiJlZGl0b3IiLCJuYW1lIjoi57eo6LyvIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE3MDAwMDAxMjB9.g4gf_kZiXmqnsn2Uu0sljVTV3KX7At_c6RFKJlEuZT8"
+const cmsSSOVector = "v1.eyJzdWIiOiJlZGl0b3IiLCJuYW1lIjoi57eo6LyvIiwiZW1haWwiOiJlZGl0b3JAbnljdS5vbmUiLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MTcwMDAwMDEyMH0.o2-7pSoemQhfBqsI4RVBM3PZcqhUBs9Fi29cNDSEN5E"
 
 func TestCMSGateVouchesForSignedInAdminsToGhost(t *testing.T) {
 	now := time.Unix(1_700_000_000, 0).UTC()
@@ -599,7 +599,7 @@ func TestCMSGateVouchesForSignedInAdminsToGhost(t *testing.T) {
 	}
 	handler, routes := newGate(WithCMSSSOSecret("cms-sso-secret-for-tests"))
 	cookie, err := handler.encodeSignedCookie("admin-session",
-		adminSession{Subject: "editor", Name: "編輯", Expires: now.Add(time.Hour).Unix()})
+		adminSession{Subject: "editor", Name: "編輯", Email: "editor@nycu.one", Expires: now.Add(time.Hour).Unix()})
 	if err != nil {
 		t.Fatal(err)
 	}

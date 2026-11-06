@@ -9,15 +9,16 @@ const sign = (claims) => {
 	const body = `v1.${Buffer.from(JSON.stringify(claims)).toString('base64url')}`;
 	return `${body}.${createHmac('sha256', secret).update(body).digest('base64url')}`;
 };
-const claims = { sub: 'editor', name: '編輯', iat: now, exp: now + 120 };
+const claims = { sub: 'editor', name: '編輯', email: 'editor@nycu.one', iat: now, exp: now + 120 };
 const vector =
-	'v1.eyJzdWIiOiJlZGl0b3IiLCJuYW1lIjoi57eo6LyvIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE3MDAwMDAxMjB9.g4gf_kZiXmqnsn2Uu0sljVTV3KX7At_c6RFKJlEuZT8';
+	'v1.eyJzdWIiOiJlZGl0b3IiLCJuYW1lIjoi57eo6LyvIiwiZW1haWwiOiJlZGl0b3JAbnljdS5vbmUiLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MTcwMDAwMDEyMH0.o2-7pSoemQhfBqsI4RVBM3PZcqhUBs9Fi29cNDSEN5E';
 
 test('accepts the Go gate token and rejects forged, expired and malformed identities', () => {
 	assert.equal(sign(claims), vector);
 	assert.deepEqual(NycuOneSSO.verifyToken(vector, secret, now * 1000), {
 		sub: 'editor',
-		name: '編輯'
+		name: '編輯',
+		email: 'editor@nycu.one'
 	});
 	for (const token of [
 		'',
@@ -36,13 +37,12 @@ test('accepts the Go gate token and rejects forged, expired and malformed identi
 	assert.equal(NycuOneSSO.verifyToken(vector, '', now * 1000), null);
 });
 
-test('signs in only on full Admin entry requests and only to an active shared account', async () => {
+test('signs in only on full Admin entry requests and only to an active matching account', async () => {
 	const adapter = new NycuOneSSO();
-	process.env.NYCU_CMS_SSO_STAFF_EMAIL = 'shared@example.test';
-	const user = { id: 'staff', status: 'active' };
+	const user = { id: 'staff', email: 'editor@nycu.one', status: 'active' };
 	adapter.setUserRepository({
 		getByEmail: async (email) => {
-			assert.equal(email, 'shared@example.test');
+			assert.equal(email, 'editor@nycu.one');
 			return user;
 		}
 	});
@@ -68,10 +68,23 @@ test('signs in only on full Admin entry requests and only to an active shared ac
 			null
 		);
 	}
-	assert.equal(await adapter.getUserForIdentity({ sub: 'editor' }), user);
+	assert.equal(await adapter.getUserForIdentity({ sub: 'editor', email: 'EDITOR@NYCU.ONE' }), user);
 	assert.equal(await adapter.getUserForIdentity(null), null);
+	assert.equal(await adapter.getUserForIdentity({ sub: 'editor', email: 'not-an-email' }), null);
 	adapter.setUserRepository({ getByEmail: async () => ({ status: 'suspended' }) });
-	assert.equal(await adapter.getUserForIdentity({ sub: 'editor' }), null);
+	assert.equal(await adapter.getUserForIdentity({ sub: 'editor', email: 'editor@nycu.one' }), null);
+});
+
+test('keeps the shared account only as a migration fallback for old tokens', async () => {
+	const adapter = new NycuOneSSO();
+	process.env.NYCU_CMS_SSO_STAFF_EMAIL = 'legacy@nycu.one';
+	const user = { id: 'legacy', email: 'legacy@nycu.one', status: 'active' };
+	adapter.setUserRepository({
+		getByEmail: async (email) => {
+			assert.equal(email, 'legacy@nycu.one');
+			return user;
+		}
+	});
+	assert.equal(await adapter.getUserForIdentity({ sub: 'old-token' }), user);
 	delete process.env.NYCU_CMS_SSO_STAFF_EMAIL;
-	assert.equal(await adapter.getUserForIdentity({ sub: 'editor' }), null);
 });

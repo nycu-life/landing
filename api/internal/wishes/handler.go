@@ -50,7 +50,7 @@ func WithServiceClients(clients []ServiceClient) HandlerOption {
 
 // WithCMSSSOSecret makes the CMS gate vouch for signed-in admins to Ghost: every
 // allowed request carries a short-lived signed identity token (cmssso.go) that
-// the Ghost SSO adapter turns into a staff session. Empty disables it.
+// the Ghost SSO adapter maps to the matching staff email. Empty disables it.
 func WithCMSSSOSecret(secret string) HandlerOption {
 	return func(h *Handler) {
 		if secret != "" {
