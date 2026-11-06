@@ -205,5 +205,5 @@ export function departmentsOfMember(
 
 /** First grapheme of a name, for the initials fallback avatar. */
 export function memberInitial(name: string): string {
-	return [...name][0] ?? '·';
+	return [...name][0] ?? '?';
 }

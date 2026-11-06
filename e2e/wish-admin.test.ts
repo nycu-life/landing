@@ -93,7 +93,7 @@ test('OAuth session moderates, switches lists, and signs out without authorizati
 
 	await page.goto('/wishpool/admin/');
 	await expect(page.getByText('已登入許願池管理')).toBeVisible();
-	await expect(page.getByText(/測試管理員 · 由 NYCU LIFE SSO 驗證/)).toBeVisible();
+	await expect(page.getByText('測試管理員 / 由 NYCU LIFE SSO 驗證')).toBeVisible();
 	await expect(page.getByText(adminWishes[0].title)).toBeVisible();
 	await page
 		.locator('.admin-card')

@@ -177,7 +177,7 @@ function coverSvg(n, title) {
 <circle cx="200" cy="860" r="90" fill="#4d7fff"/>
 <text x="540" y="560" text-anchor="middle" font-family="Ubuntu, 'Noto Sans TC', sans-serif" font-size="170" font-weight="700" fill="#0045f2">EP.${ep}</text>
 <text x="540" y="660" text-anchor="middle" font-family="'Noto Sans TC', sans-serif" font-size="56" font-weight="700" fill="#0b1f5c">${escapeXml(title)}</text>
-<text x="540" y="1010" text-anchor="middle" font-family="sans-serif" font-size="32" fill="#2455a8">Ghost seed · sample cover</text>
+<text x="540" y="1010" text-anchor="middle" font-family="sans-serif" font-size="32" fill="#2455a8">Ghost seed / sample cover</text>
 </svg>`;
 }
 
@@ -188,7 +188,7 @@ function panelSvg(n, panel) {
 <rect x="40" y="40" width="1000" height="1270" rx="28" fill="none" stroke="#0b1f5c" stroke-width="10"/>
 <circle cx="540" cy="600" r="220" fill="#4d7fff" opacity="0.85"/>
 <rect x="140" y="980" width="800" height="200" rx="40" fill="#ffffff" stroke="#0b1f5c" stroke-width="6"/>
-<text x="540" y="1100" text-anchor="middle" font-family="'Noto Sans TC', sans-serif" font-size="64" font-weight="700" fill="#0b1f5c">第 ${n} 集 · 第 ${panel} 格</text>
+<text x="540" y="1100" text-anchor="middle" font-family="'Noto Sans TC', sans-serif" font-size="64" font-weight="700" fill="#0b1f5c">第 ${n} 集，第 ${panel} 格</text>
 <text x="540" y="140" text-anchor="middle" font-family="sans-serif" font-size="40" fill="#2455a8">sample panel ${panel}/3</text>
 </svg>`;
 }
@@ -252,7 +252,7 @@ function devlogCoverSvg(title, hue) {
 <circle cx="1300" cy="160" r="360" fill="#ffffff" opacity="0.18"/>
 <circle cx="260" cy="760" r="140" fill="#ffffff" opacity="0.22"/>
 <text x="120" y="440" font-family="'Noto Sans TC', sans-serif" font-size="88" font-weight="700" fill="#ffffff">${escapeXml(title)}</text>
-<text x="120" y="530" font-family="Ubuntu, sans-serif" font-size="40" fill="#ffffff" opacity="0.85">NYCU LIFE · DEVLOG (sample)</text>
+<text x="120" y="530" font-family="Ubuntu, sans-serif" font-size="40" fill="#ffffff" opacity="0.85">NYCU LIFE / DEVLOG (sample)</text>
 </svg>`;
 }
 
@@ -281,7 +281,7 @@ const DEVLOG = [
 		body: `<p>（範例內容）NYCozU 完成全校課程收錄，現在可以依學分、時段、通識向度與教室篩選。</p>
 <h2>資料怎麼來</h2>
 <p>課程資料每天同步，加退選期間會更頻繁更新。教室資料與校園地圖共用同一份來源。</p>
-<pre><code>課程 3,760+ · 教室 420+ · 每日同步</code></pre>`
+<pre><code>課程 3,760+、教室 420+，每日同步</code></pre>`
 	},
 	{
 		slug: 'wishpool-fulfilled',

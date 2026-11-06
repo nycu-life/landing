@@ -364,7 +364,9 @@
 			</label>
 		</details>
 		<p id="wish-privacy-note" class="wish-privacy">
-			<strong>{m.wish_privacy_title()}</strong> · {m.wish_privacy_body()}
+			<strong>{m.wish_privacy_title()}</strong>{localeState.current === 'zh-tw'
+				? '：'
+				: ': '}{m.wish_privacy_body()}
 		</p>
 		<div class="wish-feedback" aria-live="polite">
 			{#if error}<p class="wish-error">{error}</p>{/if}

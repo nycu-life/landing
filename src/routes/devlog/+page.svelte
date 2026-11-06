@@ -29,7 +29,7 @@
 	<span class="post-meta">
 		<time datetime={post.publishedAt}>{formatPublished(post.publishedAt)}</time>
 		{#if post.readingTime}
-			<span aria-hidden="true">·</span>
+			<span aria-hidden="true">/</span>
 			<span>{m.devlog_reading_time({ minutes: post.readingTime })}</span>
 		{/if}
 	</span>
@@ -47,7 +47,7 @@
 
 <div class="page devlog-page">
 	<header class="page-head devlog-head">
-		<span class="devlog-eyebrow">NYCU LIFE&nbsp;·&nbsp;DEVLOG</span>
+		<span class="devlog-eyebrow">NYCU LIFE&nbsp;/&nbsp;DEVLOG</span>
 		<h1 class="page-title devlog-title">{m.devlog_page_title()}</h1>
 		<p class="page-lede">{m.devlog_page_lede()}</p>
 		{#if data.posts.length}

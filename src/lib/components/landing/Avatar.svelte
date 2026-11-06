@@ -9,7 +9,7 @@
 		size = 'md'
 	}: { name: string; slug: string; photo?: string; size?: 'md' | 'lg' } = $props();
 
-	const initial = $derived([...name][0] ?? '·');
+	const initial = $derived([...name][0] ?? '?');
 
 	// A photo dropped at static/team/<slug>.jpg shows automatically; an explicit
 	// `photo` (repo path or full URL) overrides it. The image is probed on the
