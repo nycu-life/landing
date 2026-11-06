@@ -3,32 +3,21 @@
 	import { onMount } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { fly, slide } from 'svelte/transition';
-	import { RECRUITMENT_OPEN, joinRoles, products, productStatusLabel } from '$lib/content/landing';
-	import { m } from '$lib/paraglide/messages';
+	import { useSiteMessages, useSiteView } from '$lib/site/view';
+	const m = useSiteMessages();
+	const siteView = useSiteView();
+	const site = $derived(siteView());
 	import { dismissBootSplash } from '$lib/boot-splash';
 
-	type Faq = {
-		question: () => string;
-		answer: () => string;
-		/* When set, the answer renders as pre + in-page link + post instead of plain text. */
-		link?: { pre: () => string; label: () => string; post: () => string; href: string };
+	const products = $derived(site.products);
+	const joinRoles = $derived(site.roles);
+	const faqs = $derived(site.faqs);
+	const RECRUITMENT_OPEN = $derived(site.recruitmentOpen);
+	const statusLabels = {
+		live: m.products_status_live,
+		soon: m.products_status_soon,
+		dev: m.products_status_dev
 	};
-	const faqs: Faq[] = [
-		{ question: m.story_faq_q1, answer: m.story_faq_a1 },
-		{ question: m.story_faq_q2, answer: m.story_faq_a2 },
-		{ question: m.story_faq_q3, answer: m.story_faq_a3 },
-		{ question: m.story_faq_q4, answer: m.story_faq_a4 },
-		{
-			question: m.story_faq_q5,
-			answer: m.story_faq_a5,
-			link: {
-				pre: m.story_faq_a5_pre,
-				label: m.story_faq_a5_link,
-				post: m.story_faq_a5_post,
-				href: '/wishpool/'
-			}
-		}
-	];
 	/* The story is one continuous progress value (0 → 1) scrubbed by native page scrolling: the
 	   outer section is tall, the stage is sticky, and every scene choreographs itself off
 	   --story-progress. Chapters push each other vertically; the position always tracks the
@@ -76,8 +65,9 @@
 	const wheelGapMs = 120;
 	const touchThreshold = 28;
 	const productStepMs = 460;
-	const aboutFilmEmbedUrl =
-		'https://www.youtube-nocookie.com/embed/WbndciSLhD8?autoplay=0&mute=1&loop=1&playlist=WbndciSLhD8&playsinline=1&rel=0&enablejsapi=1';
+	const aboutFilmEmbedUrl = $derived(
+		`https://www.youtube-nocookie.com/embed/${site.filmId}?autoplay=0&mute=1&loop=1&playlist=${site.filmId}&playsinline=1&rel=0&enablejsapi=1`
+	);
 
 	let storyEl: HTMLElement;
 	let stageEl: HTMLElement;
@@ -98,7 +88,7 @@
 	let aboutFilmIn = $state(false);
 	let storyReady = $state(false);
 	let reducedMotion = $state(false);
-	let activeProductData = $derived(products[activeProduct]);
+	let activeProductData = $derived(products[Math.min(activeProduct, products.length - 1)]);
 
 	const clamp = (value: number) => Math.min(1, Math.max(0, value));
 	const flyIn = (direction: number) => ({
@@ -870,7 +860,7 @@
 							{:else}
 								<span class="product-cta product-cta-soon">
 									<img class="cta-face cta-face-default" src="{base}/ui/soon-tag.svg" alt="" />
-									<span class="cta-label">{productStatusLabel[activeProductData.status]()}</span>
+									<span class="cta-label">{statusLabels[activeProductData.status]()}</span>
 								</span>
 							{/if}
 						</article>
@@ -917,13 +907,15 @@
 												>
 													<img
 														class="device-screen-light"
-														src={`${base}${screen.src}`}
+														src={screen.src.startsWith('/') ? `${base}${screen.src}` : screen.src}
 														alt={index === 0 ? activeProductData.name() : ''}
 													/>
 													{#if screen.darkSrc}
 														<img
 															class="device-screen-dark"
-															src={`${base}${screen.darkSrc}`}
+															src={screen.darkSrc.startsWith('/')
+																? `${base}${screen.darkSrc}`
+																: screen.darkSrc}
 															alt=""
 														/>
 													{/if}
@@ -1020,8 +1012,11 @@
 								{#if activeFaq === index}
 									<p transition:slide={{ duration: 260 }}>
 										{#if item.link}
-											{item.link.pre()}<a class="faq-answer-link" href="{base}{item.link.href}"
-												>{item.link.label()}</a
+											{item.link.pre()}<a
+												class="faq-answer-link"
+												href={item.link.href.startsWith('/')
+													? `${base}${item.link.href}`
+													: item.link.href}>{item.link.label()}</a
 											>{item.link.post()}
 										{:else}
 											{item.answer()}
@@ -1052,7 +1047,7 @@
 					<h2>{m.story_join_heading()}</h2>
 					<p>{RECRUITMENT_OPEN ? m.story_join_open_lede() : m.story_join_closed_lede()}</p>
 				</div>
-				<ul class="join-cards">
+				<ul class="join-cards" class:extended={joinRoles.length > 6}>
 					{#each joinRoles as role (role.id)}
 						<li class="join-card" data-group={role.group}>
 							{#if !RECRUITMENT_OPEN}
@@ -2195,6 +2190,13 @@
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: clamp(0.8rem, 1.9vh, 1.3rem);
+	}
+	@media (min-width: 768px) {
+		.join-cards.extended {
+			max-height: calc(100dvh - 15rem);
+			overflow-y: auto;
+			padding: 0.75rem;
+		}
 	}
 	.join-card {
 		position: relative;

@@ -146,7 +146,9 @@ async function ensureIntegration() {
 	const adminKey = integration.api_keys.find((key) => key.type === 'admin');
 	await writeEnvFile({
 		GHOST_CONTENT_API_KEY: contentKey,
-		GHOST_ADMIN_API_KEY: `${adminKey.id}:${adminKey.secret}`
+		GHOST_ADMIN_API_KEY: adminKey.secret.includes(':')
+			? adminKey.secret
+			: `${adminKey.id}:${adminKey.secret}`
 	});
 	console.log(`• Wrote API keys to ${envFile}`);
 }

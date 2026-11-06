@@ -1,0 +1,143 @@
+{
+	"home": {
+		"title": "首頁：主視覺與共用文案",
+		"fields": {
+			"meta_description": "搜尋摘要",
+			"meta_title": "標題",
+			"story_gacha_alt": "圖片替代文字",
+			"story_hero_title_1": "標題第一行",
+			"story_hero_title_2": "標題第二行",
+			"story_region_label": "章節標籤",
+			"story_scroll_cue": "Story Scroll Cue",
+			"story_skip": "Story Skip"
+		}
+	},
+	"home-about": {
+		"title": "首頁：關於我們",
+		"fields": {
+			"story_about_body": "內文",
+			"story_about_eyebrow": "眉標",
+			"story_about_film": "影片替代文字",
+			"story_about_label": "章節標籤",
+			"story_about_title_1": "標題第一行",
+			"story_about_title_2": "標題第二行"
+		}
+	},
+	"products": {
+		"title": "首頁：產品標題與狀態",
+		"fields": {
+			"products_status_dev": "開發中標籤",
+			"products_status_live": "已上線標籤",
+			"products_status_soon": "即將推出標籤",
+			"products_visit": "產品連結按鈕",
+			"story_products_label": "章節標籤"
+		}
+	},
+	"faq": {
+		"title": "首頁：FAQ 標題",
+		"fields": {
+			"story_faq_alt": "圖片替代文字",
+			"story_faq_label": "章節標籤"
+		}
+	},
+	"join": {
+		"title": "首頁：招募狀態與標題",
+		"fields": {
+			"story_join_card_cta": "報名按鈕",
+			"story_join_closed_lede": "停止招募簡介",
+			"story_join_eyebrow": "眉標",
+			"story_join_heading": "標題",
+			"story_join_label": "章節標籤",
+			"story_join_open_lede": "招募中簡介",
+			"story_join_stamp_closed": "停止招募戳記",
+			"story_join_stamp_semester": "學期英文戳記",
+			"story_join_stamp_term": "學期戳記"
+		}
+	},
+	"about": {
+		"title": "關於我們：頁面與章節",
+		"fields": {
+			"about_film_eyebrow": "影片眉標",
+			"about_film_title": "影片標題",
+			"about_milestone_devlog_link": "開發日誌按鈕",
+			"about_milestone_eyebrow": "里程碑眉標",
+			"about_milestone_lede": "里程碑簡介",
+			"about_milestone_title": "里程碑標題",
+			"about_page_eyebrow": "頁面眉標",
+			"about_page_lede": "頁面簡介",
+			"about_page_title": "頁面標題",
+			"about_vision_eyebrow": "願景眉標",
+			"about_vision_title": "願景標題",
+			"about_wish_lede": "許願池簡介",
+			"about_wish_title": "許願池標題"
+		}
+	},
+	"footer": {
+		"title": "全站：頁尾與許願池入口",
+		"fields": {
+			"footer_download_android": "Android 按鈕替代文字",
+			"footer_download_android_kicker": "Android 按鈕上標",
+			"footer_download_ios": "iOS 按鈕替代文字",
+			"footer_download_ios_kicker": "iOS 按鈕上標",
+			"footer_download_title": "下載區標題",
+			"footer_made_by": "製作團隊前綴",
+			"footer_made_with": "製作說明",
+			"footer_tagline": "頁尾簡介",
+			"footer_wishlist": "許願池連結",
+			"menu_contact_label": "章節標籤",
+			"wish_cta": "行動按鈕",
+			"wish_lede": "簡介",
+			"wish_title": "標題"
+		}
+	},
+	"navigation": {
+		"title": "全站：導覽與品牌",
+		"fields": {
+			"brand_name": "品牌名稱",
+			"menu_about": "關於我們",
+			"menu_close": "關閉選單",
+			"menu_home": "首頁",
+			"menu_open": "開啟選單",
+			"nav_aria": "導覽替代文字",
+			"nav_devlog": "開發日誌",
+			"nav_faq": "常見問題",
+			"nav_join": "加入我們",
+			"nav_products": "產品",
+			"nav_theme_to_dark": "切換深色模式",
+			"nav_theme_to_light": "切換淺色模式",
+			"nav_wishpool": "許願池"
+		}
+	},
+	"devlog": {
+		"title": "開發日誌：頁面文案",
+		"fields": {
+			"devlog_back": "Back",
+			"devlog_empty_body": "Empty Body",
+			"devlog_empty_cta": "Empty Cta",
+			"devlog_empty_title": "Empty Title",
+			"devlog_language_note": "Language Note",
+			"devlog_list_aria": "List Aria",
+			"devlog_newer": "Newer",
+			"devlog_older": "Older",
+			"devlog_page_lede": "Page Lede",
+			"devlog_page_title": "Page Title",
+			"devlog_post_nav_aria": "Post Nav Aria"
+		}
+	},
+	"comics": {
+		"title": "漫畫：頁面文案",
+		"fields": {
+			"comics_back": "Back",
+			"comics_episode_nav_aria": "Episode Nav Aria",
+			"comics_latest": "Latest",
+			"comics_lede": "Lede",
+			"comics_list_aria": "List Aria",
+			"comics_next": "Next",
+			"comics_placeholder_body": "Placeholder Body",
+			"comics_prev": "Prev",
+			"comics_sort_newest": "Sort Newest",
+			"comics_sort_oldest": "Sort Oldest",
+			"comics_title": "Title"
+		}
+	}
+}

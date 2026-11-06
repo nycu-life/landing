@@ -22,7 +22,7 @@ if (browser) {
 export const localeState = {
 	get current(): AppLocale {
 		// On the server, keep using Paraglide's request-local locale. Production is
-		// static, but this also keeps dev SSR isolated between requests.
+		// dynamic, so this keeps SSR isolated between requests.
 		return browser ? clientLocale : getLocale();
 	},
 	set(nextLocale: AppLocale) {

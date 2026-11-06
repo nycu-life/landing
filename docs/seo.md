@@ -12,7 +12,7 @@ as being indexed — report only what Search Console actually shows.
 `src/routes/sitemap.xml/+server.ts`, using the shared 30-second Ghost catalog.
 It combines two sources of truth:
 
-1. `src/lib/seo/pages.ts` → `indexablePages`: the static pages, in order. To
+1. `src/lib/seo/pages.ts` → `indexablePages`: the core routes, in order. To
    add a page, add one line there.
 2. Ghost content read at runtime (`docs/ghost.md`): `/devlog/` and its
    posts (newest first), then `/comics/` and its episodes (episode order).
@@ -29,7 +29,7 @@ It combines two sources of truth:
 | `https://nycu.life/comics/<slug>/` | 200    | self      | — (Ghost-backed)              |
 | `/comics/ep-01/` … (placeholder)   | 200    | self      | `noindex`, not in the sitemap |
 
-All return full HTML without JS. Fixed pages are prerendered; Ghost pages use SSR. `/wishpool/admin/` is
+All return full HTML without JS through SvelteKit SSR. Home/About/shared chrome use Ghost Pages. `/wishpool/admin/` is
 reachable but `noindex,nofollow` and intentionally absent from the sitemap.
 English copy is a cookie-selected locale on the same URLs (Paraglide `cookie`
 strategy), so there are no `/en/` URLs and no hreflang alternates.
@@ -45,9 +45,8 @@ supplies published content:
   `src/lib/content/comics.ts` render with `noindex`, and the comics corner is
   not linked from the navigation.
 
-Builds do not contact Ghost. A configured Ghost outage returns 503 on content
-pages and the sitemap after the cache expires, while prerendered pages stay
-available. Published/edited/withdrawn articles and their sitemap entries refresh
+Builds do not contact Ghost. A configured Ghost outage returns 503 on
+article pages and the sitemap after the cache expires. Site content can use the last successful catalog for up to 5 minutes; home/About/custom pages then return 503. Wish Pool and its Go API remain independent. Published/edited/withdrawn articles and their sitemap entries refresh
 within 30 seconds, without a new deployment.
 
 Images use Ghost's public `/cms/content/images/` route. Former
@@ -91,7 +90,7 @@ The two non-404 entries, as read in Search Console by Codex (report data as of
 2026-10-16):
 
 - **Discovered – currently not indexed:** `https://nycu.life/wishpool/`. It is
-  in the sitemap, 200, prerendered, self-canonical, not noindex. Nothing in this
+  in the sitemap, 200, prerendered at the time of this report, self-canonical, not noindex. Nothing in this
   repo blocks it; Google simply has not crawled it yet. Google-side follow-up
   only — no code change and no sitemap resubmission (the sitemap is unchanged).
 - **Crawled – currently not indexed:** `http://nycu.life/` (plain HTTP), last
@@ -144,3 +143,5 @@ noindex error page with a real 404. `e2e/devlog.test.ts` and
 | `/sitemap.xml`                                            | 200 `text/xml`, 2 URLs (`/`, `/wishpool/`)              |
 | `/robots.txt`                                             | 200, `Disallow:` (empty), `Sitemap:` line               |
 | `/api/wishes?limit=1`                                     | 200 JSON (Wish API unaffected)                          |
+
+Published Public Ghost Pages without the reserved `site-` slug prefix render at `/pages/<slug>/` and join the runtime sitemap. Reserved management Pages return 404 through that route and are never listed. Drafts, private Pages, and withdrawn Pages are absent. `e2e/seo.test.ts` covers the management-page boundary, ordinary missing pages, existing 410 routes, and the CMS-independent `/healthz` endpoint.

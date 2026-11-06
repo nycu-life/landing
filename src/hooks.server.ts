@@ -25,7 +25,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		});
 	}
 	const response = await handleParaglide({ event, resolve });
-	if (/^\/(devlog|comics)(\/|$)/.test(path) || path === '/sitemap.xml') {
+	if (!path.startsWith('/_app/')) {
 		// Locale depends on the Paraglide cookie. Do not share translated HTML or
 		// prolong the server's 30-second content cache with a second HTTP cache.
 		response.headers.set('cache-control', 'private, no-cache');

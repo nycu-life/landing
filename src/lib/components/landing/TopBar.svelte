@@ -3,7 +3,10 @@
 	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { Moon, Sun } from '@lucide/svelte';
-	import { m } from '$lib/paraglide/messages';
+	import { useSiteMessages, useSiteView } from '$lib/site/view';
+	const m = useSiteMessages();
+	const siteView = useSiteView();
+	const site = $derived(siteView());
 	import BurgerIcon from '$lib/components/glass/BurgerIcon.svelte';
 	import LocaleSwitch from './LocaleSwitch.svelte';
 
@@ -26,13 +29,7 @@
 
 	/* #105 navigation order. Home chapters stay in-page anchors; the rest are their own pages.
 	   The Wish Pool keeps the sticker slot until the comics corner (#107) has episodes. */
-	const links = [
-		{ href: '/about/', label: m.menu_about, page: '/about' },
-		{ href: '/#products', label: m.nav_products },
-		{ href: '/#faq', label: m.nav_faq },
-		{ href: '/#join', label: m.nav_join },
-		{ href: '/devlog/', label: m.nav_devlog, page: '/devlog' }
-	];
+	const links = $derived(site.navigation);
 
 	afterNavigate(() => {
 		menuOpen = false;
@@ -55,7 +52,7 @@
 	<nav class="topbar-nav" aria-label={m.nav_aria()}>
 		{#each links as link (link.href)}
 			<a
-				href="{base}{link.href}"
+				href={link.href.startsWith('/') ? `${base}${link.href}` : link.href}
 				aria-current={link.page && isActive(link.page) ? 'page' : undefined}>{link.label()}</a
 			>
 		{/each}
@@ -111,7 +108,7 @@
 		<nav aria-label={m.nav_aria()}>
 			{#each links as link (link.href)}
 				<a
-					href="{base}{link.href}"
+					href={link.href.startsWith('/') ? `${base}${link.href}` : link.href}
 					aria-current={link.page && isActive(link.page) ? 'page' : undefined}
 					onclick={() => (menuOpen = false)}>{link.label()}</a
 				>

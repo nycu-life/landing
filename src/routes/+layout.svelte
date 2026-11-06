@@ -2,12 +2,18 @@
 	import './layout.css';
 	import { afterNavigate, onNavigate } from '$app/navigation';
 	import { page } from '$app/state';
-	import { onMount } from 'svelte';
+	import { onMount, setContext } from 'svelte';
+	import { getLocale } from '$lib/paraglide/runtime';
+	import { defaultSite } from '$lib/site/defaults';
+	import { buildSiteView, createSiteMessages } from '$lib/site/view';
 	import TopBar from '$lib/components/landing/TopBar.svelte';
 	import { initAnalytics, trackCampaignVisit, trackPageView } from '$lib/analytics';
 	import { dismissBootSplash } from '$lib/boot-splash';
 
-	let { children } = $props();
+	let { children, data } = $props();
+	const catalog = () => data.site ?? defaultSite;
+	setContext('site-messages', createSiteMessages(catalog, getLocale));
+	setContext('site-view', () => buildSiteView(catalog(), getLocale()));
 
 	const siteOrigin = 'https://nycu.life';
 	const ogImage = `${siteOrigin}/og/nycu-life.jpg`;
