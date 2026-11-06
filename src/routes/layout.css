@@ -155,6 +155,15 @@ body {
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
+	/* Progressive spacing for mixed Chinese/Latin CMS and user-authored prose,
+	   including inline links. Authored UI copy still contains explicit spaces.
+	   `normal` only inserts missing gaps; it does not double existing spaces. */
+	text-autospace: normal;
+}
+
+/* Keep literal text and editable values visually faithful to their source. */
+:where(pre, code, kbd, samp, input, textarea, [contenteditable='true']) {
+	text-autospace: no-autospace;
 }
 
 html,

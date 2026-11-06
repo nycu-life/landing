@@ -177,7 +177,7 @@ test('fulfilled tab shows completed wishes with team replies inside the same pag
 	await expect(tabs.getByRole('tab', { name: '已實現' })).toHaveAttribute('aria-selected', 'true');
 	const fulfilledCard = pool.locator('.wish-card').filter({ hasText: fulfilledWishes[0].title });
 	await expect(fulfilledCard.getByText('128 人有共鳴')).toBeVisible();
-	await expect(fulfilledCard.getByText('2026年10月1日 實現')).toBeVisible();
+	await expect(fulfilledCard.getByText('2026 年 10 月 1 日 實現')).toBeVisible();
 	await expect(fulfilledCard.locator('.wish-reply')).toContainText('NYCU LIFE 團隊回覆');
 	await expect(fulfilledCard.locator('.wish-reply')).toContainText(fulfilledWishes[0].reply);
 	await expect(fulfilledCard.getByRole('button')).toHaveCount(0);

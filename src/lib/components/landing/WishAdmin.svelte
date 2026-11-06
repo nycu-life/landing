@@ -3,6 +3,7 @@
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import { m } from '$lib/paraglide/messages';
 	import { localeState } from '$lib/i18n.svelte';
+	import { formatDateTime } from '$lib/typography';
 	import {
 		WishAdminRequestError,
 		getAdminSession,
@@ -67,10 +68,10 @@
 	const formatCreatedAt = (value: string) => {
 		const date = new Date(value);
 		if (Number.isNaN(date.getTime())) return value;
-		return new Intl.DateTimeFormat(localeState.current === 'zh-tw' ? 'zh-TW' : 'en', {
+		return formatDateTime(date, localeState.current, {
 			dateStyle: 'medium',
 			timeStyle: 'short'
-		}).format(date);
+		});
 	};
 
 	function errorMessage(caught: unknown) {

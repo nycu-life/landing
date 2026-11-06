@@ -6,7 +6,7 @@ import type { ComicEpisode } from '$lib/comics';
  * Used whenever the build has no Ghost content source (GHOST_URL /
  * GHOST_CONTENT_API_KEY unset, or Ghost unreachable without GHOST_REQUIRED=1).
  * Placeholder episode pages are `noindex` and never listed in the sitemap.
- * `title: null` renders the localized "[本集標題]" / "[Episode title]" copy, and
+ * `title: null` renders the localized placeholder title, and
  * `cover: null` renders the CSS placeholder cover.
  */
 export const PLACEHOLDER_EPISODE_COUNT = 10;
