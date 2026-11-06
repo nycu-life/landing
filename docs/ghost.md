@@ -110,23 +110,31 @@ include:
 
 Traefik forwards `/cms` authorization to wish-api's `/api/wishes/auth/gate`.
 Signed-out editors go through the existing `wishpool-admin` OIDC client at
-`auth.nycu.one`, then return to Ghost. As explicitly configured for this site,
-**every NYCU One account** can pass the gate and use the shared staff account.
+`auth.nycu.one`, then return to Ghost. Every NYCU One account can pass the outer
+gate, while Ghost's staff list controls who can enter the CMS.
 
-The gate signs a short-lived `X-Nycu-Cms-Identity` token. Traefik's
-`authResponseHeaders` overwrites any client value. The `NycuOneSSO` adapter uses
-Ghost 6.75's supported SSO hook to verify the token and create a verified staff
-session for **hermes@nycu.one** on the Admin entry page. No shared password is
-needed by the bridge. Everyone appears as hermes in Ghost; individual changes
-cannot be attributed through Ghost's author/history UI. The gate logs the NYCU
-One subject when the session is created.
+The gate signs a short-lived `X-Nycu-Cms-Identity` token containing the NYCU One
+subject, display name, and email. Traefik's `authResponseHeaders` overwrites any
+client value. The `NycuOneSSO` adapter uses Ghost 6.75's supported SSO hook to
+verify the token and create a verified staff session for the Ghost staff user
+with the same email. No shared password is needed by the bridge. Ghost's own
+role and author/history records therefore remain per person. The gate logs the
+NYCU One subject when the session is created.
+
+Ghost does not create staff users through the SSO adapter. An Owner must invite
+or create each staff email in Ghost first, then assign its Ghost role. A user
+whose NYCU One email has no matching active Ghost staff account is denied by the
+adapter. This makes the Ghost staff list the CMS allowlist even though the outer
+NYCU One gate can authenticate any account.
 
 `docker/ghost/Dockerfile` packages the adapter outside the persistent content
-volume. Activate with `adapters__sso__active=NycuOneSSO`, set
-`NYCU_CMS_SSO_STAFF_EMAIL`, and inject the same random secret into
-`NYCU_CMS_SSO_SECRET` (Ghost) and `WISH_CMS_SSO_SECRET` (wish-api). GitOps generates
-and persists this secret through ExternalSecrets/OpenBao. Missing/invalid tokens
-never create sessions; Ghost's manual login remains available behind the gate.
+volume. Activate with `adapters__sso__active=NycuOneSSO` and inject the same
+random secret into `NYCU_CMS_SSO_SECRET` (Ghost) and `WISH_CMS_SSO_SECRET`
+(wish-api). GitOps generates and persists this secret through
+ExternalSecrets/OpenBao. `NYCU_CMS_SSO_STAFF_EMAIL` is an optional temporary
+fallback for tokens from an older wish-api image; remove it after the rollout.
+Missing/invalid tokens and unprovisioned staff emails never create sessions;
+Ghost's manual login remains available behind the gate.
 
 The `/cms` gate remains mandatory on **every** Admin/API request, even when a
 Ghost session exists. Wish Pool sign-out clears the gate's CMS cookie too. The

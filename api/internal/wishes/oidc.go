@@ -16,6 +16,7 @@ import (
 type AdminIdentity struct {
 	Subject string `json:"subject"`
 	Name    string `json:"name"`
+	Email   string `json:"email,omitempty"`
 	Method  string `json:"-"`
 }
 
@@ -167,7 +168,12 @@ func (a *OIDCAuthenticator) identityFromClaims(
 		return AdminIdentity{}, errors.New("OIDC nonce or subject is invalid")
 	}
 	name := firstNonEmpty(claims.Name, claims.PreferredUsername, claims.Email, claims.Subject)
-	return AdminIdentity{Subject: claims.Subject, Name: name, Method: "oidc"}, nil
+	return AdminIdentity{
+		Subject: claims.Subject,
+		Name:    name,
+		Email:   strings.TrimSpace(claims.Email),
+		Method:  "oidc",
+	}, nil
 }
 
 func firstNonEmpty(values ...string) string {

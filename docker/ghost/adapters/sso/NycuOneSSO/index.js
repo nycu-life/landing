@@ -8,12 +8,14 @@
  * token signed with the shared `NYCU_CMS_SSO_SECRET`; Traefik copies it onto
  * the request it forwards to Ghost (replacing any client-supplied value).
  *
- * This adapter verifies that token and signs the visitor in as the shared CMS
- * staff account (`NYCU_CMS_SSO_STAFF_EMAIL`), so NYCU One is the only sign-in.
- * Without the secret, the staff email, or a valid token it does nothing and
- * Ghost's own sign-in form still works.
+ * This adapter verifies that token and signs the visitor in as the Ghost staff
+ * account with the same email as the NYCU One identity. Ghost staff accounts
+ * must be invited by an owner first; their Ghost role remains authoritative.
+ * `NYCU_CMS_SSO_STAFF_EMAIL` is retained only as a short-lived migration
+ * fallback for tokens minted by an older wish-api image that do not include an
+ * email. Without an identity email (or that fallback) it does nothing.
  *
- * Token: `v1.<base64url(JSON {sub, name, iat, exp})>.<base64url(HMAC-SHA256)>`,
+ * Token: `v1.<base64url(JSON {sub, name, email, iat, exp})>.<base64url(HMAC-SHA256)>`,
  * the MAC covering `v1.<payload>` (api/internal/wishes/cmssso.go).
  *
  * Activate with `adapters__sso__active=NycuOneSSO` and either install this
@@ -28,6 +30,7 @@ const MAX_LIFETIME_S = 10 * 60;
 const CLOCK_SKEW_S = 60;
 // Ghost staff statuses that may sign in (`warn-*` are active users nearing a lockout).
 const ACTIVE_STATUSES = new Set(['active', 'warn-1', 'warn-2', 'warn-3', 'warn-4']);
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** The base class from Ghost's own install: the adapter lives outside Ghost's node_modules. */
 function loadSSOBase() {
@@ -76,14 +79,18 @@ function verifyToken(token, secret, nowMs = Date.now()) {
 		return null;
 	}
 	const now = Math.floor(nowMs / 1000);
-	const { sub, name, iat, exp } = claims ?? {};
+	const { sub, name, email, iat, exp } = claims ?? {};
 	if (typeof sub !== 'string' || !sub || !Number.isInteger(iat) || !Number.isInteger(exp)) {
 		return null;
 	}
 	if (exp <= now || iat > now + CLOCK_SKEW_S || exp <= iat || exp - iat > MAX_LIFETIME_S) {
 		return null;
 	}
-	return { sub, name: typeof name === 'string' ? name : '' };
+	return {
+		sub,
+		name: typeof name === 'string' ? name : '',
+		email: typeof email === 'string' ? email.trim().toLowerCase() : ''
+	};
 }
 
 const SSOBase = loadSSOBase();
@@ -107,14 +114,21 @@ class NycuOneSSO extends SSOBase {
 	}
 
 	async getUserForIdentity(identity) {
-		const email = (process.env.NYCU_CMS_SSO_STAFF_EMAIL ?? '').trim();
-		if (!identity || !email) return null;
+		if (!identity) return null;
+		const identityEmail =
+			typeof identity.email === 'string' ? identity.email.trim().toLowerCase() : '';
+		const legacyEmail = (process.env.NYCU_CMS_SSO_STAFF_EMAIL ?? '').trim().toLowerCase();
+		const email = identityEmail || legacyEmail;
+		if (!email || !EMAIL_RE.test(email)) {
+			console.warn(`[NycuOneSSO] NYCU One subject ${identity.sub} has no usable email`);
+			return null;
+		}
 		const user = await this.getUserByEmail(email);
 		if (!user || (user.status && !ACTIVE_STATUSES.has(user.status))) {
 			console.warn(`[NycuOneSSO] staff account ${email} is missing or not active`);
 			return null;
 		}
-		console.info(`[NycuOneSSO] signed in NYCU One subject ${identity.sub} as ${email}`);
+		console.info(`[NycuOneSSO] signed in NYCU One subject ${identity.sub} as Ghost staff ${email}`);
 		return user;
 	}
 }

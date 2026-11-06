@@ -38,6 +38,7 @@ type oauthState struct {
 type adminSession struct {
 	Subject string `json:"subject"`
 	Name    string `json:"name"`
+	Email   string `json:"email,omitempty"`
 	Expires int64  `json:"expires"`
 }
 
@@ -135,6 +136,7 @@ func (h *Handler) authCallback(w http.ResponseWriter, r *http.Request) {
 	session := adminSession{
 		Subject: identity.Subject,
 		Name:    identity.Name,
+		Email:   identity.Email,
 		Expires: h.now().Add(adminSessionTTL).Unix(),
 	}
 	encoded, err := h.encodeSignedCookie("admin-session", session)
@@ -276,7 +278,7 @@ func (h *Handler) cookieIdentity(r *http.Request, name string) (AdminIdentity, b
 		session.Subject == "" || session.Expires <= h.now().Unix() {
 		return AdminIdentity{}, false
 	}
-	return AdminIdentity{Subject: session.Subject, Name: session.Name, Method: "oidc"}, true
+	return AdminIdentity{Subject: session.Subject, Name: session.Name, Email: session.Email, Method: "oidc"}, true
 }
 
 func (h *Handler) encodeSignedCookie(purpose string, value any) (string, error) {

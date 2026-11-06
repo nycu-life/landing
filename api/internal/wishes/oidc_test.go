@@ -63,7 +63,7 @@ func TestOIDCIdentityRequiresNonceAndStableSubject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if identity.Subject != "stable-provider-subject" || identity.Name != "管理員" {
+	if identity.Subject != "stable-provider-subject" || identity.Name != "管理員" || identity.Email != "changeable-email@nycu.edu.tw" {
 		t.Fatalf("identity must use stable sub and display name: %#v", identity)
 	}
 

@@ -137,6 +137,11 @@ signed-out navigation gets `302` to `/api/wishes/auth/login?return=/cms/…`, an
 any other signed-out request gets `401`. `return` only accepts local paths under
 `/cms/`; the callback falls back to `/wishpool/admin/` for anything else.
 
+After OIDC, the gate includes the NYCU One subject, display name, and email in
+the short-lived CMS identity token. Ghost resolves that email to an existing
+staff user, so Ghost roles and edit history stay per person. The Ghost Owner
+must invite or create staff users before they can use SSO.
+
 ## Wish JSON
 
 Every public and admin endpoint returns wishes in this shape (`visibility` is
