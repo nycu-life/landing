@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { localeState } from '$lib/i18n.svelte';
+	import { formatDateTime } from '$lib/typography';
 	import {
 		createWish,
 		listWishes,
@@ -149,9 +150,9 @@
 	const formatDate = (value: string | null | undefined) => {
 		const date = new Date(value ?? '');
 		if (Number.isNaN(date.getTime())) return '';
-		return new Intl.DateTimeFormat(localeState.current === 'zh-tw' ? 'zh-TW' : 'en', {
+		return formatDateTime(date, localeState.current, {
 			dateStyle: 'medium'
-		}).format(date);
+		});
 	};
 	const tabLabel = (status: WishStatus) =>
 		status === 'open' ? m.wish_tab_open() : m.wish_tab_fulfilled();
@@ -363,7 +364,9 @@
 			</label>
 		</details>
 		<p id="wish-privacy-note" class="wish-privacy">
-			<strong>{m.wish_privacy_title()}</strong> · {m.wish_privacy_body()}
+			<strong>{m.wish_privacy_title()}</strong>{localeState.current === 'zh-tw'
+				? '：'
+				: ': '}{m.wish_privacy_body()}
 		</p>
 		<div class="wish-feedback" aria-live="polite">
 			{#if error}<p class="wish-error">{error}</p>{/if}

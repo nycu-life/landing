@@ -448,7 +448,7 @@
 							<div class="activity-ticket">
 								<span>24 AUG</span>
 								<strong>{m.story_activity_screen_item()}</strong>
-								<small>18:30 · Campus</small>
+								<small>18:30 / Campus</small>
 							</div>
 						</div>
 					</div>

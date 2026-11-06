@@ -42,7 +42,7 @@
 			<p class="article-meta">
 				<time datetime={post.publishedAt}>{formatPublished(post.publishedAt)}</time>
 				{#if post.readingTime}
-					<span aria-hidden="true">·</span>
+					<span aria-hidden="true">/</span>
 					<span>{m.devlog_reading_time({ minutes: post.readingTime })}</span>
 				{/if}
 			</p>

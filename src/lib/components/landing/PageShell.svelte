@@ -24,7 +24,7 @@
 
 <div class="page">
 	<header class="page-head">
-		<Eyebrow left="{item.num} · {item.latin()}" right={item.eyebrowRight} />
+		<Eyebrow left="{item.num} / {item.latin()}" right={item.eyebrowRight} />
 		<h1 class="page-title">
 			{item.titleLead()}<span class="grad-text">{item.titleAccent()}</span>
 		</h1>

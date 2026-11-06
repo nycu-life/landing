@@ -16,7 +16,7 @@
 		marketing: { icon: 'spark', accent: '#B66BFF', latin: 'MARKETING' }
 	};
 
-	const sub = (program?: string, role?: string) => [program, role].filter(Boolean).join(' · ');
+	const sub = (program?: string, role?: string) => [program, role].filter(Boolean).join(' / ');
 </script>
 
 <div class="bento">

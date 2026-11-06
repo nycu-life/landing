@@ -46,7 +46,7 @@
 	<header class="reader-head">
 		<p class="reader-eyebrow">
 			<span>{label}</span>
-			<span aria-hidden="true">·</span>
+			<span aria-hidden="true">/</span>
 			<span>EP.{padEpisode(episode.number)}</span>
 			{#if episode.number === data.latestNumber}
 				<span class="latest-badge">{m.comics_latest()}</span>

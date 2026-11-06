@@ -20,7 +20,7 @@ export function siteSeedPages() {
 		const content = defaultContent(locale);
 		const pages = Object.entries(sections).map(([section, definition]) => ({
 			slug: `site-${locale}-${section}`,
-			title: `${definition.title} · ${locale}`,
+			title: `${definition.title} / ${locale}`,
 			html: fieldsHtml(
 				Object.fromEntries(
 					Object.keys(definition.fields).map((key) => [key, content.messages[key]])
@@ -30,7 +30,7 @@ export function siteSeedPages() {
 		}));
 		pages.push({
 			slug: `site-${locale}-settings`,
-			title: `全站：連結、影片與招募開關 · ${locale}`,
+			title: `全站：連結、影片與招募開關 / ${locale}`,
 			html: fieldsHtml(content.settings, fieldLabels)
 		});
 		for (const kind of collectionKinds)

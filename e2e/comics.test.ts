@@ -10,7 +10,7 @@ test('lists every episode with a count, newest badge and client-side sort', asyn
 	const response = await page.goto('/comics/');
 	expect(response?.status()).toBe(200);
 	await expect(page.locator('h1')).toHaveText('小貢的校園日常');
-	await expect(page.getByText('NYCU LIFE · COMICS')).toBeVisible();
+	await expect(page.getByText('NYCU LIFE / COMICS')).toBeVisible();
 
 	const cards = page.locator('#comics-grid .ep-card');
 	const total = await cards.count();

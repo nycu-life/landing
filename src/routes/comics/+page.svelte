@@ -32,7 +32,7 @@
 <div id="comics" class="page comics-page">
 	<div class="comics-head">
 		<header class="page-head">
-			<span class="comics-eyebrow">NYCU LIFE&nbsp;·&nbsp;COMICS</span>
+			<span class="comics-eyebrow">NYCU LIFE&nbsp;/&nbsp;COMICS</span>
 			<h1 class="page-title comics-title">{m.comics_title()}</h1>
 			<p class="page-lede">{m.comics_lede()}</p>
 		</header>

@@ -12,7 +12,7 @@
 <!-- eslint-disable svelte/no-at-html-tags -->
 <article class="page cms-page">
 	<h1 class="page-title">{data.content.title}</h1>
-	<div class="prose max-w-none dark:prose-invert">{@html data.content.html}</div>
+	<div class="prose max-w-none">{@html data.content.html}</div>
 </article>
 <!-- eslint-enable svelte/no-at-html-tags -->
 <SiteFooter />

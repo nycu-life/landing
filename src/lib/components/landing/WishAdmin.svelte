@@ -3,6 +3,7 @@
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import { m } from '$lib/paraglide/messages';
 	import { localeState } from '$lib/i18n.svelte';
+	import { formatDateTime } from '$lib/typography';
 	import {
 		WishAdminRequestError,
 		getAdminSession,
@@ -67,10 +68,10 @@
 	const formatCreatedAt = (value: string) => {
 		const date = new Date(value);
 		if (Number.isNaN(date.getTime())) return value;
-		return new Intl.DateTimeFormat(localeState.current === 'zh-tw' ? 'zh-TW' : 'en', {
+		return formatDateTime(date, localeState.current, {
 			dateStyle: 'medium',
 			timeStyle: 'short'
-		}).format(date);
+		});
 	};
 
 	function errorMessage(caught: unknown) {
@@ -234,7 +235,7 @@
 	{#if checkingSession}
 		<div class="admin-auth glass glass-strong" aria-live="polite">
 			<div class="auth-copy">
-				<span class="admin-kicker">NYCU LIFE · WISH POOL</span>
+				<span class="admin-kicker">NYCU LIFE / WISH POOL</span>
 				<h2>{m.wish_admin_checking()}</h2>
 				<p>{m.wish_admin_checking_body()}</p>
 			</div>
@@ -243,7 +244,7 @@
 	{:else if !connected}
 		<div class="admin-auth glass glass-strong">
 			<div class="auth-copy">
-				<span class="admin-kicker">NYCU LIFE · WISH POOL</span>
+				<span class="admin-kicker">NYCU LIFE / WISH POOL</span>
 				<h2>{m.wish_admin_login_title()}</h2>
 				<p>{m.wish_admin_login_body()}</p>
 			</div>
@@ -259,7 +260,7 @@
 				<span class="status-dot" aria-hidden="true"></span>
 				<div>
 					<strong>{m.wish_admin_connected()}</strong>
-					<span>{identity?.name} · {m.wish_admin_connected_body()}</span>
+					<span>{identity?.name} / {m.wish_admin_connected_body()}</span>
 				</div>
 			</div>
 			<div class="toolbar-actions">
