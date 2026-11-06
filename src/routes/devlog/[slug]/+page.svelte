@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
+	import { useSiteMessages } from '$lib/site/view';
+	const m = useSiteMessages();
 	import { formatPublished } from '$lib/comics-labels';
 	import SiteFooter from '$lib/components/landing/SiteFooter.svelte';
 

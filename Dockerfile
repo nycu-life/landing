@@ -12,7 +12,7 @@ RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
 COPY . .
-# Fixed pages are prerendered; Ghost pages run only in the deployed Node service.
+# Ghost site content is read at runtime in the deployed Node service.
 # Builds need no CMS credentials or connection to Ghost.
 RUN pnpm run build
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
+	import { useSiteMessages } from '$lib/site/view';
+	const m = useSiteMessages();
 	import { padEpisode } from '$lib/comics';
 	import { episodeLabel, episodeTitle, formatPublished } from '$lib/comics-labels';
 	import ComicCover from '$lib/components/landing/ComicCover.svelte';

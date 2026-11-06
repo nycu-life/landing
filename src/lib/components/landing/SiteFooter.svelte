@@ -1,15 +1,9 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { m } from '$lib/paraglide/messages';
-	import {
-		APP_STORE_URL,
-		CONTACT_EMAIL,
-		GITHUB_URL,
-		GOOGLE_PLAY_URL,
-		INSTAGRAM_URL,
-		LANDING_REPO_URL,
-		YOUTUBE_URL
-	} from '$lib/content/landing';
+	import { useSiteMessages, useSiteView } from '$lib/site/view';
+	const m = useSiteMessages();
+	const siteView = useSiteView();
+	const site = $derived(siteView());
 </script>
 
 <footer id="prototype-footer" class="prototype-footer">
@@ -20,18 +14,18 @@
 		</div>
 		<div class="footer-contact">
 			<strong>{m.menu_contact_label()}</strong>
-			<a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+			<a href={`mailto:${site.settings.contactEmail}`}>{site.settings.contactEmail}</a>
 			<a href="{base}/wishpool/">{m.footer_wishlist()} ✦</a>
-			<a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">Instagram</a>
-			<a href={YOUTUBE_URL} target="_blank" rel="noreferrer">YouTube</a>
-			<a href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</a>
+			<a href={site.settings.instagram} target="_blank" rel="noreferrer">Instagram</a>
+			<a href={site.settings.youtube} target="_blank" rel="noreferrer">YouTube</a>
+			<a href={site.settings.github} target="_blank" rel="noreferrer">GitHub</a>
 		</div>
 		<div class="footer-downloads">
 			<strong>{m.footer_download_title()}</strong>
 			<div class="store-links">
 				<a
 					class="store-link"
-					href={GOOGLE_PLAY_URL}
+					href={site.settings.googlePlay}
 					target="_blank"
 					rel="noreferrer"
 					aria-label={m.footer_download_android()}
@@ -57,7 +51,7 @@
 				</a>
 				<a
 					class="store-link"
-					href={APP_STORE_URL}
+					href={site.settings.appStore}
 					target="_blank"
 					rel="noreferrer"
 					aria-label={m.footer_download_ios()}
@@ -86,7 +80,9 @@
 		<span class="made-with">
 			{m.footer_made_with()}
 			{m.footer_made_by()}
-			<a href={LANDING_REPO_URL} target="_blank" rel="noopener noreferrer">{m.brand_name()}</a>
+			<a href={site.settings.repository} target="_blank" rel="noopener noreferrer"
+				>{m.brand_name()}</a
+			>
 		</span>
 	</div>
 </footer>

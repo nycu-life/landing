@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { useSiteMessages } from '$lib/site/view';
+	const m = useSiteMessages();
 	import WishPool from '$lib/components/landing/WishPool.svelte';
 	import SiteFooter from '$lib/components/landing/SiteFooter.svelte';
 </script>

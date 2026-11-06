@@ -1,12 +1,18 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { TEAM_FILM_ID, milestones, visionCards } from '$lib/content/about';
+	import { useSiteMessages, useSiteView } from '$lib/site/view';
+	const m = useSiteMessages();
+	const siteView = useSiteView();
+	const site = $derived(siteView());
+	const milestones = $derived(site.milestones);
+	const visionCards = $derived(site.vision);
 	import SiteFooter from '$lib/components/landing/SiteFooter.svelte';
 
 	const title = $derived(`${m.menu_about()}｜NYCU LIFE`);
-	const filmUrl = `https://www.youtube-nocookie.com/embed/${TEAM_FILM_ID}?rel=0&playsinline=1`;
+	const filmUrl = $derived(
+		`https://www.youtube-nocookie.com/embed/${site.filmId}?rel=0&playsinline=1`
+	);
 
 	/* The milestone path draws itself once it scrolls into view; milestones follow it in. */
 	let milestoneEl: HTMLElement | undefined = $state();
@@ -33,18 +39,22 @@
 
 	/* Desktop path: one S-curve per gap, milestones sit on its alternating crests (viewBox
 	   1000 × 520). Positions are shared by the SVG and the absolutely placed list items. */
-	const nodes = milestones.map((_, index) => ({
-		x: 40 + (920 / (milestones.length - 1)) * index,
-		y: index % 2 === 0 ? 350 : 170
-	}));
-	const pathD = nodes
-		.map((node, index) => {
-			if (index === 0) return `M${node.x},${node.y}`;
-			const prev = nodes[index - 1];
-			const mid = (prev.x + node.x) / 2;
-			return `C${mid},${prev.y} ${mid},${node.y} ${node.x},${node.y}`;
-		})
-		.join(' ');
+	const nodes = $derived(
+		milestones.map((_, index) => ({
+			x: milestones.length === 1 ? 500 : 40 + (920 / (milestones.length - 1)) * index,
+			y: index % 2 === 0 ? 350 : 170
+		}))
+	);
+	const pathD = $derived(
+		nodes
+			.map((node, index) => {
+				if (index === 0) return `M${node.x},${node.y}`;
+				const prev = nodes[index - 1];
+				const mid = (prev.x + node.x) / 2;
+				return `C${mid},${prev.y} ${mid},${node.y} ${node.x},${node.y}`;
+			})
+			.join(' ')
+	);
 </script>
 
 <svelte:head>
@@ -71,9 +81,13 @@
 				<li class="vision-card" data-vision={card.id}>
 					<div class="vision-art" aria-hidden="true">
 						{#if card.art}
-							<img src="{base}{card.art}" alt="" />
+							<img src={card.art.startsWith('/') ? `${base}${card.art}` : card.art} alt="" />
 						{:else}
-							<span class="motif motif-{card.id}"><i></i><i></i><i></i></span>
+							<span
+								class="motif motif-{['integrate', 'realtime', 'students'].includes(card.id)
+									? card.id
+									: 'integrate'}"><i></i><i></i><i></i></span
+							>
 						{/if}
 					</div>
 					<span class="vision-num">0{index + 1}</span>
@@ -109,7 +123,7 @@
 		<span class="about-eyebrow">{m.about_milestone_eyebrow()}</span>
 		<h2 id="milestone-title" class="section-title">{m.about_milestone_title()}</h2>
 		<p class="section-lede">{m.about_milestone_lede()}</p>
-		<div class="milestone-track">
+		<div class="milestone-track" class:extended={milestones.length > 5}>
 			<svg class="milestone-path" viewBox="0 0 1000 520" aria-hidden="true">
 				<path class="path-base" d={pathD} pathLength="1" />
 				<path class="path-draw" d={pathD} pathLength="1" />
@@ -642,6 +656,36 @@
 			max-height: 12rem;
 		}
 	}
+	/* Extra CMS milestones use a normal list so additional cards cannot overlap. */
+	.milestone-track.extended {
+		height: auto;
+		padding: 1rem 0 1rem 3rem;
+	}
+	.milestone-track.extended .milestone-path {
+		display: none;
+	}
+	.milestone-track.extended .milestone-list {
+		display: grid;
+		gap: 1.75rem;
+	}
+	.milestone-track.extended .milestone {
+		position: relative;
+		left: auto;
+		top: auto;
+		width: auto;
+		height: auto;
+	}
+	.milestone-track.extended .milestone-dot {
+		left: -2.25rem;
+		top: 0.1rem;
+	}
+	.milestone-track.extended .milestone-card {
+		position: static;
+		width: auto;
+		transform: none;
+		text-align: left;
+	}
+
 	@media (max-width: 520px) {
 		.vision-card {
 			grid-template-columns: 5.5rem minmax(0, 1fr);

@@ -7,6 +7,8 @@ import {
 	SITE_ORIGIN
 } from '$lib/seo/pages';
 import { getComics, getDevlog } from '$lib/server/ghost';
+import { getSite } from '$lib/server/site';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 // Refreshes with the same catalog as the article pages.
@@ -16,7 +18,12 @@ const escapeXml = (value: string) =>
 	value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export const GET: RequestHandler = async () => {
-	const [devlog, comics] = await Promise.all([getDevlog(), getComics()]);
+	const [devlog, comics, { site, siteUnavailable }] = await Promise.all([
+		getDevlog(),
+		getComics(),
+		getSite()
+	]);
+	if (siteUnavailable) error(503, 'Content temporarily unavailable');
 	// Empty / placeholder sections are noindex and must never be advertised to crawlers.
 	const devlogPaths =
 		devlog.source === 'ghost'
@@ -26,7 +33,12 @@ export const GET: RequestHandler = async () => {
 		comics.source === 'ghost'
 			? [COMICS_INDEX, ...comics.episodes.map((episode) => comicEpisodePath(episode.slug))]
 			: [];
-	const urls = [...indexablePages, ...devlogPaths, ...comicPaths]
+	const urls = [
+		...indexablePages,
+		...devlogPaths,
+		...comicPaths,
+		...site.pages.map((p) => `/pages/${p.slug}/`)
+	]
 		.map((path) => `  <url><loc>${escapeXml(`${SITE_ORIGIN}${path}`)}</loc></url>`)
 		.join('\n');
 	const body = `<?xml version="1.0" encoding="UTF-8"?>

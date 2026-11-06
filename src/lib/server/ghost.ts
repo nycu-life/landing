@@ -8,6 +8,7 @@ import { error } from '@sveltejs/kit';
 import type { ComicEpisode, ComicsCatalog } from '$lib/comics';
 import { placeholderEpisodes } from '$lib/content/comics';
 import type { DevlogCatalog, DevlogPost } from '$lib/devlog';
+import type { SiteGhostPage } from '$lib/server/site-loader';
 
 export interface GhostEnv {
 	GHOST_URL?: string;
@@ -374,3 +375,28 @@ async function available<T>(load: () => Promise<T>): Promise<T> {
 }
 export const getComics = createCatalogCache(() => available(() => loadComics(runtimeEnv())));
 export const getDevlog = createCatalogCache(() => available(() => loadDevlog(runtimeEnv())));
+
+/** Fetch every published Ghost Page. Pages are the editor-facing
+ * records for the public site; normal Ghost headings and paragraphs remain easy to edit. */
+export async function fetchSitePages(
+	env: GhostEnv,
+	fetchFn: typeof fetch = fetch
+): Promise<{ pages: SiteGhostPage[]; ghostUrl: string }> {
+	const ghostUrl = env.GHOST_URL ? trimSlash(env.GHOST_URL) : '';
+	const key = env.GHOST_CONTENT_API_KEY ?? '';
+	if (!ghostUrl || !key) throw new GhostUnavailable('GHOST_URL / GHOST_CONTENT_API_KEY not set');
+	try {
+		const { pages } = await ghostGet<{ pages: SiteGhostPage[] }>(fetchFn, ghostUrl, key, 'pages', {
+			filter: 'visibility:public',
+			include: 'tags',
+			formats: 'html',
+			limit: 'all',
+			order: 'published_at asc'
+		});
+		return { pages, ghostUrl };
+	} catch (cause) {
+		throw new GhostUnavailable(
+			`could not load site content from ${ghostUrl}: ${cause instanceof Error ? cause.message : cause}`
+		);
+	}
+}

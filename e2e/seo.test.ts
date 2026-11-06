@@ -3,7 +3,7 @@ import { indexablePages, SITE_ORIGIN as siteOrigin } from '../src/lib/seo/pages'
 
 const publicRoutes = [...indexablePages];
 /** Ghost-backed sections the sitemap may append after the static pages. */
-const ghostRoute = /^\/(devlog|comics)\/([^/]+\/)?$/;
+const ghostRoute = /^\/(?:(devlog|comics)\/([^/]+\/)?|pages\/[^/]+\/)$/;
 
 /** Sitemap paths, in order. Dev log / comics pages appear only when the build read them from Ghost. */
 const sitemapPaths = async (request: APIRequestContext) => {
@@ -42,7 +42,12 @@ test('publishes a complete production sitemap and advertises it to crawlers', as
 });
 
 test('serves unknown URLs a noindex error page without a canonical', async ({ page }) => {
-	for (const path of ['/nonexistent-page/', '/demo/']) {
+	for (const path of [
+		'/nonexistent-page/',
+		'/demo/',
+		'/pages/not-a-page/',
+		'/pages/site-zh-tw-home/'
+	]) {
 		const response = await page.goto(path);
 		expect(response?.status()).toBe(404);
 		await expect(page.locator('h1')).toHaveText('找不到這個頁面');
@@ -110,4 +115,11 @@ test('preserves retired routes and API failures on the Node server', async ({ pa
 	const api = await request.get('/api/not-a-service');
 	expect(api.status()).toBe(404);
 	expect(await api.json()).toEqual({ error: 'not_found' });
+});
+
+test('process health does not render the CMS-backed layout', async ({ request }) => {
+	const response = await request.get('/healthz');
+	expect(response.status()).toBe(200);
+	expect(response.headers()['content-type']).toContain('text/plain');
+	expect(await response.text()).toBe('ok');
 });

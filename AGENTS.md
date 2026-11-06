@@ -1,7 +1,6 @@
 # AGENTS.md — NYCU LIFE Landing
 
-The official NYCU LIFE marketing site (`官網`). A SvelteKit app served by **adapter-node** in Docker. Fixed pages are
-prerendered; Ghost dev log, comics, and sitemap render on request. The Wish API
+The official NYCU LIFE marketing site (`官網`). A SvelteKit app served by **adapter-node** in Docker. Public pages, shared chrome, Ghost dev log, comics, and sitemap render on request. The Wish API
 remains a separate Go service.
 
 ## Stack
@@ -9,7 +8,7 @@ remains a separate Go service.
 - **SvelteKit 2 / Svelte 5 / TypeScript 6**, **Vite 8**, **Tailwind CSS v4**
 - **Paraglide (inlang)** i18n — `baseLocale: zh-tw`, also `en` (`project.inlang/`,
   messages in `messages/{zh-tw,en}.json`)
-- **adapter-node** (prerendered fixed pages + runtime Ghost pages)
+- **adapter-node** (runtime Ghost site content)
 - Tooling: **pnpm 10.21.0**, **ESLint 10** + Prettier, `svelte-check`
 - Tests: **Vitest** (unit + Storybook browser project) + **Playwright** e2e
 - Node **24**
@@ -40,9 +39,9 @@ Keep all of them green — don't merge a red gate.
   both are Ghost content, see `docs/ghost.md`. `/wishpool/admin/` is noindex.
   `+error.svelte` is the 404/410 page. Navigation is the `TopBar` (About,
   home-section anchors, dev log, Wish Pool sticker).
-- `src/lib/content/` — **page copy lives here as data** (`landing.ts`, `about.ts`,
-  `team.ts`, `departments.ts`), wired to Paraglide messages. Edit content here,
-  not inline in components.
+- `src/lib/content/` — **initial/fallback page copy lives here as data** (`landing.ts`, `about.ts`,
+  `team.ts`, `departments.ts`), wired to Paraglide messages. Published copy is edited in Ghost Pages; see `docs/site-content.md`.
+  Design and fallback edits stay here, not inline in components.
 - `src/lib/components/` — `glass/` (theme primitives: `Aurora`, `Eyebrow`, …) and
   `landing/` (page sections).
 - `src/routes/layout.css` — **design tokens** (see below).
@@ -68,17 +67,20 @@ editing here, match this repo's tokens; don't import the other system.
 
 ## Gotchas
 
-- Fixed pages inherit `prerender = true` from `+layout.ts`. Ghost content pages,
-  sitemap, old media redirects, and the catch-all error route explicitly opt out.
+- All public pages inherit `prerender = false` from `+layout.ts`. Builds need no Ghost connection.
+  Runtime site content lives in `src/lib/site/` and `src/lib/server/site*.ts`;
+  initialize Ghost Pages with `pnpm cms:seed-site -- --apply` before deployment.
 - Ghost is read only at request time (`src/lib/server/ghost.ts`). Without config,
   local dev uses empty/placeholder content. A configured Ghost outage returns 503
-  for content pages; fixed pages keep working. Catalogs use a 30-second cache.
+  for articles. Site content uses a 30-second cache with up to 5 minutes of
+  last-known-good content; home/About/custom pages then return 503 while Wish Pool
+  and its independent Go API remain available.
 - Ghost image URLs use the public `/cms/content/images/` route. The Node service
   uses the in-cluster Ghost URL for API calls and `GHOST_PUBLIC_URL` for images.
 - The default locale is **`zh-tw`**; the unprefixed `/` renders Chinese copy.
 - Brand string "NYCU LIFE" is identical in both locales — safe to assert in tests.
 - **SEO routing** (see `docs/seo.md`): `/sitemap.xml` is generated from
-  `src/lib/seo/pages.ts` (static pages) plus Ghost dev log posts and comic episodes. SvelteKit returns a real 404 for unknown paths (no SPA fallback to
+  `src/lib/seo/pages.ts` (static pages) plus Ghost dev log posts, comic episodes, and public `/pages/<slug>/` Pages. SvelteKit returns a real 404 for unknown paths (no SPA fallback to
   the home page) and 410 for withdrawn ones (`/courses/`, `/products/`,
   `/team/…`), both with the noindex `+error.svelte` page.
   Adding or withdrawing a page means updating the route, `src/lib/seo/pages.ts`,
