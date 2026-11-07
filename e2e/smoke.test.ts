@@ -1006,6 +1006,16 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 				await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
 
 				for (const chapter of chapters) {
+					if (process.env.GHOST_THEME_TEST_URL) {
+						// Reload directly into the chapter so history restoration cannot race a
+						// subsequent hash jump while YouTube and fonts are still loading.
+						await page.goto(`${locale === 'en' ? '/en/' : '/'}?motion=on#${chapter}`, {
+							waitUntil: 'domcontentloaded'
+						});
+						await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
+						await page.evaluate(() => document.fonts.ready);
+						await page.waitForTimeout(1150);
+					}
 					await page.evaluate((nextChapter) => {
 						location.hash = nextChapter;
 					}, chapter);
@@ -1030,6 +1040,7 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 								)
 							);
 					}
+					await expect(story(page)).toHaveAttribute('data-story-step-name', chapter);
 					const result = await page.locator('.story-scene.scene-active').evaluate((scene) => {
 						const stage = document.querySelector<HTMLElement>('.story-stage');
 						if (!stage) throw new Error('Missing story stage');
@@ -1135,6 +1146,7 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 							animations: 'disabled'
 						});
 					}
+					await expect(story(page)).toHaveAttribute('data-story-step-name', chapter);
 				}
 			}
 		}

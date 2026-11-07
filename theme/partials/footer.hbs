@@ -6,6 +6,7 @@
                 {{#foreach pages}}<div class="footer-editor-content">{{content}}</div>{{/foreach}}
             {{/get}}
         </div>
+        <div class="footer-contact"><strong>{{copy 'menu_contact_label'}}</strong>{{#get "pages" filter="slug:theme-[[locale]]-footer" limit="1"}}{{#foreach pages}}<div class="footer-contact-content">{{content}}</div>{{/foreach}}{{/get}}</div>
         <div class="footer-downloads">
             <strong>{{copy 'footer_download_title'}}</strong>
             <div class="store-links">
@@ -18,5 +19,5 @@
             </div>
         </div>
     </div>
-    <div class="footer-bottom"><span>© {{date format="YYYY"}} NYCU LIFE</span><a href="/ghost/">[[adminLabel]]</a></div>
+    <div class="footer-bottom"><span>© {{date format="YYYY"}} NYCU LIFE</span><span class="made-with">{{copy 'footer_made_with'}} {{copy 'footer_made_by'}} <a href="https://github.com/nycu-life/landing" target="_blank" rel="noopener noreferrer">NYCU LIFE</a> <a href="/ghost/">[[adminLabel]]</a></span></div>
 </footer>

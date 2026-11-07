@@ -6,10 +6,10 @@ routes:
     template: home-en
     data: page.theme-en-hero
   /about/:
-    template: page
+    template: about
     data: page.theme-zh-tw-about
   /en/about/:
-    template: page-en
+    template: about-en
     data: page.theme-en-about
   /wishpool/:
     template: page
