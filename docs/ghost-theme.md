@@ -153,3 +153,14 @@ node scripts/restore-ghost-pages.mjs --backup=<private-legacy-backup-directory> 
 首頁影片進入 About 的播放區間時自動播放，離開時暫停。瀏覽器未授予音訊播放權限時
 先靜音播放，顯示「開啟聲音」按鈕；點擊或鍵盤操作頁面後嘗試開聲。播放器回報被
 阻擋時回到靜音播放。YouTube 的手動暫停不會被啟動重試覆蓋。
+
+## Svelte 與 Ghost 的導覽邊界
+
+Ghost engine 下，許願池仍由 Svelte 提供，但連結必須載入完整文件，交回 Ghost 渲染。
+版面根節點會設定 `data-sveltekit-reload`。已開著的舊分頁若請求 Ghost 頁面的 Svelte
+資料，伺服器回傳不快取的 409，讓 Svelte 改用文件載入；不轉送 `__data.json` 至
+Ghost，也不讓 Ghost 尾斜線轉址變成無限資料轉址。已累積 `__data.json/` 的錯誤網址
+會移除內部資料路徑與查詢參數，回到原頁，其他查詢參數保留。
+
+主題 1.0.4 將行動版「開發中」貼紙置中，並保留所有產品文案中最高的一份所需空間，
+讓同一視窗切換四項產品時手機尺寸一致。未選中的文案仍不可見、不可互動。

@@ -93,7 +93,7 @@ FIRST VIEWPORT: wordmark, normal navigation, locale/theme controls, oversized th
 FORM: direct reproduction of the rendered supplied HTML prototype; no alternate app shell is the primary home experience.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
 -->
-<div class="app-shell">
+<div class="app-shell" data-sveltekit-reload={data.nativeGhost ? true : undefined}>
 	<TopBar {darkMode} ontoggletheme={() => (darkMode = !darkMode)} />
 	<main class="app-main">
 		{@render children()}
