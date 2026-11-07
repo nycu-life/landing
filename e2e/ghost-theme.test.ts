@@ -6,7 +6,10 @@ test('Ghost serves readable home content without JavaScript', async ({ browser }
 	const context = await browser.newContext({ javaScriptEnabled: false });
 	const page = await context.newPage();
 	await page.goto(process.env.GHOST_THEME_TEST_URL!);
-	await expect(page.locator('.hero-copy h1')).toBeVisible();
+	await expect(page.locator('.hero-copy h1')).toContainText('NYCU LIFE');
+	expect(await page.locator('.hero-copy').evaluate((e) => e.getBoundingClientRect().height)).toBe(
+		1
+	);
 	await expect(page.locator('.product-copy')).toHaveCount(4);
 	for (const product of await page.locator('.product-copy').all())
 		await expect(product).toBeVisible();
@@ -16,6 +19,40 @@ test('Ghost serves readable home content without JavaScript', async ({ browser }
 		/\/wishpool\/$/
 	);
 	await context.close();
+});
+
+test('vertical gestures step through products and release to the next chapter', async ({
+	page
+}) => {
+	await page.goto('/?motion=on#products');
+	await expect(page.locator('.prototype-story')).toHaveAttribute('data-story-ready', 'true');
+	const top = await page.evaluate(() => scrollY);
+	await page.mouse.move(600, 450);
+	for (let index = 1; index < 4; index++) {
+		await page.mouse.wheel(0, 100);
+		await expect(page.locator(`[data-product-index="${index}"]`)).toBeVisible();
+		await expect(page.locator('.prototype-story')).toHaveAttribute('data-story-animating', 'false');
+		expect(await page.evaluate(() => scrollY)).toBe(top);
+	}
+	// At the final product the gesture releases the lock; following scroll reaches FAQ.
+	await page.mouse.wheel(0, 100);
+	await page.mouse.wheel(0, 1500);
+	await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(top);
+});
+
+test('About retains vision cards, film, milestone path and wish hand-off in both locales', async ({
+	page
+}) => {
+	for (const prefix of ['', '/en']) {
+		await page.goto(`${prefix}/about/`);
+		await expect(page.locator('.about-head h1')).toBeVisible();
+		await expect(page.locator('.vision-card')).toHaveCount(3);
+		await expect(page.locator('.film-frame iframe')).toHaveAttribute('src', /youtube-nocookie/);
+		await expect(page.locator('.milestone')).toHaveCount(5);
+		await page.locator('.milestone-section').scrollIntoViewIfNeeded();
+		await expect(page.locator('.milestone-section')).toHaveClass(/drawn/);
+		await expect(page.locator('.about-wish-link')).toHaveAttribute('href', '/wishpool/');
+	}
 });
 
 test('products retain multiple screenshots, dark variants and accessible controls', async ({
@@ -57,7 +94,7 @@ test('mobile menu provides locale and appearance controls', async ({ page }) => 
 	await page.locator('.menu-toggle').click();
 	await page.locator('#topbar-menu .theme-toggle').click();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-	await page.locator('#topbar-menu [data-locale-switch]').click();
+	await page.locator('#topbar-menu [data-locale-switch="en"]').click();
 	await expect(page).toHaveURL(/\/en\//);
 	await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

@@ -21,16 +21,22 @@ await mkdir(path.join(output, 'assets'), { recursive: true });
 const styles = ['src/routes/layout.css'];
 for (const component of [
 	'src/lib/components/landing/TopBar.svelte',
+	'src/lib/components/landing/LocaleSwitch.svelte',
 	'src/lib/components/landing/PrototypeStory.svelte',
 	'src/routes/+page.svelte',
 	'src/lib/components/landing/SiteFooter.svelte',
 	'src/routes/devlog/+page.svelte',
-	'src/routes/devlog/[slug]/+page.svelte'
+	'src/routes/devlog/[slug]/+page.svelte',
+	'src/routes/about/+page.svelte'
 ]) {
 	const text = await readFile(path.join(root, component), 'utf8');
-	styles.push(
-		text.match(/<style[^>]*>([\s\S]*?)<\/style>/)[1].replace(/:global\(([^)]+)\)/g, '$1')
-	);
+	let css = text.match(/<style[^>]*>([\s\S]*?)<\/style>/)[1].replace(/:global\(([^)]+)\)/g, '$1');
+	if (component.endsWith('/PrototypeStory.svelte'))
+		css = css.replace(/\.faq-item button/g, ':is(.faq-item button, .faq-item summary)');
+	// Svelte scoped the About artwork classes. Keep that isolation in the native theme.
+	if (component === 'src/routes/about/+page.svelte')
+		css = css.replace(/\.wish-(art|copy|card|link)\b/g, '.about-wish-$1');
+	styles.push(css);
 }
 const generatedCss = path.join(source, '.generated.css');
 await writeFile(
@@ -60,11 +66,14 @@ try {
 	await rm(generatedCss, { force: true });
 }
 await cp(path.join(root, 'static'), path.join(output, 'assets'), { recursive: true });
-await cp(path.join(source, 'site.js'), path.join(output, 'assets/site.js'));
+await writeFile(
+	path.join(output, 'assets/site.js'),
+	`${await read('site.js')}\n${await read('story.js')}\n${await read('about.js')}`
+);
 for (const file of ['package.json', 'default.hbs', 'post.hbs', 'error.hbs', 'routes.yaml'])
 	await cp(path.join(source, file), path.join(output, file));
 await mkdir(path.join(output, 'partials'), { recursive: true });
-for (const file of ['card', 'store-play', 'store-apple'])
+for (const file of ['card', 'store-play', 'store-apple', 'appearance'])
 	await cp(path.join(source, `partials/${file}.hbs`), path.join(output, `partials/${file}.hbs`));
 
 for (const locale of ['zh-tw', 'en']) {
@@ -77,6 +86,9 @@ for (const locale of ['zh-tw', 'en']) {
 		otherHome: english ? '/' : '/en/',
 		otherLocale: english ? 'zh-tw' : 'en',
 		otherLabel: english ? '繁中' : 'EN',
+		introTitle: JSON.stringify(`${copy.story_about_title_1} ${copy.story_about_title_2}`),
+		zhCurrent: english ? 'false' : 'true',
+		enCurrent: english ? 'true' : 'false',
 		adminLabel: english ? 'Content management' : '內容管理',
 		navigation: english ? '{{navigation type="secondary"}}' : '{{navigation}}',
 		previousProduct: english ? 'Previous product' : '上一個產品',
@@ -110,7 +122,7 @@ for (const locale of ['zh-tw', 'en']) {
 			path.join(output, `partials/${locale}/${partial}.hbs`),
 			render(await read(`partials/${partial}.hbs`))
 		);
-	for (const file of ['home', 'page', 'index'])
+	for (const file of ['home', 'page', 'index', 'about'])
 		await writeFile(
 			path.join(output, `${file}${english ? '-en' : ''}.hbs`),
 			render(await read(`${file}.hbs`))

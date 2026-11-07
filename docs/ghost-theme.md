@@ -31,19 +31,22 @@ Wish Pool 在 Ghost 故障時仍可使用；其 Svelte 導覽列保留程式內�
 原有 78 個 `site-*` 資料頁會轉換成一般富文字 Pages，既有內容不被覆寫。
 `theme-zh-tw-*` 與 `theme-en-*` 是兩個語系：
 
-- `hero`：插圖上方的可見標語與搜尋摘要。扭蛋機插圖中的字是設計素材，修改插圖需要更新主題。
+- `hero`：供輔助閱讀的首頁標題與搜尋摘要；畫面保留原版扭蛋機，不額外疊上標語。扭蛋機插圖中的字是設計素材，修改插圖需要更新主題。
 - `intro`：首頁 About 的標題與內文。
 - `film`：使用 Ghost 的影片嵌入卡片。
 - `wish`：許願池入口的標題與內文。
 - `join`：招募標題和說明。加上內部標籤 `#recruiting` 才會顯示職缺中的報名連結；移除即關閉。
 - `footer`：頁尾介紹、聯絡和社群連結。
-- `about`：完整 About，直接使用標題、圖片、段落和列表編輯。
+- `about`：About 的頁面標題。既有內文完整保留，首次修復版型時以它拆出下列子頁；之後編輯子頁。
+- `about-lede`：About 頁首介紹，支援段落與連結。
+- `vision-1` 等：願景卡片，使用 `#theme-vision-zh-tw`（或 `en`）內部標籤；標題、內文、Feature image 分別對應卡片標題、說明與插圖。未設圖片時保留原版動畫圖形。
+- `milestone-1` 等：里程碑，使用 `#theme-milestone-zh-tw`（或 `en`）；標題為事件、Excerpt 為日期、內文為說明。`#upcoming` 顯示尚未完成的空心節點。超過五筆時自動改成直式清單。
 
 產品、FAQ 和職缺各是一個 Page，分別加上 `#theme-product-zh-tw`、
 `#theme-faq-zh-tw`、`#theme-role-zh-tw`，英文將尾碼換成 `en`。
 產品的標題、Excerpt、Feature image 分別是名稱、摘要和預設手機畫面，內文列表是特色，
 一般連結是產品入口。內文圖片卡片會輪播於手機中；圖片說明填 `Light` 或 `Dark`
-可分配明暗版本，未填說明的圖片視為明亮版。可使用箭頭、圓點與左右滑動切換產品。
+可分配明暗版本，未填說明的圖片視為明亮版。可使用箭頭、圓點、鍵盤及滑動切換產品；上下捲動經過產品章節時，每次手勢切換一項，越過最後一項便繼續捲動。
 FAQ 的標題是問題，內文是答案。職缺的標題是職稱、Excerpt 是
 短句，內文包含說明與報名連結。
 
@@ -67,6 +70,7 @@ Ghost Design 的站名、圖示和字型設定生效；原生主題版型、插�
 pnpm cms:theme-build
 pnpm exec gscan -z dist/nycu-life.zip
 pnpm cms:migrate-theme                   # 預覽，不寫入
+node scripts/migrate-ghost-about.mjs      # 預覽 About 拆頁，不覆寫原內容
 pnpm cms:theme-install                   # 預覽，不寫入
 ```
 
@@ -78,6 +82,7 @@ CSS 或插圖變更需重新建置主題，內容發布則不需要。建置不�
 
 ```sh
 pnpm cms:migrate-theme --apply
+node scripts/migrate-ghost-about.mjs --apply
 pnpm cms:theme-install --apply --initialize-navigation
 GHOST_THEME_TEST_URL=http://localhost:2368 \
 VISUAL_AUDIT_SCREENSHOTS=/tmp/ghost-theme-screens \
@@ -133,3 +138,14 @@ node scripts/restore-ghost-pages.mjs --backup=<private-legacy-backup-directory> 
 恢復這些 Pages 的原發布狀態，否則舊版讀取不到內容。
 
 此文件描述可執行的切換流程；程式碼合併或主題通過 gscan 都不代表正式環境已切換。
+
+## v1.0.2 版型修復
+
+安裝前先執行 `node scripts/migrate-ghost-about.mjs --apply`，只建立缺少的 About
+子頁，保留來源 Page 與所有既有子頁。工具會先驗證兩語系的結構，再私下備份 Pages；
+無法識別的編輯結構會停止，不會猜測後改寫。預覽不加 `--apply`。
+主題安裝會檢查必要子頁；例行更新不要加 `--initialize-navigation`，以保留編輯者選單。
+
+視覺檢查需與原 Svelte 版在相同語系、外觀、視窗及章節對照，再跑完整矩陣。
+只通過 HTTP 或 DOM 幾何檢查，不能證明設計一致。Ghost 導覽文字、文章內容及自訂字型
+以編輯者設定為準，不會為了比對畫面而覆寫。

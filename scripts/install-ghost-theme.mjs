@@ -6,17 +6,19 @@ import { restoreTheme } from './lib/ghost-theme-backup.mjs';
 
 if (!process.argv.includes('--apply')) {
 	console.log(
-		'Would back up theme/routes/navigation, upload nycu-life.zip, install routes, then activate nycu-life. Use --apply after cms:migrate-theme.'
+		'Would back up theme/routes/navigation, upload nycu-life.zip, install routes, then activate nycu-life. Use --apply after cms:migrate-theme and scripts/migrate-ghost-about.mjs.'
 	);
 	process.exit(0);
 }
 const admin = ghostAdmin();
 const pages = await allPages(admin);
 for (const locale of ['zh-tw', 'en']) {
-	for (const id of ['hero', 'intro', 'film', 'join', 'wish', 'footer', 'about'])
+	for (const id of ['hero', 'intro', 'film', 'join', 'wish', 'footer', 'about', 'about-lede'])
 		if (!pages.some((p) => p.slug === `theme-${locale}-${id}` && p.status === 'published'))
-			throw new Error(`Missing theme-${locale}-${id}; run cms:migrate-theme first.`);
-	for (const kind of ['product', 'faq', 'role'])
+			throw new Error(
+				`Missing theme-${locale}-${id}; run cms:migrate-theme and scripts/migrate-ghost-about.mjs first.`
+			);
+	for (const kind of ['product', 'faq', 'role', 'vision', 'milestone'])
 		if (
 			!pages.some(
 				(p) =>

@@ -1,0 +1,39 @@
+{{!< default}}
+{{#contentFor "lang"}}[[lang]]{{/contentFor}}
+{{#contentFor "header"}}{{> "[[locale]]/header"}}{{/contentFor}}
+{{#contentFor "footer"}}{{> "[[locale]]/footer"}}{{/contentFor}}
+<div class="about-page">
+    <header class="page about-head about-section">
+        <span class="about-eyebrow">{{copy 'about_page_eyebrow'}}</span>
+        {{#post}}<h1 class="page-title">{{title}}</h1>{{/post}}
+        {{#get "pages" filter="slug:theme-[[locale]]-about-lede" limit="1"}}{{#foreach pages}}<div class="page-lede">{{content}}</div>{{/foreach}}{{/get}}
+    </header>
+    <section class="page about-section" aria-labelledby="vision-title">
+        <span class="about-eyebrow">{{copy 'about_vision_eyebrow'}}</span>
+        <h2 id="vision-title" class="section-title">{{copy 'about_vision_title'}}</h2>
+        <ul class="vision-grid">
+            {{#get "pages" filter="tag:hash-theme-vision-[[locale]]" order="published_at asc" limit="100"}}{{#foreach pages}}
+            <li class="vision-card {{#if feature_image}}has-vision-art{{/if}}">
+                <div class="vision-art" aria-hidden="true">{{#if feature_image}}<img src="{{feature_image}}" alt="">{{else}}<span class="motif {{#if @first}}motif-integrate{{else}}{{#if @last}}motif-students{{else}}motif-realtime{{/if}}{{/if}}"><i></i><i></i><i></i></span>{{/if}}</div>
+                <span class="vision-num">{{@number}}</span><h3>{{title}}</h3><div class="vision-body">{{content}}</div>
+            </li>
+            {{/foreach}}{{/get}}
+        </ul>
+    </section>
+    <section class="page about-section" aria-labelledby="film-title">
+        <span class="about-eyebrow">{{copy 'about_film_eyebrow'}}</span>
+        <h2 id="film-title" class="section-title">{{copy 'about_film_title'}}</h2>
+        <div class="film-frame">{{#get "pages" filter="slug:theme-[[locale]]-film" limit="1"}}{{#foreach pages}}{{content}}{{/foreach}}{{/get}}</div>
+    </section>
+    <section id="milestones" class="page about-section milestone-section" aria-labelledby="milestone-title">
+        <span class="about-eyebrow">{{copy 'about_milestone_eyebrow'}}</span><h2 id="milestone-title" class="section-title">{{copy 'about_milestone_title'}}</h2><p class="section-lede">{{copy 'about_milestone_lede'}}</p>
+        <div class="milestone-track">
+            <svg class="milestone-path" viewBox="0 0 1000 520" aria-hidden="true"><path class="path-base" pathLength="1"/><path class="path-draw" pathLength="1"/></svg>
+            <ol class="milestone-list">
+                {{#get "pages" filter="tag:hash-theme-milestone-[[locale]]" include="tags" order="published_at asc" limit="100"}}{{#foreach pages}}<li class="milestone {{#has tag='#upcoming'}}upcoming{{/has}}"><span class="milestone-dot" aria-hidden="true"></span><div class="milestone-card"><span class="milestone-date">{{custom_excerpt}}</span><h3>{{title}}</h3><div class="milestone-body">{{content}}</div></div></li>{{/foreach}}{{/get}}
+            </ol>
+        </div>
+        <p class="milestone-more"><a href="[[prefix]]/devlog/">{{copy 'about_milestone_devlog_link'}} →</a></p>
+    </section>
+    <section class="page about-section about-wish" aria-labelledby="about-wish-title"><div class="about-wish-card"><img class="about-wish-art" src="{{asset 'story/designer/wishpool/machine.svg'}}" alt=""><div class="about-wish-copy"><h2 id="about-wish-title">{{copy 'about_wish_title'}}</h2><p>{{copy 'about_wish_lede'}}</p><a class="about-wish-link" href="/wishpool/">{{copy 'wish_cta'}} <span aria-hidden="true">→</span></a></div></div></section>
+</div>

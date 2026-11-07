@@ -22,12 +22,7 @@
 			<span class='sticker-label'>{{copy 'nav_wishpool'}} ✦</span>
 		</a>
 		<div class='topbar-controls'>
-			<a
-				class='locale-toggle'
-				href='[[otherHome]]'
-				data-locale-switch='[[otherLocale]]'
-				aria-label='[[otherLabel]]'
-			>[[otherLabel]]</a>
+<div class="locale" role="group" aria-label="{{copy 'nav_locale'}}"><a class="locale-option" href="/" data-locale-switch="zh-tw" aria-pressed="[[zhCurrent]]">{{copy 'nav_locale_zh'}}</a><a class="locale-option" href="/en/" data-locale-switch="en" aria-pressed="[[enCurrent]]">{{copy 'nav_locale_en'}}</a></div>
 			<button
 				class='theme-toggle'
 				type='button'
@@ -35,7 +30,7 @@
 				data-label-dark='{{copy "nav_theme_to_dark"}}'
 				data-label-light='{{copy "nav_theme_to_light"}}'
 				aria-pressed='false'
-			>◐</button>
+			>{{> 'appearance'}}</button>
 		</div>
 		<button
 			class='menu-toggle'
@@ -43,15 +38,15 @@
 			aria-expanded='false'
 			aria-controls='topbar-menu'
 			aria-label='{{copy "menu_open"}}'
-		>☰</button>
+		><svg class='burger-icon' viewBox='0 0 24 24' width='22' height='22' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M4 6h16M4 12h16M4 18h16'/></svg></button>
 	</div>
 	<div id='topbar-menu' class='topbar-menu' hidden>
 		<nav aria-label='{{copy "nav_aria"}}'>[[navigation]]<a href='/wishpool/'>{{copy
 					'nav_wishpool'
 				}}</a></nav>
 		<div class="menu-controls">
-			<a class="locale-toggle" href="[[otherHome]]" data-locale-switch="[[otherLocale]]">[[otherLabel]]</a>
-			<button class="theme-toggle theme-toggle-wide" type="button" aria-label="{{copy 'nav_theme_to_dark'}}" data-label-dark="{{copy 'nav_theme_to_dark'}}" data-label-light="{{copy 'nav_theme_to_light'}}" aria-pressed="false">◐</button>
+<div class="locale" role="group" aria-label="{{copy 'nav_locale'}}"><a class="locale-option" href="/" data-locale-switch="zh-tw" aria-pressed="[[zhCurrent]]">{{copy 'nav_locale_zh'}}</a><a class="locale-option" href="/en/" data-locale-switch="en" aria-pressed="[[enCurrent]]">{{copy 'nav_locale_en'}}</a></div>
+			<button class="theme-toggle theme-toggle-wide" type="button" aria-label="{{copy 'nav_theme_to_dark'}}" data-label-dark="{{copy 'nav_theme_to_dark'}}" data-label-light="{{copy 'nav_theme_to_light'}}" aria-pressed="false">{{> 'appearance'}}</button>
 		</div>
 	</div>
 </header>

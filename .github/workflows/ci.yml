@@ -43,7 +43,9 @@ jobs:
           pnpm cms:theme-check
 
       - name: Test server routing and content
-        run: pnpm exec vitest run --project server
+        run: |
+          pnpm exec vitest run --project server
+          node --test scripts/lib/ghost-about-sections.test.mjs
 
       - name: Upload installable Ghost theme
         uses: actions/upload-artifact@v4
