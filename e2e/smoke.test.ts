@@ -962,7 +962,8 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 	page
 }) => {
 	test.slow();
-	const viewports = [
+	if (process.env.GHOST_THEME_TEST_URL) test.setTimeout(300_000);
+	const allViewports = [
 		{ name: 'desktop-large', width: 2560, height: 1440 },
 		{ name: 'desktop', width: 1440, height: 900 },
 		{ name: 'tablet-landscape', width: 1024, height: 768 },
@@ -972,6 +973,11 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 		{ name: 'mobile', width: 390, height: 844 },
 		{ name: 'compact', width: 320, height: 568 }
 	];
+	const viewports = process.env.GHOST_THEME_TEST_URL
+		? allViewports.filter((viewport) =>
+				['desktop', 'tablet-portrait', 'mobile'].includes(viewport.name)
+			)
+		: allViewports;
 	const locales = ['zh-tw', 'en'] as const;
 	const themes = ['light', 'dark'] as const;
 	const chapters = ['hero', 'about', 'products', 'faq', 'join'] as const;
@@ -981,7 +987,12 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 		await page.setViewportSize(viewport);
 		for (const locale of locales) {
 			for (const theme of themes) {
-				await page.goto('/?motion=on#hero');
+				await page.goto(
+					process.env.GHOST_THEME_TEST_URL && locale === 'en'
+						? '/en/?motion=on#hero'
+						: '/?motion=on#hero',
+					{ waitUntil: 'domcontentloaded' }
+				);
 				await page.evaluate(
 					({ locale, theme }) => {
 						document.cookie = `PARAGLIDE_LOCALE=${locale}; path=/`;
@@ -989,7 +1000,7 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 					},
 					{ locale, theme }
 				);
-				await page.reload();
+				await page.reload({ waitUntil: 'domcontentloaded' });
 				await expect(page.locator('html')).toHaveAttribute('lang', locale);
 				await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 				await expect(story(page)).toHaveAttribute('data-story-ready', 'true');
@@ -1012,7 +1023,7 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 						// Product copy also enters in pieces; settled screenshots are required for a real
 						// visual review (mid-animation frames can look like missing labels in dark mode).
 						await page
-							.locator('.product-copy')
+							.locator('.product-copy:not([hidden])')
 							.evaluate((element) =>
 								Promise.all(element.getAnimations().map((animation) => animation.finished)).catch(
 									() => {}
@@ -1024,6 +1035,10 @@ test('visual acceptance matrix has no broken images, clipped copy, or horizontal
 						if (!stage) throw new Error('Missing story stage');
 						const stageRect = stage.getBoundingClientRect();
 						const isVisible = (element: HTMLElement) => {
+							// Closed native details can retain intrinsic descendant geometry even
+							// though the browser does not paint their answer content.
+							if (element.closest('details:not([open])') && !element.closest('summary'))
+								return false;
 							const style = getComputedStyle(element);
 							const rect = element.getBoundingClientRect();
 							return (

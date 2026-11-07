@@ -32,3 +32,6 @@ storybook-static
 
 # Local Ghost API keys / owner credentials written by docker/ghost/seed.mjs
 .env.ghost.local
+/dist/
+/theme/.generated.css
+/.ghost-theme-backups/

@@ -1,0 +1,242 @@
+<div class='gacha-machine' role='img' aria-label='{{copy "story_gacha_alt"}}'>
+	<picture class='gacha-device-art' aria-hidden='true'>
+		<source media='(max-width: 430px)' srcset='{{asset "story/designer/gacha-mobile.svg"}}' />
+		<source media='(max-width: 900px)' srcset='{{asset "story/designer/gacha-tablet.svg"}}' />
+		<img src='{{asset "story/designer/gacha-desktop.svg"}}' alt='' />
+	</picture>
+	<!-- The dial cut from each artwork's 旋鈕本體 layer, sitting exactly over its baked
+				     twin so it can spin as the capsule dispenses. -->
+	<picture class='machine-knob' aria-hidden='true'>
+		<source media='(max-width: 430px)' srcset='{{asset "story/designer/knob-mobile.svg"}}' />
+		<source media='(max-width: 900px)' srcset='{{asset "story/designer/knob-tablet.svg"}}' />
+		<img src='{{asset "story/designer/knob-desktop.svg"}}' alt='' />
+	</picture>
+	<img class='machine-base' src='{{asset "story/designer/gacha-machine.svg"}}' alt='' />
+	<img class='machine-glass' src='{{asset "story/designer/gacha-glass.svg"}}' alt='' />
+	<div class='gacha-contents' aria-hidden='true'>
+		<img src='{{asset "story/designer/bottom-ball.svg"}}' alt='' />
+		<img src='{{asset "story/designer/error-ball.svg"}}' alt='' />
+		<img src='{{asset "story/designer/bus-ball.svg"}}' alt='' />
+		<img src='{{asset "story/designer/mail-ball.svg"}}' alt='' />
+		<img src='{{asset "story/designer/graduation-ball.svg"}}' alt='' />
+		<img src='{{asset "story/designer/debug.svg"}}' alt='' />
+		<img src='{{asset "story/designer/your.svg"}}' alt='' />
+		<img src='{{asset "story/designer/star.svg"}}' alt='' />
+		<img src='{{asset "story/designer/problems.svg"}}' alt='' />
+		<img src='{{asset "story/designer/nycu-life.svg"}}' alt='' />
+	</div>
+	<img class='machine-hole' src='{{asset "story/designer/gacha-hole.svg"}}' alt='' />
+	<div class='capsule' aria-hidden='true'>
+		<div class='capsule-rotor'>
+			<svg class='capsule-svg' viewBox='730.38 27.38 240 240' xmlns='http://www.w3.org/2000/svg'>
+				<defs>
+					<clipPath id='capsule-clip-top'><path
+							d='M640,-200 H1060 V161.65 H959.88 C938.71,142.58 909.93,134.58 881.38,133.84 C834.99,133.83 779.24,130.99 740.68,160.03 H640 Z'
+						/></clipPath>
+					<clipPath id='capsule-clip-bottom'><path
+							d='M640,160.03 H740.68 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65 H1060 V520 H640 Z'
+						/></clipPath>
+					<radialGradient
+						id='capsule-glow-fill'
+						cx='850.38'
+						cy='147.38'
+						r='165'
+						gradientUnits='userSpaceOnUse'
+					>
+						<stop offset='0' stop-color='#fffaf0' stop-opacity='0.95' />
+						<stop offset='0.46' stop-color='#efe9d1' stop-opacity='0.45' />
+						<stop offset='1' stop-color='#efe9d1' stop-opacity='0' />
+					</radialGradient>
+					<linearGradient
+						id='capsule-seam-fill'
+						x1='740'
+						y1='0'
+						x2='960'
+						y2='0'
+						gradientUnits='userSpaceOnUse'
+					>
+						<stop offset='0' stop-color='#fff' stop-opacity='0' />
+						<stop offset='0.18' stop-color='#fff' stop-opacity='1' />
+						<stop offset='0.82' stop-color='#fff' stop-opacity='1' />
+						<stop offset='1' stop-color='#fff' stop-opacity='0' />
+					</linearGradient>
+					<path id='capsule-ray' class='capsule-ray' d='M-3.4,-116 L3.4,-116 L0,-158 Z' />
+					<path
+						id='capsule-spark'
+						d='M0,-8 C1.1,-2.6 2.6,-1.1 8,0 C2.6,1.1 1.1,2.6 0,8 C-1.1,2.6 -2.6,1.1 -8,0 C-2.6,-1.1 -1.1,-2.6 0,-8 Z'
+					/>
+				</defs>
+				<circle
+					class='capsule-glow'
+					cx='850.38'
+					cy='147.38'
+					r='165'
+					fill='url(#capsule-glow-fill)'
+				/>
+				<g class='capsule-rays'>
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(0)' />
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(30)' />
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(60)' />
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(90)' />
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(120)' />
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(150)' />
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(180)' />
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(210)' />
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(240)' />
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(270)' />
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(300)' />
+					<use href='#capsule-ray' transform='translate(850.38 147.38) rotate(330)' />
+				</g>
+				<circle class='capsule-ring' cx='850.38' cy='147.38' r='110.43' />
+				<g class='capsule-body'>
+					<g class='capsule-shell capsule-shell-bottom'>
+						<g clip-path='url(#capsule-clip-bottom)'><circle
+								class='capsule-ball'
+								cx='850.38'
+								cy='147.38'
+								r='110.43'
+							/></g>
+						<path
+							class='capsule-lip'
+							d='M881.38,133.84c-46.39-.01-102.14-2.85-140.7,26.19.08.69.15,1.38.25,2.07,57.19,36.39,127.99,36.92,188.99,15.9,10.38-3.64,20.5-8.5,29.74-14.62.09-.58.14-1.16.22-1.73-21.17-19.07-49.95-27.07-78.5-27.8Z'
+						/>
+						<path
+							class='capsule-base'
+							d='M929.92,178c-61.01,21.02-131.81,20.49-189-15.9,5.14,38,29.96,72.24,68.05,87.65,56.54,22.87,120.91-4.42,143.78-60.96,3.38-8.35,5.65-16.88,6.91-25.41-9.24,6.12-19.36,10.98-29.74,14.62Z'
+						/>
+						<path
+							class='capsule-cut'
+							d='M740.68,160.03 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65'
+						/>
+					</g>
+					<g class='capsule-shell capsule-shell-top'>
+						<g clip-path='url(#capsule-clip-top)'><circle
+								class='capsule-ball'
+								cx='850.38'
+								cy='147.38'
+								r='110.43'
+							/></g>
+						<path
+							class='capsule-cut'
+							d='M740.68,160.03 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65'
+						/>
+					</g>
+					<g class='capsule-seam'>
+						<path
+							d='M740.68,160.03 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65'
+							fill='none'
+							stroke='url(#capsule-seam-fill)'
+							stroke-width='10'
+							opacity='0.35'
+						/>
+						<path
+							d='M740.68,160.03 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65'
+							fill='none'
+							stroke='url(#capsule-seam-fill)'
+							stroke-width='5'
+							opacity='0.6'
+						/>
+						<path
+							d='M740.68,160.03 C779.24,130.99 834.99,133.83 881.38,133.84 C909.93,134.58 938.71,142.58 959.88,161.65'
+							fill='none'
+							stroke='url(#capsule-seam-fill)'
+							stroke-width='2'
+						/>
+					</g>
+					<g class='capsule-letter'>
+						<rect
+							class='capsule-paper'
+							x='784.58'
+							y='115.78'
+							width='126.97'
+							height='91.6'
+							rx='28.35'
+							ry='28.35'
+							transform='translate(-11.04 76.35) rotate(-5.12)'
+						/>
+						<path
+							class='capsule-paper'
+							d='M893.6,111.51l-99.26,8.9c-7.48.67-13.05,7.34-12.38,14.82l1.43,15.93c1.38.54,2.74,1.12,4.06,1.71,21.14,9.23,43.03,15.97,65.62,19.75,18.74-9.83,37.77-19.68,57.14-28.91l-1.78-19.82c-.67-7.48-7.34-13.05-14.82-12.38Z'
+						/>
+						<circle class='capsule-paper' cx='849.57' cy='172.22' r='10.73' />
+						<ellipse
+							class='capsule-paper'
+							cx='898.46'
+							cy='124.11'
+							rx='31.74'
+							ry='25.34'
+							transform='translate(-7.49 80.7) rotate(-5.12)'
+						/>
+						<g class='capsule-badge'>
+							<path
+								d='M880.72,132.65c.23.77.39,1.11.63,1.49.53.81,1.22,1.22,2.04,1.14,1.15-.1,1.99-1.08,2.4-2.73.29-1.17.36-2.47.26-4.9-.94,1.91-2.04,2.77-3.85,2.93-3.69.33-6.43-3.34-6.97-9.32-.56-6.3,1.83-10.86,5.89-11.22,2.6-.23,4.83,1.43,6.37,4.74,1.05,2.24,1.8,5.58,2.15,9.5s.24,7.3-.27,10.07c-.49,2.63-1.62,4.77-3,5.72-.78.54-1.76.91-2.68.99-1.95.17-3.61-.61-4.98-2.35-.8-1.04-1.23-1.97-1.96-4.1l3.95-1.97ZM884.96,120.03c-.24-2.67-1.59-4.42-3.29-4.26s-2.7,2.11-2.46,4.81,1.51,4.46,3.19,4.31c1.76-.16,2.8-2.12,2.56-4.86Z'
+							/>
+							<path
+								d='M896.49,131.23c.23.77.39,1.11.63,1.49.53.81,1.22,1.22,2.04,1.14,1.15-.1,1.99-1.08,2.4-2.73.29-1.17.36-2.47.26-4.9-.94,1.91-2.04,2.77-3.85,2.93-3.69.33-6.43-3.34-6.97-9.32-.56-6.3,1.83-10.86,5.89-11.22,2.6-.23,4.84,1.43,6.37,4.74,1.05,2.24,1.8,5.58,2.15,9.5s.24,7.3-.27,10.07c-.49,2.63-1.62,4.77-3,5.72-.78.54-1.76.91-2.68.99-1.95.17-3.61-.61-4.98-2.35-.8-1.04-1.23-1.97-1.96-4.1l3.95-1.97ZM900.73,118.62c-.24-2.67-1.59-4.42-3.29-4.26s-2.7,2.11-2.46,4.81,1.51,4.46,3.19,4.31c1.76-.16,2.8-2.12,2.56-4.86Z'
+							/>
+							<path
+								d='M912.26,129.82c.23.77.39,1.11.63,1.49.53.81,1.22,1.22,2.04,1.14,1.15-.1,1.99-1.08,2.4-2.73.29-1.17.36-2.47.26-4.9-.94,1.91-2.04,2.77-3.85,2.93-3.69.33-6.43-3.34-6.97-9.32-.56-6.3,1.83-10.86,5.89-11.22,2.6-.23,4.84,1.43,6.37,4.74,1.05,2.24,1.8,5.58,2.15,9.5.34,3.77.24,7.3-.27,10.07-.49,2.63-1.62,4.77-3,5.72-.78.54-1.76.91-2.68.99-1.95.17-3.61-.61-4.98-2.35-.8-1.04-1.23-1.97-1.96-4.1l3.95-1.97ZM916.5,117.2c-.24-2.67-1.59-4.42-3.29-4.26s-2.7,2.11-2.46,4.81,1.51,4.46,3.19,4.31c1.76-.16,2.8-2.12,2.56-4.86Z'
+							/>
+						</g>
+					</g>
+				</g>
+				<g class='capsule-sparks'>
+					<g transform='rotate(18 850.38 147.38)'><g class='capsule-spark capsule-spark-a'><use
+								href='#capsule-spark'
+								x='850.38'
+								y='147.38'
+								fill='#fffdf5'
+							/></g></g>
+					<g transform='rotate(58 850.38 147.38)'><g class='capsule-spark capsule-spark-b'><use
+								href='#capsule-spark'
+								x='850.38'
+								y='147.38'
+								fill='#efe9d1'
+							/></g></g>
+					<g transform='rotate(96 850.38 147.38)'><g class='capsule-spark capsule-spark-c'><use
+								href='#capsule-spark'
+								x='850.38'
+								y='147.38'
+								fill='#fffdf5'
+							/></g></g>
+					<g transform='rotate(140 850.38 147.38)'><g class='capsule-spark capsule-spark-a'><use
+								href='#capsule-spark'
+								x='850.38'
+								y='147.38'
+								fill='#efe9d1'
+							/></g></g>
+					<g transform='rotate(176 850.38 147.38)'><g class='capsule-spark capsule-spark-b'><use
+								href='#capsule-spark'
+								x='850.38'
+								y='147.38'
+								fill='#fffdf5'
+							/></g></g>
+					<g transform='rotate(218 850.38 147.38)'><g class='capsule-spark capsule-spark-c'><use
+								href='#capsule-spark'
+								x='850.38'
+								y='147.38'
+								fill='#bb2e31'
+							/></g></g>
+					<g transform='rotate(262 850.38 147.38)'><g class='capsule-spark capsule-spark-a'><use
+								href='#capsule-spark'
+								x='850.38'
+								y='147.38'
+								fill='#efe9d1'
+							/></g></g>
+					<g transform='rotate(300 850.38 147.38)'><g class='capsule-spark capsule-spark-b'><use
+								href='#capsule-spark'
+								x='850.38'
+								y='147.38'
+								fill='#fffdf5'
+							/></g></g>
+					<g transform='rotate(334 850.38 147.38)'><g class='capsule-spark capsule-spark-c'><use
+								href='#capsule-spark'
+								x='850.38'
+								y='147.38'
+								fill='#bb2e31'
+							/></g></g>
+				</g>
+			</svg>
+		</div>
+	</div>
+</div>

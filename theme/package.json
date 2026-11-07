@@ -1,0 +1,20 @@
+{
+	"name": "nycu-life",
+	"version": "1.0.0",
+	"description": "NYCU LIFE official site, rendered by Ghost with the Liquid Glass design",
+	"author": {
+		"name": "NYCU LIFE",
+		"email": "life@nycu.edu.tw"
+	},
+	"engines": {
+		"ghost": ">=6.75.0"
+	},
+	"license": "MIT",
+	"config": {
+		"posts_per_page": 12,
+		"card_assets": true
+	},
+	"keywords": [
+		"ghost-theme"
+	]
+}

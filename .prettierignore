@@ -13,6 +13,11 @@ bun.lockb
 /src/lib/paraglide/
 /.svelte-kit/
 /build/
+/dist/
+/theme/.generated.css
+/.ghost-theme-backups/
+# Prettier's Glimmer parser does not support Ghost Handlebars partials.
+/theme/**/*.hbs
 
 # inlang project metadata — tool-managed, regenerated on compile
 /project.inlang/.meta.json

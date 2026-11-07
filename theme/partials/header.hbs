@@ -1,0 +1,57 @@
+<header class='topbar'>
+	<a class='topbar-brand' href='[[prefix]]/' aria-label='{{copy "menu_home"}}'>
+		<img class='logo-light' src='{{asset "brand/logo-horizontal-blue.svg"}}' alt='NYCU LIFE' />
+		<img class='logo-dark' src='{{asset "brand/logo-horizontal-white.svg"}}' alt='NYCU LIFE' />
+	</a>
+	<nav class='topbar-nav' aria-label='{{copy "nav_aria"}}'>[[navigation]]</nav>
+	<div class='topbar-actions'>
+		<a class='sticker-link' href='/wishpool/'>
+			<span class='sticker-art' aria-hidden='true'>
+				<img
+					class='sticker-face sticker-face-default'
+					src='{{asset "ui/wishpool-mobile.svg"}}'
+					alt=''
+				/>
+				<img
+					class='sticker-face sticker-face-hover'
+					src='{{asset "ui/wishpool-mobile-hover.svg"}}'
+					alt=''
+				/>
+			</span>
+			<span class='sticker-erase' aria-hidden='true'></span>
+			<span class='sticker-label'>{{copy 'nav_wishpool'}} ✦</span>
+		</a>
+		<div class='topbar-controls'>
+			<a
+				class='locale-toggle'
+				href='[[otherHome]]'
+				data-locale-switch='[[otherLocale]]'
+				aria-label='[[otherLabel]]'
+			>[[otherLabel]]</a>
+			<button
+				class='theme-toggle'
+				type='button'
+				aria-label='{{copy "nav_theme_to_dark"}}'
+				data-label-dark='{{copy "nav_theme_to_dark"}}'
+				data-label-light='{{copy "nav_theme_to_light"}}'
+				aria-pressed='false'
+			>◐</button>
+		</div>
+		<button
+			class='menu-toggle'
+			type='button'
+			aria-expanded='false'
+			aria-controls='topbar-menu'
+			aria-label='{{copy "menu_open"}}'
+		>☰</button>
+	</div>
+	<div id='topbar-menu' class='topbar-menu' hidden>
+		<nav aria-label='{{copy "nav_aria"}}'>[[navigation]]<a href='/wishpool/'>{{copy
+					'nav_wishpool'
+				}}</a></nav>
+		<div class="menu-controls">
+			<a class="locale-toggle" href="[[otherHome]]" data-locale-switch="[[otherLocale]]">[[otherLabel]]</a>
+			<button class="theme-toggle theme-toggle-wide" type="button" aria-label="{{copy 'nav_theme_to_dark'}}" data-label-dark="{{copy 'nav_theme_to_dark'}}" data-label-light="{{copy 'nav_theme_to_light'}}" aria-pressed="false">◐</button>
+		</div>
+	</div>
+</header>

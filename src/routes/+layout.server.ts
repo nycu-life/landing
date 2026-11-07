@@ -1,2 +1,6 @@
 import { getSite } from '$lib/server/site';
-export const load = () => getSite();
+import { defaultSite } from '$lib/site/defaults';
+export const load = () =>
+	process.env.PUBLIC_SITE_ENGINE === 'ghost'
+		? { site: defaultSite, siteUnavailable: false }
+		: getSite();

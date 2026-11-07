@@ -537,6 +537,49 @@ func TestCMSGateUsesTheAdminSignIn(t *testing.T) {
 	}
 }
 
+func TestNativeGhostCookieLifecycle(t *testing.T) {
+	auth := &fakeAdminAuthenticator{identity: AdminIdentity{Subject: "editor", Email: "editor@example.org", Method: "oidc"}}
+	handler := testHandlerWithAuth(t, &fakeStore{}, auth)
+	login := httptest.NewRecorder()
+	handler.ServeHTTP(login, httptest.NewRequest(http.MethodGet, "https://nycu.life/api/wishes/auth/login?return=%2Fghost%2F", nil))
+	callbackRequest := httptest.NewRequest(http.MethodGet, "https://nycu.life/api/wishes/auth/callback?state="+url.QueryEscape(auth.state)+"&code=c", nil)
+	callbackRequest.AddCookie(responseCookie(t, login, oauthStateCookie))
+	callback := httptest.NewRecorder()
+	handler.ServeHTTP(callback, callbackRequest)
+	if callback.Header().Get("Location") != "/ghost/" {
+		t.Fatalf("native callback returned to %q", callback.Header().Get("Location"))
+	}
+	var native *http.Cookie
+	for _, cookie := range callback.Result().Cookies() {
+		if cookie.Name == cmsSessionCookie && cookie.Path == ghostPath {
+			native = cookie
+		}
+	}
+	if native == nil || !native.Secure || !native.HttpOnly || native.SameSite != http.SameSiteLaxMode || native.MaxAge <= 0 {
+		t.Fatal("native Ghost session was not scoped and hardened")
+	}
+	gate := httptest.NewRequest(http.MethodGet, "https://nycu.life/api/wishes/auth/gate", nil)
+	gate.Header.Set("X-Forwarded-Method", http.MethodPost)
+	gate.Header.Set("X-Forwarded-Uri", "/ghost/api/admin/posts/")
+	gate.AddCookie(native)
+	allowed := httptest.NewRecorder()
+	handler.ServeHTTP(allowed, gate)
+	if allowed.Code != http.StatusNoContent {
+		t.Fatalf("native Ghost gate returned %d", allowed.Code)
+	}
+	logout := httptest.NewRecorder()
+	handler.ServeHTTP(logout, httptest.NewRequest(http.MethodPost, "https://nycu.life/api/wishes/auth/logout", nil))
+	cleared := map[string]bool{}
+	for _, cookie := range logout.Result().Cookies() {
+		if cookie.Name == cmsSessionCookie && cookie.MaxAge < 0 {
+			cleared[cookie.Path] = true
+		}
+	}
+	if !cleared[cmsPath] || !cleared[ghostPath] {
+		t.Fatal("logout did not clear both legacy and native Ghost gate sessions")
+	}
+}
+
 type originAuthenticator struct{ *fakeAdminAuthenticator }
 
 func (originAuthenticator) PublicOrigin() string { return "https://nycu.life" }
@@ -567,6 +610,11 @@ func TestSafeReturnPath(t *testing.T) {
 		"/cms/ghost/":           "/cms/ghost/",
 		"/cms":                  "/cms",
 		"/cms/ghost/?a=1":       "/cms/ghost/?a=1",
+		"/ghost/":               "/ghost/",
+		"/ghost/?a=1":           "/ghost/?a=1",
+		"/ghostly/":             "",
+		"/ghost/../wishpool/":   "",
+		"/ghost/%2e%2e/api/":    "",
 		"/cmsx/":                "",
 		"/wishpool/admin/":      "",
 		"//evil.example/cms/":   "",

@@ -1,0 +1,91 @@
+<div class="prototype-home">
+<section class="scroll-story prototype-story" id="home" aria-label="{{copy 'story_region_label'}}" data-story-step="0" data-story-step-name="hero" data-story-ready="false">
+    <div class="story-stage">
+        <div class="story-progress" aria-hidden="true"><img src="{{asset 'ui/progress-line.svg'}}" alt=""></div>
+        <button class="skip-story" type="button">
+            <img class="skip-face skip-face-default" src="{{asset 'ui/skip-default.svg'}}" alt="">
+            <img class="skip-face skip-face-hover" src="{{asset 'ui/skip-hover.svg'}}" alt="">
+            <img class="skip-face skip-face-pressed" src="{{asset 'ui/skip-pressed.svg'}}" alt="">
+            <span class="skip-label">{{copy 'story_skip'}}</span><span class="skip-icon" aria-hidden="true">»</span>
+        </button>
+        <section id="hero" class="story-scene hero-scene scene-active">
+            <div class="hero-orbit" aria-hidden="true"></div>
+            {{> "[[locale]]/machine"}}
+            {{#get "pages" filter="slug:theme-[[locale]]-hero" limit="1"}}
+                {{#foreach pages}}<div class="hero-copy"><h1>{{title}}</h1><div class="sr-only">{{content}}</div></div>{{/foreach}}
+            {{/get}}
+            <div class="scroll-hint">{{copy 'story_scroll_cue'}} ↓</div>
+        </section>
+        <section id="about" class="story-scene about-scene" aria-label="{{copy 'story_about_label'}}">
+            <div class="section-shell about-shell">
+                {{#get "pages" filter="slug:theme-[[locale]]-intro" limit="1"}}
+                    {{#foreach pages}}
+                    <article class="about-copy"><span class="eyebrow">{{copy 'story_about_eyebrow'}}</span><h2>{{title}}</h2><div class="section-content">{{content}}</div></article>
+                    {{/foreach}}
+                {{/get}}
+                <div class="team-film">
+                    {{#get "pages" filter="slug:theme-[[locale]]-film" limit="1"}}{{#foreach pages}}{{content}}{{/foreach}}{{/get}}
+                </div>
+            </div>
+        </section>
+        <section id="products" class="story-scene product-scene" aria-label="{{copy 'story_products_label'}}">
+        {{#get "pages" filter="tag:hash-theme-product-[[locale]]" order="published_at asc" limit="100"}}
+            <div class="section-shell product-shell">
+                <div class="product-copy-stack">
+                    {{#foreach pages}}
+                    <article class="product-copy" data-product-index="{{@index}}">
+                        <h2>{{title}}</h2><p>{{custom_excerpt}}</p><div class="native-product-content">{{content}}</div>
+                    </article>
+                    {{/foreach}}
+                </div>
+                <div class="product-demo">
+                    <button type="button" class="arrow previous" aria-label="[[previousProduct]]" data-product-direction="-1"><img class="arrow-face arrow-face-default" src="{{asset 'ui/arrow-default-left.svg'}}" alt=""><img class="arrow-face arrow-face-hover" src="{{asset 'ui/arrow-hover-left.svg'}}" alt=""></button>
+                    <div class="device-card">
+                        <img class="device-hand" src="{{asset 'story/designer/hand/back-fingers-v2.svg'}}" alt="">
+                        <div class="device-phone"><div class="device-screen">
+                            {{#foreach pages}}<div class="device-shot-group" data-product-image="{{@index}}" {{#unless @first}}hidden{{/unless}}>{{#if feature_image}}<div class="device-shot active"><img src="{{feature_image}}" alt="{{feature_image_alt}}"></div>{{/if}}</div>{{/foreach}}
+                        </div></div>
+                        <img class="device-frame" src="{{asset 'story/designer/hand/phone-v2.svg'}}" alt="">
+                        <img class="device-hand-front" src="{{asset 'story/designer/hand/front-palm-v2.svg'}}" alt="">
+                        <img class="device-thumb" src="{{asset 'story/designer/hand/thumb-v2.svg'}}" alt="">
+                        <img class="device-cable" src="{{asset 'story/designer/hand/cable-v2.svg'}}" alt="">
+                    </div>
+                    <button type="button" class="arrow next" aria-label="[[nextProduct]]" data-product-direction="1"><img class="arrow-face arrow-face-default" src="{{asset 'ui/arrow-default-right.svg'}}" alt=""><img class="arrow-face arrow-face-hover" src="{{asset 'ui/arrow-hover-right.svg'}}" alt=""></button>
+                    <div class="product-dots" aria-label="{{copy 'story_products_label'}}">{{#foreach pages}}<button type="button" data-select-product="{{@index}}" class="{{#if @first}}active{{/if}}" aria-label="{{title}}" aria-pressed="{{#if @first}}true{{else}}false{{/if}}"></button>{{/foreach}}</div>
+                </div>
+            </div>
+        {{/get}}
+        </section>
+        <section id="faq" class="story-scene faq-scene" aria-label="{{copy 'story_faq_label'}}">
+            <div class="section-shell faq-shell"><div class="notebook">
+                <img class="notebook-art" src="{{asset 'story/designer/faq-notebook.svg'}}" alt="">
+                <div class="faq-list"><strong>FAQ</strong>
+                    {{#get "pages" filter="tag:hash-theme-faq-[[locale]]" order="published_at asc" limit="100"}}
+                        {{#foreach pages}}<details class="faq-item" name="faq" {{#if @first}}open{{/if}}><summary><span class="faq-question-text">{{title}}</span><span class="faq-icon" aria-hidden="true"></span></summary><div class="faq-answer">{{content}}</div></details>{{/foreach}}
+                    {{/get}}
+                </div>
+            </div></div>
+        </section>
+        {{#get "pages" filter="slug:theme-[[locale]]-join" limit="1"}}
+        {{#foreach pages}}
+        <section id="join" class="story-scene join-scene" aria-label="{{copy 'story_join_label'}}" data-recruiting="{{#has tag='#recruiting'}}open{{else}}closed{{/has}}">
+            <div class="section-shell join-shell">
+                <div class="join-head"><span class="eyebrow">{{copy 'story_join_eyebrow'}}</span><h2>{{title}}</h2>{{content}}</div>
+                <ul class="join-cards">
+                    {{#get "pages" filter="tag:hash-theme-role-[[locale]]" order="published_at asc" limit="100"}}
+                        {{#foreach pages}}<li class="join-card"><span class="join-stamp"><span>{{copy 'story_join_stamp_term'}}</span><span>{{copy 'story_join_stamp_semester'}}</span><strong>{{copy 'story_join_stamp_closed'}}</strong></span><h3>{{title}}</h3><p class="join-card-hook">{{custom_excerpt}}</p><div class="join-card-desc">{{content}}</div></li>{{/foreach}}
+                    {{/get}}
+                </ul>
+            </div>
+        </section>
+        {{/foreach}}{{/get}}
+        <span class="story-count hero-count" aria-hidden="true">1 / 5</span>
+    </div>
+</section>
+<section id="wishes" class="wish-invite" aria-labelledby="wish-invite-title">
+    <div class="wish-shell"><div class="wish-copy">
+        {{#get "pages" filter="slug:theme-[[locale]]-wish" limit="1"}}{{#foreach pages}}<h2 id="wish-invite-title">{{title}}</h2><div class="wish-invite-lede">{{content}}</div>{{/foreach}}{{/get}}
+        <a class="wish-cta" href="/wishpool/"><img class="wish-face wish-face-default" src="{{asset 'ui/wish-default.svg'}}" alt=""><img class="wish-face wish-face-hover" src="{{asset 'ui/wish-hover.svg'}}" alt=""><span class="wish-cta-label">{{copy 'wish_cta'}} →</span></a>
+    </div><div class="wish-art" aria-hidden="true"><img class="wish-machine" src="{{asset 'story/designer/wishpool/machine.svg'}}" alt=""><img class="wish-sticker" src="{{asset 'story/designer/wishpool/sticker.svg'}}" alt=""><img class="wish-hand" src="{{asset 'story/designer/wishpool/hand-ball.svg'}}" alt=""></div></div>
+</section>
+</div>

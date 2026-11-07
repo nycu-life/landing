@@ -1,5 +1,10 @@
 # SEO — indexable pages and retired URLs
 
+With `PUBLIC_SITE_ENGINE=ghost`, Ghost's native sitemap, canonical URLs and real
+404 responses replace the headless catalog described below. See
+[ghost-theme.md](ghost-theme.md) for component Page canonicals and legacy archival.
+Wish Pool and retired 410 routes remain owned by Node.
+
 Owner split for Search Console work: this repo (code, tests, deploy) is handled by
 the coding agent; Search Console properties, sitemap submission, and Google-side
 live tests are handled by Codex. Submitting or reading a sitemap is not the same

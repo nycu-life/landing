@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang='{{{block "lang"}}}' data-theme='light'>
+	<head>
+		<meta charset='utf-8' />
+		<meta name='viewport' content='width=device-width, initial-scale=1' />
+		<title>{{meta_title}}</title>
+		<script
+		>try{document.documentElement.dataset.theme=localStorage.getItem('nycu-life-theme')==='dark'?'dark':'light'}catch{}</script>
+		<link rel='stylesheet' href='{{asset "site.css"}}' />
+		{{ghost_head}}
+		{{{block 'ghost_head'}}}
+	</head>
+	<body class='ghost-theme {{body_class}}'>
+		<div class='app-shell'>
+			{{{block 'header'}}}
+			<main class='app-main' id='main-content'>{{{body}}}</main>
+			{{{block 'footer'}}}
+		</div>
+		<script src='{{asset "site.js"}}' defer></script>
+		{{ghost_foot}}
+	</body>
+</html>

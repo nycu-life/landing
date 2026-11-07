@@ -23,7 +23,12 @@
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
 		"storybook": "storybook dev -p 6006",
-		"build-storybook": "storybook build"
+		"build-storybook": "storybook build",
+		"cms:theme-build": "node scripts/build-ghost-theme.mjs",
+		"cms:migrate-theme": "node scripts/migrate-ghost-theme.mjs",
+		"cms:theme-install": "node scripts/install-ghost-theme.mjs",
+		"cms:theme-finalize": "node scripts/finalize-ghost-theme.mjs",
+		"cms:theme-check": "gscan -z dist/nycu-life.zip"
 	},
 	"devDependencies": {
 		"@chromatic-com/storybook": "^5.2.1",
@@ -54,7 +59,9 @@
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-storybook": "^10.4.2",
 		"eslint-plugin-svelte": "^3.19.0",
+		"fflate": "^0.8.3",
 		"globals": "^17.6.0",
+		"gscan": "^6.7.0",
 		"parse5": "^8.1.0",
 		"playwright": "^1.58.2",
 		"prettier": "^3.8.1",
