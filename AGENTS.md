@@ -3,6 +3,11 @@
 The official NYCU LIFE marketing site (`官網`). A SvelteKit app served by **adapter-node** in Docker. Public pages, shared chrome, Ghost dev log, comics, and sitemap render on request. The Wish API
 remains a separate Go service.
 
+**Native Ghost cutover:** `PUBLIC_SITE_ENGINE=ghost` delegates public HTML to the
+Handlebars theme in `theme/`; SvelteKit continues serving Wish Pool and process health.
+See `docs/ghost-theme.md` for native content editing, verification, staged deployment
+and rollback. The headless behavior below remains available until cutover and for rollback.
+
 ## Stack
 
 - **SvelteKit 2 / Svelte 5 / TypeScript 6**, **Vite 8**, **Tailwind CSS v4**

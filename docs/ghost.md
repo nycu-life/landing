@@ -1,5 +1,9 @@
 # Ghost CMS: site content, dev log, comics, and NYCU One sign-in
 
+For the native Ghost theme and its staged cutover, see [ghost-theme.md](ghost-theme.md).
+The Content API / SvelteKit architecture below applies while `PUBLIC_SITE_ENGINE`
+is unset, and remains available for rollback.
+
 The SvelteKit site runs with `adapter-node`. Home, About, shared navigation/footer, and Wish Pool render on request; `/devlog/`, `/devlog/<slug>/`, `/comics/`, `/comics/<slug>/`, and
 `/sitemap.xml` render on request with the same Svelte components and i18n.
 

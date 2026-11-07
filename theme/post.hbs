@@ -1,0 +1,12 @@
+{{!< default}}
+{{#contentFor "lang"}}zh-tw{{/contentFor}}
+{{#contentFor "header"}}{{> "zh-tw/header"}}{{/contentFor}}
+{{#contentFor "footer"}}{{> "zh-tw/footer"}}{{/contentFor}}
+{{#post}}
+<article class="page article-page {{post_class}}">
+    <header class="article-head"><time datetime="{{date format='YYYY-MM-DD'}}">{{date format="YYYY / MM / DD"}}</time><h1 class="article-title">{{title}}</h1>{{#if custom_excerpt}}<p class="article-lede">{{custom_excerpt}}</p>{{/if}}{{tags separator=" / "}}</header>
+    {{#if feature_image}}<figure><img class="article-cover" src="{{img_url feature_image size='xl'}}" alt="{{feature_image_alt}}">{{#if feature_image_caption}}<figcaption>{{feature_image_caption}}</figcaption>{{/if}}</figure>{{/if}}
+    <div class="prose gh-content">{{content}}</div>
+    <nav class="post-nav">{{#prev_post}}<a href="{{url}}" rel="prev">← {{title}}</a>{{/prev_post}}{{#next_post}}<a href="{{url}}" rel="next">{{title}} →</a>{{/next_post}}</nav>
+</article>
+{{/post}}

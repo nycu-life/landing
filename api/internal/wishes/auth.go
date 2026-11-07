@@ -17,11 +17,11 @@ const (
 	adminSessionCookie = "nycu_wish_admin"
 	oauthStateCookie   = "nycu_wish_oauth_state"
 	adminReturnPath    = "/wishpool/admin/"
-	// The CMS (Ghost under /cms/) is gated by Traefik forwardAuth against
-	// /api/wishes/auth/gate. Browsers only send this copy of the admin session
-	// to /cms/, so the gate can see it without widening the API cookie's path.
+	// Both the legacy /cms and native-theme /ghost Admin paths are gated.
+	// Keep both cookies during the staged rollout and rollback window.
 	cmsSessionCookie = "nycu_cms_session"
 	cmsPath          = "/cms"
+	ghostPath        = "/ghost"
 	adminSessionTTL  = 8 * time.Hour
 	oauthStateTTL    = 10 * time.Minute
 )
@@ -144,9 +144,9 @@ func (h *Handler) authCallback(w http.ResponseWriter, r *http.Request) {
 		h.internalError(w, r, err)
 		return
 	}
-	for _, path := range []string{"/api/wishes", cmsPath} {
+	for _, path := range []string{"/api/wishes", cmsPath, ghostPath} {
 		name := adminSessionCookie
-		if path == cmsPath {
+		if path == cmsPath || path == ghostPath {
 			name = cmsSessionCookie
 		}
 		http.SetCookie(w, &http.Cookie{
@@ -247,7 +247,7 @@ func (h *Handler) authGate(w http.ResponseWriter, r *http.Request) {
 	writeError(w, http.StatusUnauthorized, "sign in at /api/wishes/auth/login first")
 }
 
-// safeReturnPath accepts only local paths under /cms/ (the gated CMS); anything
+// safeReturnPath accepts only local paths under /cms/ or /ghost/ (gated CMS); anything
 // else (absolute or scheme-relative URLs, other paths) yields "".
 func safeReturnPath(raw string) string {
 	if raw == "" || strings.ContainsAny(raw, "\\\r\n") || strings.HasPrefix(raw, "//") {
@@ -257,7 +257,9 @@ func safeReturnPath(raw string) string {
 	if err != nil || parsed.Scheme != "" || parsed.Host != "" || parsed.User != nil {
 		return ""
 	}
-	if parsed.Path != cmsPath && !strings.HasPrefix(parsed.Path, cmsPath+"/") ||
+	allowed := parsed.Path == cmsPath || strings.HasPrefix(parsed.Path, cmsPath+"/") ||
+		parsed.Path == ghostPath || strings.HasPrefix(parsed.Path, ghostPath+"/")
+	if !allowed ||
 		strings.Contains(parsed.Path, "/../") || strings.HasSuffix(parsed.Path, "/..") {
 		return ""
 	}
@@ -317,7 +319,11 @@ func (h *Handler) clearOAuthState(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) clearAdminSession(w http.ResponseWriter, r *http.Request) {
-	for name, path := range map[string]string{adminSessionCookie: "/api/wishes", cmsSessionCookie: cmsPath} {
+	for _, path := range []string{"/api/wishes", cmsPath, ghostPath} {
+		name := cmsSessionCookie
+		if path == "/api/wishes" {
+			name = adminSessionCookie
+		}
 		http.SetCookie(w, &http.Cookie{
 			Name:     name,
 			Value:    "",

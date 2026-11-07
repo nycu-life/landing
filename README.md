@@ -1,5 +1,9 @@
 # sv
 
+NYCU LIFE 官網的 Ghost 原生主題與切換流程見 [docs/ghost-theme.md](docs/ghost-theme.md)。
+`theme/` 產生公開網站 HTML；SvelteKit 保留許願池。未啟用 `PUBLIC_SITE_ENGINE=ghost`
+時，原本的 SvelteKit 官網仍可運作，供分階段部署與回復。
+
 Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 
 ## Creating a project

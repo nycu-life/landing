@@ -1,0 +1,42 @@
+routes:
+  /:
+    template: home
+    data: page.theme-zh-tw-hero
+  /en/:
+    template: home-en
+    data: page.theme-en-hero
+  /about/:
+    template: page
+    data: page.theme-zh-tw-about
+  /en/about/:
+    template: page-en
+    data: page.theme-en-about
+  /wishpool/:
+    template: page
+    data: page.theme-wishpool
+  /en/devlog/:
+    controller: channel
+    template: index-en
+    filter: 'tag:[hash-devlog,devlog]+tag:-[hash-comics,comics]'
+  /en/comics/:
+    controller: channel
+    template: comics-en
+    filter: 'tag:[hash-comics,comics]'
+
+collections:
+  /comics/:
+    permalink: /comics/{slug}/
+    template: comics
+    filter: 'tag:[hash-comics,comics]'
+  /devlog/:
+    permalink: /devlog/{slug}/
+    template: index
+    filter: 'tag:[hash-devlog,devlog]+tag:-[hash-comics,comics]'
+  /news/:
+    permalink: /news/{slug}/
+    template: news
+    filter: 'tag:-[hash-devlog,devlog,hash-comics,comics]'
+
+taxonomies:
+  tag: /tag/{slug}/
+  author: /author/{slug}/

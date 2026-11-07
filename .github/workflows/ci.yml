@@ -37,6 +37,20 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      - name: Build and validate native Ghost theme
+        run: |
+          pnpm cms:theme-build
+          pnpm cms:theme-check
+
+      - name: Test server routing and content
+        run: pnpm exec vitest run --project server
+
+      - name: Upload installable Ghost theme
+        uses: actions/upload-artifact@v4
+        with:
+          name: nycu-life-ghost-theme
+          path: dist/nycu-life.zip
+
       - name: Test Ghost SSO adapter
         run: pnpm test:cms-sso
 
