@@ -16,6 +16,25 @@ export function themeProxyPath(pathname: string): string | null {
 	return pathname;
 }
 
+/** Stale Svelte clients must reload Ghost documents, never follow a data URL as a page. */
+export function ghostNavigationResponse(url: URL, isDataRequest: boolean): Response | null {
+	if (isDataRequest)
+		return new Response('This page requires a full document navigation.', {
+			status: 409,
+			headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' }
+		});
+	const pathname = url.pathname.replace(/(?:\/__data\.json)+\/?$/, '/');
+	if (pathname === url.pathname) return null;
+	const clean = new URL(url);
+	clean.pathname = pathname;
+	clean.searchParams.delete('x-sveltekit-trailing-slash');
+	clean.searchParams.delete('x-sveltekit-invalidated');
+	return new Response(null, {
+		status: 308,
+		headers: { location: clean.pathname + clean.search, 'cache-control': 'no-store' }
+	});
+}
+
 export async function proxyGhostTheme(
 	request: Request,
 	target: string,

@@ -84,6 +84,63 @@ test('vertical gestures step through products and release to the next chapter', 
 	await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(top);
 });
 
+test('all products keep the same phone size and center the development sticker', async ({
+	page
+}) => {
+	test.setTimeout(90000);
+	for (const viewport of [
+		{ width: 1440, height: 900 },
+		{ width: 768, height: 1024 },
+		{ width: 412, height: 778 },
+		{ width: 390, height: 844 },
+		{ width: 320, height: 568 }
+	]) {
+		await page.setViewportSize(viewport);
+		for (const prefix of ['', '/en']) {
+			await page.goto(`${prefix}/?motion=on#products`);
+			await expect(page.locator('.prototype-story')).toHaveAttribute('data-story-ready', 'true');
+			await page.evaluate(() => document.fonts.ready);
+			const sizes = [];
+			for (let index = 0; index < 4; index++) {
+				await page.locator(`[data-select-product="${index}"]`).click();
+				await page
+					.locator(`[data-product-index="${index}"]`)
+					.evaluate((element) =>
+						Promise.all(element.getAnimations().map((animation) => animation.finished))
+					);
+
+				const box = await page.locator('.device-phone').boundingBox();
+				if (!box) throw new Error('Missing phone');
+				sizes.push(box);
+			}
+			for (const box of sizes) {
+				expect
+					.soft(Math.abs(box.width - sizes[0].width), `${viewport.width}/${prefix} phone width`)
+					.toBeLessThan(1);
+				expect
+					.soft(Math.abs(box.height - sizes[0].height), `${viewport.width}/${prefix} phone height`)
+					.toBeLessThan(1);
+			}
+			if (process.env.VISUAL_AUDIT_SCREENSHOTS) {
+				await page.screenshot({
+					path: `${process.env.VISUAL_AUDIT_SCREENSHOTS}/maps-${viewport.width}-${prefix ? 'en' : 'zh-tw'}.png`,
+					animations: 'disabled'
+				});
+			}
+			if (viewport.width <= 900) {
+				const delta = await page.locator('[data-product-index="3"]').evaluate((copy) => {
+					const sticker = copy
+						.querySelector('.native-product-content > p:last-of-type')!
+						.getBoundingClientRect();
+					const parent = copy.getBoundingClientRect();
+					return Math.abs(sticker.x + sticker.width / 2 - parent.x - parent.width / 2);
+				});
+				expect.soft(delta, `${viewport.width}/${prefix} centered sticker`).toBeLessThan(1);
+			}
+		}
+	}
+});
+
 test('About retains vision cards, film, milestone path and wish hand-off in both locales', async ({
 	page
 }) => {

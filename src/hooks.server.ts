@@ -2,7 +2,11 @@ import { base } from '$app/paths';
 import type { Handle } from '@sveltejs/kit';
 import { getTextDirection } from '$lib/paraglide/runtime';
 import { paraglideMiddleware } from '$lib/paraglide/server';
-import { proxyGhostTheme, themeProxyPath } from '$lib/server/ghost-theme-proxy';
+import {
+	ghostNavigationResponse,
+	proxyGhostTheme,
+	themeProxyPath
+} from '$lib/server/ghost-theme-proxy';
 
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -39,6 +43,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 				headers: { location: path.slice('/pages'.length) + event.url.search }
 			});
 		if (themeProxyPath(path) !== null) {
+			const navigationResponse = ghostNavigationResponse(event.url, event.isDataRequest);
+			if (navigationResponse) return navigationResponse;
 			if (!process.env.GHOST_THEME_URL)
 				return new Response('Ghost theme upstream is not configured', { status: 503 });
 			return proxyGhostTheme(event.request, process.env.GHOST_THEME_URL);

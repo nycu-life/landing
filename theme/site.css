@@ -15,6 +15,15 @@ html:has(.prototype-story) {
 [hidden] {
 	display: none !important;
 }
+/* Reserve the tallest copy in the shared grid so switching products cannot
+   resize the phone; inactive copy remains hidden from sight and assistive tech. */
+@layer base {
+	.story-enhanced .product-copy[hidden] {
+		display: block !important;
+		visibility: hidden;
+		pointer-events: none;
+	}
+}
 .ghost-theme .logo-dark {
 	display: none;
 }
@@ -465,6 +474,7 @@ html:has(.prototype-story) {
 		font-size: 0.85rem;
 	}
 	.native-product-content > p:last-of-type {
+		margin-inline: auto;
 		margin-top: 0.25rem;
 		width: 7.25rem;
 		font-size: 0.78rem;
