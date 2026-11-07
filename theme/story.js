@@ -5,6 +5,11 @@ if (storyEl) {
 	const stageEl = storyEl.querySelector('.story-stage');
 	const products = [...storyEl.querySelectorAll('[data-product-index]')];
 	const aboutFilmFrame = storyEl.querySelector('.team-film iframe');
+	const filmSoundButton = storyEl.querySelector('.film-sound');
+	let aboutFilmMuted = true;
+	const syncFilmSoundButton = () => {
+		if (filmSoundButton) filmSoundButton.hidden = !aboutFilmShouldPlay || !aboutFilmMuted;
+	};
 	let aboutFilmLoaded = false,
 		aboutFilmShouldPlay = false,
 		aboutFilmAudioUnlocked = false;
@@ -284,7 +289,31 @@ if (storyEl) {
 			return;
 		// Once YouTube reports a real player state, it is ready. Continuing the startup
 		// retries after that point can immediately undo a viewer's tap on Pause (#78).
-		if (readAboutFilmPlayerState(event.data) !== null) clearAboutFilmRetries();
+		let message = event.data;
+		try {
+			if (typeof message === 'string') message = JSON.parse(message);
+		} catch {
+			return;
+		}
+		if (message?.event === 'onReady') syncAboutFilmPlayback();
+		const state = readAboutFilmPlayerState(message);
+		// Unstarted/cued messages do not confirm that playVideo was accepted.
+		if (state === 1 || state === 2 || state === 0) clearAboutFilmRetries();
+		if (typeof message?.info?.muted === 'boolean') {
+			aboutFilmMuted = message.info.muted;
+			syncFilmSoundButton();
+		}
+		if (message?.event === 'onAutoplayBlocked') {
+			const attemptedAudio = aboutFilmAudioUnlocked;
+			aboutFilmAudioUnlocked = false;
+			aboutFilmMuted = true;
+			syncFilmSoundButton();
+			// Recover muted autoplay when a previous page interaction did not grant audio.
+			if (attemptedAudio) {
+				sendAboutFilmCommand('mute');
+				sendAboutFilmCommand('playVideo');
+			}
+		}
 	};
 	const playAboutFilm = () => {
 		if (aboutFilmAudioUnlocked) {
@@ -293,7 +322,8 @@ if (storyEl) {
 		} else sendAboutFilmCommand('mute');
 		sendAboutFilmCommand('playVideo');
 	};
-	const unlockAboutFilmAudio = () => {
+	const unlockAboutFilmAudio = (event) => {
+		if (!event.isTrusted) return;
 		aboutFilmAudioUnlocked = true;
 		if (aboutFilmShouldPlay) playAboutFilm();
 	};
@@ -319,11 +349,18 @@ if (storyEl) {
 	const setAboutFilmPlayback = (shouldPlay) => {
 		aboutFilmShouldPlay = shouldPlay;
 		storyEl.dataset.aboutFilmShouldPlay = String(shouldPlay);
+		syncFilmSoundButton();
 		syncAboutFilmPlayback();
 	};
 	const onAboutFilmLoad = () => {
 		aboutFilmLoaded = true;
-		sendAboutFilmCommand('addEventListener', ['onStateChange']);
+		// The embedded player sends readiness and volume updates after this handshake.
+		aboutFilmFrame.contentWindow?.postMessage(
+			JSON.stringify({ event: 'listening', id: 'nycu-life-film' }),
+			'https://www.youtube-nocookie.com'
+		);
+		for (const name of ['onReady', 'onStateChange', 'onAutoplayBlocked'])
+			sendAboutFilmCommand('addEventListener', [name]);
 		syncAboutFilmPlayback();
 	};
 	/* Product stepper state. While the lock is engaged the page holds still and one scroll
@@ -443,7 +480,8 @@ if (storyEl) {
 				playlist: url.pathname.split('/').pop(),
 				playsinline: '1',
 				rel: '0',
-				enablejsapi: '1'
+				enablejsapi: '1',
+				origin: location.origin
 			}))
 				url.searchParams.set(key, value);
 			aboutFilmFrame.addEventListener('load', onAboutFilmLoad);
@@ -635,6 +673,7 @@ if (storyEl) {
 	window.addEventListener('keydown', onKeyDown);
 	window.addEventListener('hashchange', onHashChange);
 	window.addEventListener('message', onAboutFilmMessage);
+	filmSoundButton?.addEventListener('click', unlockAboutFilmAudio);
 	window.addEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
 	window.addEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
 	window.addEventListener('keydown', unlockAboutFilmAudio, { capture: true });

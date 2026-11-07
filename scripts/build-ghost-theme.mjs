@@ -93,6 +93,7 @@ for (const locale of ['zh-tw', 'en']) {
 		navigation: english ? '{{navigation type="secondary"}}' : '{{navigation}}',
 		previousProduct: english ? 'Previous product' : '上一個產品',
 		nextProduct: english ? 'Next product' : '下一個產品',
+		enableFilmSound: english ? 'Play with sound' : '開啟聲音',
 		section: 'DEVLOG',
 		sectionTitle: copy.devlog_page_title,
 		sectionDescription: copy.devlog_page_lede

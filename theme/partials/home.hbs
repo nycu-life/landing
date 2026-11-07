@@ -25,6 +25,7 @@
                 {{/get}}
                 <div class="team-film">
                     {{#get "pages" filter="slug:theme-[[locale]]-film" limit="1"}}{{#foreach pages}}{{content}}{{/foreach}}{{/get}}
+                    <button type="button" class="film-sound" hidden>[[enableFilmSound]]</button>
                 </div>
             </div>
         </section>

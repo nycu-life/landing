@@ -489,3 +489,26 @@ html:has(.prototype-story) {
 		width: 7rem;
 	}
 }
+
+/* A trusted click enables audio when the browser only permits muted autoplay. */
+.team-film .film-sound {
+	position: absolute;
+	z-index: 3;
+	right: 0.75rem;
+	bottom: 3rem;
+	padding: 0.5rem 0.9rem;
+	border: 1px solid var(--brand);
+	border-radius: 999px;
+	background: var(--brand);
+	color: white;
+	font: inherit;
+	font-size: 0.875rem;
+	cursor: pointer;
+}
+.team-film .film-sound[hidden] {
+	display: none;
+}
+.team-film .film-sound:focus-visible {
+	outline: 3px solid var(--ink);
+	outline-offset: 3px;
+}

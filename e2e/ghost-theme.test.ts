@@ -21,6 +21,33 @@ test('Ghost serves readable home content without JavaScript', async ({ browser }
 	await context.close();
 });
 
+test('film really autoplays muted, enables sound on click and respects Pause', async ({ page }) => {
+	test.setTimeout(60000);
+	await page.goto('/?motion=on#about');
+	const frame = page.frameLocator('.team-film iframe');
+	const video = frame.locator('video');
+	await expect
+		.poll(() => video.evaluate((v: HTMLVideoElement) => !v.paused && v.currentTime > 0), {
+			timeout: 30000
+		})
+		.toBe(true);
+	await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.muted)).toBe(true);
+	await page.getByRole('button', { name: '開啟聲音', exact: true }).click();
+	await expect
+		.poll(() => video.evaluate((v: HTMLVideoElement) => !v.muted && !v.paused && v.volume > 0))
+		.toBe(true);
+	await expect(page.locator('.film-sound')).toBeHidden();
+	// Pause the real media element; startup retries must not resume it.
+	await video.evaluate((v: HTMLVideoElement) => v.pause());
+	await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+	await expect(page.locator('.prototype-story')).toHaveAttribute(
+		'data-about-film-retrying',
+		'false'
+	);
+	await page.waitForTimeout(1300);
+	expect(await video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+});
+
 test('vertical gestures step through products and release to the next chapter', async ({
 	page
 }) => {

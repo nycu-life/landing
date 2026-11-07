@@ -149,3 +149,7 @@ node scripts/restore-ghost-pages.mjs --backup=<private-legacy-backup-directory> 
 視覺檢查需與原 Svelte 版在相同語系、外觀、視窗及章節對照，再跑完整矩陣。
 只通過 HTTP 或 DOM 幾何檢查，不能證明設計一致。Ghost 導覽文字、文章內容及自訂字型
 以編輯者設定為準，不會為了比對畫面而覆寫。
+
+首頁影片進入 About 的播放區間時自動播放，離開時暫停。瀏覽器未授予音訊播放權限時
+先靜音播放，顯示「開啟聲音」按鈕；點擊或鍵盤操作頁面後嘗試開聲。播放器回報被
+阻擋時回到靜音播放。YouTube 的手動暫停不會被啟動重試覆蓋。
