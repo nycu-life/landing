@@ -40,6 +40,8 @@ await writeFile(
 try {
 	await build({
 		configFile: false,
+		// Ghost serves this CSS and its bundled fonts from the same /assets directory.
+		base: './',
 		plugins: [tailwindcss()],
 		build: {
 			outDir: path.join(output, 'assets'),

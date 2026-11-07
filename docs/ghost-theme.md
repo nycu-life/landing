@@ -1,7 +1,8 @@
 # Ghost 原生官網主題
 
 這次轉換讓 **Ghost 直接產生官網 HTML**。`theme/` 是可上傳的原生 Handlebars
-主題，不會在瀏覽器取得 Content API key，也不靠 SvelteKit 渲染首頁。
+主題，由 Ghost 直接渲染首頁。Ghost 自帶的 Portal／搜尋可能嵌入公開 Content API key；
+Admin 憑證只留在服務端，不放入主題。
 `theme/site.js` 只加上捲動故事、產品切換和明暗模式；關閉 JavaScript 仍可閱讀內容。
 
 ## 網址和責任
@@ -94,7 +95,8 @@ e2e/ghost-theme.test.ts` 驗證無 JavaScript 閱讀、FAQ、手機選單與截�
 ## 正式切換順序
 
 1. 原始碼 PR 合併並發布 `v0.0.23` 映像後，先合併「前置版本更新」GitOps PR：
-   僅更新版本，相容 `/cms` 與 `/ghost` cookie 的 Wish API 先上線。
+   先執行資料庫／內容備份 Job，校驗完成後更新版本；相容 `/cms` 與 `/ghost`
+   cookie 的 Wish API 先上線。
    Node engine 與 Ghost `/cms` base 保持原設定，確認 rollout 完成再繼續。
 2. 備份 Ghost 資料庫、content volume 和目前映像版本。先執行內容轉換、主題安裝。
    工具會跳過既有 slug，並在 `.ghost-theme-backups/` 私下保存原主題 ZIP、路由與選單。
@@ -103,6 +105,9 @@ e2e/ghost-theme.test.ts` 驗證無 JavaScript 閱讀、FAQ、手機選單與截�
    它將 Ghost `url` 改成 `https://nycu.life`，probe 路徑改成
    `/ghost/api/admin/site/`；保留資料庫、PVC 和 SSO adapter。
 4. 將 `/ghost/api/content/` 設為公開例外，其餘 `/ghost` 套用同一個 NYCU One gate。
+   `/assets/`、`/public/`、`/content/`、`/favicon.ico` 和 sitemap XML（含子檔）
+   直接路由至 Ghost，避免 SvelteKit 頁面規則加上尾斜線而 404。
+   主題 CSS 的字型使用相對路徑，隨主題放在 `assets/` 內。
    舊 `/cms/ghost/api/content/`、`/cms/content/images/` 使用 StripPrefix `/cms`
    轉送至 Ghost，其他 `/cms` 交給 Node 轉址。
 5. Node 設定 `PUBLIC_SITE_ENGINE=ghost`、`GHOST_THEME_URL=http://landing-ghost:2368`，
