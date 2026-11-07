@@ -639,6 +639,29 @@ if (storyEl) {
 		// tall story runway settles its height only after layout, so re-aim at the element.
 		else if (hash) document.getElementById(hash)?.scrollIntoView({ behavior: 'instant' });
 	};
+	// The browser may keep following a fragment while late iframe/image layout settles.
+	// Reapply our timeline position after load, unless the viewer has already navigated.
+	const initialHash = location.hash;
+	let initialNavigationInterrupted = false;
+	const interruptInitialNavigation = (event) => {
+		if (event.isTrusted) initialNavigationInterrupted = true;
+	};
+	for (const type of ['wheel', 'touchstart', 'pointerdown', 'keydown'])
+		window.addEventListener(type, interruptInitialNavigation, { passive: true, capture: true });
+	window.addEventListener(
+		'load',
+		() => {
+			requestAnimationFrame(() => {
+				if (!initialNavigationInterrupted && initialHash && location.hash === initialHash) {
+					measure();
+					onHashChange();
+				}
+				for (const type of ['wheel', 'touchstart', 'pointerdown', 'keydown'])
+					window.removeEventListener(type, interruptInitialNavigation, { capture: true });
+			});
+		},
+		{ once: true }
+	);
 	const prepareFirstScene = async () => {
 		const images = Array.from(storyEl.querySelectorAll('.gacha-machine img'));
 		await Promise.allSettled(

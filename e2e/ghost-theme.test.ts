@@ -21,6 +21,23 @@ test('Ghost serves readable home content without JavaScript', async ({ browser }
 	await context.close();
 });
 
+test('initial About deep link survives late iframe loading', async ({ page }) => {
+	await page.route('https://www.youtube-nocookie.com/embed/**', async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 1400));
+		await route.fulfill({
+			contentType: 'text/html',
+			body: '<!doctype html><title>Delayed film</title>'
+		});
+	});
+	await page.goto('/?motion=on#about');
+	await expect(page.locator('.prototype-story')).toHaveAttribute('data-story-ready', 'true');
+	await expect(page.locator('.prototype-story')).toHaveAttribute('data-story-step-name', 'about');
+	await expect(page.locator('.prototype-story')).toHaveAttribute(
+		'data-about-film-should-play',
+		'true'
+	);
+});
+
 test('film really autoplays muted, enables sound on click and respects Pause', async ({ page }) => {
 	test.setTimeout(60000);
 	await page.goto('/?motion=on#about');
