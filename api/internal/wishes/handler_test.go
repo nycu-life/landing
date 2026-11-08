@@ -302,8 +302,8 @@ func TestAdminOIDCSessionFlowAndSameOriginProtection(t *testing.T) {
 	callbackRequest.AddCookie(stateCookie)
 	callback := httptest.NewRecorder()
 	handler.ServeHTTP(callback, callbackRequest)
-	if callback.Code != http.StatusFound || callback.Header().Get("Location") != adminReturnPath {
-		t.Fatalf("callback returned %d with redirect %q", callback.Code, callback.Header().Get("Location"))
+	if callback.Code != http.StatusOK || !bytes.Contains(callback.Body.Bytes(), []byte(adminReturnPath)) {
+		t.Fatalf("callback returned %d with body %q", callback.Code, callback.Body.String())
 	}
 	if auth.code != "authorization-code" {
 		t.Fatalf("callback exchanged code %q", auth.code)
@@ -525,8 +525,8 @@ func TestCMSGateUsesTheAdminSignIn(t *testing.T) {
 	callbackRequest.AddCookie(responseCookie(t, login, oauthStateCookie))
 	callback := httptest.NewRecorder()
 	handler.ServeHTTP(callback, callbackRequest)
-	if callback.Header().Get("Location") != "/cms/ghost/" {
-		t.Fatalf("callback returned to %q", callback.Header().Get("Location"))
+	if callback.Code != http.StatusOK || !bytes.Contains(callback.Body.Bytes(), []byte("/cms/ghost/")) {
+		t.Fatalf("callback returned %d with body %q", callback.Code, callback.Body.String())
 	}
 	cms := responseCookie(t, callback, cmsSessionCookie)
 	if cms.Path != cmsPath || !cms.HttpOnly || cms.SameSite != http.SameSiteLaxMode {
@@ -550,8 +550,8 @@ func TestNativeGhostCookieLifecycle(t *testing.T) {
 	callbackRequest.AddCookie(responseCookie(t, login, oauthStateCookie))
 	callback := httptest.NewRecorder()
 	handler.ServeHTTP(callback, callbackRequest)
-	if callback.Header().Get("Location") != "/ghost/" {
-		t.Fatalf("native callback returned to %q", callback.Header().Get("Location"))
+	if callback.Code != http.StatusOK || !bytes.Contains(callback.Body.Bytes(), []byte("/ghost/")) {
+		t.Fatalf("native callback returned %d with body %q", callback.Code, callback.Body.String())
 	}
 	var native *http.Cookie
 	for _, cookie := range callback.Result().Cookies() {
