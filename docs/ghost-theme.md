@@ -164,3 +164,11 @@ Ghost，也不讓 Ghost 尾斜線轉址變成無限資料轉址。已累積 `__d
 
 主題 1.0.4 將行動版「開發中」貼紙置中，並保留所有產品文案中最高的一份所需空間，
 讓同一視窗切換四項產品時手機尺寸一致。未選中的文案仍不可見、不可互動。
+
+## NYCU One 登入回呼
+
+成員登入 NYCU One 後應直接進入自己對應的 Ghost staff 帳號。OIDC callback 的
+重新導向必須回傳 `Referrer-Policy: no-referrer`，避免瀏覽器將 Authentik 登入頁的
+外部 Referer 繼續帶到 Ghost，導致 Ghost 的 session 來源檢查拒絕登入。保留 Ghost
+原有來源檢查，不需第二組 Ghost 密碼。驗證時需清除官網 cookie，並模擬從 IdP
+頁面返回；只有既有 IdP session 的靜默重新導向無法涵蓋這個情境。

@@ -298,6 +298,7 @@ func TestAdminOIDCSessionFlowAndSameOriginProtection(t *testing.T) {
 	)
 	callbackRequest.Host = "nycu.life"
 	callbackRequest.Header.Set("X-Forwarded-Proto", "https")
+	callbackRequest.Header.Set("Referer", "https://auth.nycu.one/")
 	callbackRequest.AddCookie(stateCookie)
 	callback := httptest.NewRecorder()
 	handler.ServeHTTP(callback, callbackRequest)
@@ -306,6 +307,9 @@ func TestAdminOIDCSessionFlowAndSameOriginProtection(t *testing.T) {
 	}
 	if auth.code != "authorization-code" {
 		t.Fatalf("callback exchanged code %q", auth.code)
+	}
+	if callback.Header().Get("Referrer-Policy") != "no-referrer" {
+		t.Fatal("callback must clear the IdP referrer before redirecting to Ghost")
 	}
 	sessionCookie := responseCookie(t, callback, adminSessionCookie)
 	if !sessionCookie.HttpOnly || !sessionCookie.Secure || sessionCookie.SameSite != http.SameSiteLaxMode {

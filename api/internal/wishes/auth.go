@@ -98,6 +98,10 @@ func (h *Handler) authLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) authCallback(w http.ResponseWriter, r *http.Request) {
+	// A browser returning from the IdP can retain its cross-origin Referer
+	// through this redirect. Ghost must establish its session at the Admin
+	// origin, so stop forwarding that referrer rather than relaxing its checks.
+	w.Header().Set("Referrer-Policy", "no-referrer")
 	cookie, err := r.Cookie(oauthStateCookie)
 	if err != nil {
 		h.redirectAdminAuthError(w, r, "invalid_callback")
