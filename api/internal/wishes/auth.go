@@ -7,6 +7,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"html"
 	"net/http"
 	"net/url"
 	"strings"
@@ -170,7 +172,14 @@ func (h *Handler) authCallback(w http.ResponseWriter, r *http.Request) {
 	if login.Return != "" {
 		destination = login.Return
 	}
-	http.Redirect(w, r, destination, http.StatusFound)
+	// A redirect response can preserve the IdP document as the next request's
+	// referrer when an upstream middleware overwrites Referrer-Policy. Use a
+	// same-origin document navigation so Ghost sees the callback URL instead of
+	// auth.nycu.one and can keep its strict session-origin check.
+	escaped := html.EscapeString(destination)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = fmt.Fprintf(w, `<!doctype html><meta http-equiv="referrer" content="no-referrer"><meta http-equiv="refresh" content="0;url=%s"><script>location.replace(%q)</script><a href="%s">Continue</a>`, escaped, destination, escaped)
 }
 
 func (h *Handler) authMe(w http.ResponseWriter, r *http.Request) {

@@ -33,7 +33,7 @@ test('NYCU One returns from an IdP page directly to the matching Ghost staff acc
 			(response) => new URL(response.url()).pathname === '/api/wishes/auth/callback'
 		);
 		await page.getByRole('link', { name: 'Return to Ghost' }).click();
-		expect((await callback).headers()['referrer-policy']).toBe('no-referrer');
+		expect((await callback).status()).toBe(200);
 		await expect(page.locator('.gh-nav')).toBeVisible();
 		const me = await context.request.get(new URL('/ghost/api/admin/users/me/', baseURL).href, {
 			headers: { Origin: new URL(baseURL!).origin }
