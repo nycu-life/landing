@@ -9,7 +9,7 @@ export function themeProxyPath(pathname: string): string | null {
 		return null;
 	}
 	if (/^\/(?:ghost|cms|api)(?:\/|$)/i.test(decoded)) return null;
-	if (/^\/(?:wishpool|_app|healthz|social)(?:\/|$)/.test(decoded)) return null;
+	if (/^\/(?:wishpool|_app|healthz)(?:\/|$)/.test(decoded)) return null;
 	if (/^\/(?:brand|ui|story|og)\//.test(decoded)) return null;
 	// Product screenshots are static files; the /products/ index itself is a Ghost page.
 	if (/^\/products\/[^/]+\.[a-z0-9]+$/i.test(decoded)) return null;

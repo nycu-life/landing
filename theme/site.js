@@ -70,62 +70,119 @@ if (productEntries.length) {
 	});
 }
 
-// 最新消息: Instagram and Threads posts from the Node service. Without them the
-// profile links in the markup stay as the fallback.
-const socialFeed = document.querySelector('[data-social-feed]');
-if (socialFeed) {
-	const list = socialFeed.querySelector('[data-social-list]');
-	const fallback = socialFeed.querySelector('[data-social-fallback]');
-	const dateFormat = new Intl.DateTimeFormat(document.documentElement.lang || 'zh-TW', {
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit'
-	});
-	const label = { instagram: 'Instagram', threads: 'Threads' };
-	fetch('/social/feed.json', { headers: { accept: 'application/json' } })
-		.then((response) => (response.ok ? response.json() : { posts: [] }))
-		.then(({ posts = [] }) => {
-			if (!posts.length) return;
-			list.replaceChildren(
-				...posts.map((post) => {
-					const item = document.createElement('li');
-					item.className = `social-card social-${post.network}`;
-					const link = document.createElement('a');
-					link.href = post.permalink;
-					link.target = '_blank';
-					link.rel = 'noopener noreferrer';
-					if (post.image) {
-						const image = document.createElement('img');
-						image.src = post.image;
-						image.alt = '';
-						image.loading = 'lazy';
-						image.decoding = 'async';
-						link.append(image);
-					}
-					const copy = document.createElement('div');
-					copy.className = 'social-card-copy';
-					const meta = document.createElement('p');
-					meta.className = 'social-card-meta';
-					const network = document.createElement('span');
-					network.textContent = label[post.network] ?? post.network;
-					const time = document.createElement('time');
-					time.dateTime = post.timestamp;
-					time.textContent = dateFormat.format(new Date(post.timestamp));
-					meta.append(network, time);
-					const text = document.createElement('p');
-					text.className = 'social-card-text';
-					text.textContent = post.text;
-					const open = document.createElement('span');
-					open.className = 'social-card-open';
-					open.textContent = `${socialFeed.dataset.openLabel} →`;
-					copy.append(meta, text, open);
-					link.append(copy);
-					item.append(link);
-					return item;
-				})
-			);
-			list.hidden = false;
-			fallback.hidden = true;
-		})
-		.catch(() => {});
+// Instagram and Threads posts: the editor pastes a post link on its own line (or a
+// bookmark card) and the page shows the network's official embed. On /news/ a post
+// whose body is only such a link appears as the embed instead of a text card.
+const SOCIAL_POSTS = [
+	{
+		network: 'instagram',
+		pattern: /^https?:\/\/(?:www\.)?instagram\.com\/(?:[\w.]+\/)?(p|reel|tv)\/([\w-]+)/i,
+		permalink: (match) => `https://www.instagram.com/${match[1].toLowerCase()}/${match[2]}/`,
+		script: 'https://www.instagram.com/embed.js',
+		process: () => window.instgrm?.Embeds.process()
+	},
+	{
+		network: 'threads',
+		pattern: /^https?:\/\/(?:www\.)?threads\.(?:com|net)\/@([\w.]+)\/post\/([\w-]+)/i,
+		permalink: (match) => `https://www.threads.com/@${match[1]}/post/${match[2]}`,
+		script: 'https://www.threads.com/embed.js',
+		// Threads' script scans the page once when it loads; reloading it embeds later blockquotes.
+		process: null
+	}
+];
+const socialPost = (href) => {
+	for (const kind of SOCIAL_POSTS) {
+		const match = kind.pattern.exec(href ?? '');
+		if (match) return { kind, url: kind.permalink(match) };
+	}
+	return null;
+};
+const OFFICIAL_EMBEDS = 'blockquote.instagram-media, blockquote.text-post-media';
+/** The social post link an element stands for, when the element is nothing else. */
+const standaloneSocialLink = (element) => {
+	if (element.matches('.kg-bookmark-card'))
+		return socialPost(element.querySelector('a.kg-bookmark-container')?.href);
+	if (element.matches('p')) {
+		const link = element.querySelector('a');
+		if (
+			link &&
+			element.children.length === 1 &&
+			element.textContent.trim() === link.textContent.trim()
+		)
+			return socialPost(link.href);
+	}
+	return null;
+};
+const socialEmbed = ({ kind, url }) => {
+	const figure = document.createElement('figure');
+	figure.className = `social-embed social-embed-${kind.network}`;
+	const quote = document.createElement('blockquote');
+	const link = document.createElement('a');
+	link.href = url;
+	link.target = '_blank';
+	link.rel = 'noopener noreferrer';
+	link.textContent = url;
+	quote.append(link);
+	if (kind.network === 'instagram') {
+		quote.className = 'instagram-media';
+		quote.dataset.instgrmPermalink = url;
+		quote.dataset.instgrmVersion = '14';
+	} else {
+		quote.className = 'text-post-media';
+		quote.dataset.textPostPermalink = url;
+		quote.dataset.textPostVersion = '0';
+	}
+	figure.append(quote);
+	return figure;
+};
+/** Replace standalone social links inside `container`; returns the networks converted. */
+const embedSocialLinks = (container) => {
+	const used = new Set();
+	for (const element of container.querySelectorAll(':scope > p, :scope > .kg-bookmark-card')) {
+		const post = standaloneSocialLink(element);
+		if (!post) continue;
+		element.replaceWith(socialEmbed(post));
+		used.add(post.kind.network);
+	}
+	return used;
+};
+const loadSocialScripts = (networks) => {
+	for (const kind of SOCIAL_POSTS) {
+		if (!networks.has(kind.network)) continue;
+		const loaded = document.querySelector(`script[src="${kind.script}"]`);
+		if (loaded && kind.process) {
+			kind.process();
+			continue;
+		}
+		loaded?.remove();
+		const script = document.createElement('script');
+		script.src = kind.script;
+		script.async = true;
+		document.body.append(script);
+	}
+};
+const socialNetworks = new Set();
+for (const body of document.querySelectorAll('.article-page .gh-content'))
+	for (const network of embedSocialLinks(body)) socialNetworks.add(network);
+for (const item of document.querySelectorAll('[data-news-item]')) {
+	const template = item.querySelector('template[data-news-content]');
+	const body = template?.content;
+	template?.remove();
+	if (!body) continue;
+	// Ghost HTML cards keep the network's own <script>; the page loads it once instead.
+	for (const script of body.querySelectorAll('script')) script.remove();
+	const blocks = [...body.children].filter(
+		(element) => !(element.matches('p') && !element.textContent.trim() && !element.children.length)
+	);
+	if (blocks.length !== 1) continue;
+	const post = standaloneSocialLink(blocks[0]);
+	const official = blocks[0].matches(OFFICIAL_EMBEDS)
+		? blocks[0]
+		: blocks[0].querySelector(OFFICIAL_EMBEDS);
+	if (!post && !official) continue;
+	item.replaceChildren(post ? socialEmbed(post) : blocks[0]);
+	item.classList.add('news-item-social');
+	if (post) socialNetworks.add(post.kind.network);
+	else socialNetworks.add(official.matches('.instagram-media') ? 'instagram' : 'threads');
 }
+loadSocialScripts(socialNetworks);

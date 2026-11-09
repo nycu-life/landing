@@ -645,126 +645,78 @@ html:has(.prototype-story) {
 	}
 }
 
-/* 最新消息 (/news/): Instagram and Threads posts, then Ghost announcements. */
-.social-feed,
-.news-posts {
-	margin-top: 2.5rem;
-}
-.social-feed-head {
+/* 最新消息 (/news/): Ghost posts; a post that is only an Instagram or Threads
+   link shows the network's official embed (theme/site.js). */
+.news-follow {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
-	justify-content: space-between;
-	gap: 0.5rem 1.5rem;
-	margin-bottom: 1.25rem;
-}
-.social-feed h2,
-.news-posts h2 {
-	margin: 0;
-	font-size: 1.5rem;
-}
-.news-posts h2 {
-	margin-bottom: 1.25rem;
+	gap: 0.5rem 1rem;
+	margin: 1.5rem 0 0;
+	color: var(--ink-soft);
 }
 .social-profiles {
-	display: flex;
+	display: inline-flex;
 	gap: 1rem;
-	margin: 0;
 	font-weight: 650;
 }
 .social-profiles a {
 	color: var(--brand-ink);
 }
-.social-fallback {
-	margin: 0;
-	padding: 1.5rem;
-	border: 1px dashed var(--line-strong, var(--line));
-	border-radius: 1.2rem;
-	color: var(--ink-soft);
-}
-.social-fallback[hidden],
-.social-grid[hidden] {
-	display: none;
-}
-.social-grid {
+.news-stream {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 1.25rem;
-	margin: 0;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: start;
+	gap: 1.5rem;
+	margin: 2.5rem 0 0;
 	padding: 0;
 	list-style: none;
 }
-.social-card a {
+.news-item > .native-post-card {
+	height: 100%;
+}
+.news-item {
+	min-width: 0;
+}
+.social-embed,
+.news-item-social > * {
 	display: flex;
 	flex-direction: column;
-	height: 100%;
-	overflow: hidden;
+	align-items: center;
+	min-width: 0;
+	margin: 0;
+}
+.article-page .social-embed {
+	margin-block: 2rem;
+}
+/* The networks size their own iframes; keep them inside narrow columns. */
+.social-embed blockquote,
+.social-embed iframe,
+.news-item-social iframe,
+.news-item-social blockquote {
+	width: 100% !important;
+	max-width: 540px !important;
+	min-width: 0 !important;
+	margin: 0 auto !important;
+}
+.social-embed blockquote {
+	padding: 1.25rem;
 	background: var(--surface);
 	border: 1px solid var(--line);
-	border-radius: 1.2rem;
-	color: inherit;
-	text-decoration: none;
-	transition: transform 0.15s ease;
-}
-.social-card a:hover {
-	transform: translateY(-2px);
-}
-.social-card a:focus-visible {
-	outline: 3px solid var(--brand);
-	outline-offset: 3px;
-}
-.social-card img {
-	width: 100%;
-	aspect-ratio: 1;
-	object-fit: cover;
-	background: var(--line);
-}
-.social-card-copy {
-	display: flex;
-	flex: 1;
-	flex-direction: column;
-	gap: 0.55rem;
-	padding: 1.1rem 1.2rem 1.2rem;
-}
-.social-card-meta {
-	display: flex;
-	justify-content: space-between;
-	gap: 0.5rem;
-	margin: 0;
-	color: var(--ink-soft);
-	font-size: 0.8rem;
-	font-weight: 650;
-}
-.social-card-text {
-	display: -webkit-box;
-	overflow: hidden;
-	margin: 0;
-	line-height: 1.6;
-	white-space: pre-line;
+	border-radius: 1rem;
 	overflow-wrap: anywhere;
-	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 5;
-	line-clamp: 5;
 }
-.social-card-open {
-	margin-top: auto;
-	color: var(--brand-ink);
-	font-size: 0.85rem;
-	font-weight: 650;
+/* Threads keeps its source blockquote next to the rendered iframe. */
+.social-embed iframe.text-post-media ~ blockquote,
+.news-item-social iframe.text-post-media ~ blockquote {
+	display: none;
 }
-@media (max-width: 900px) {
-	.social-grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
+.news-item .native-post-copy p {
+	overflow-wrap: anywhere;
 }
-@media (max-width: 560px) {
-	.social-grid {
-		grid-template-columns: 1fr;
-	}
-}
-@media (prefers-reduced-motion: reduce) {
-	.social-card a {
-		transition: none;
+@media (max-width: 767px) {
+	.news-stream {
+		grid-template-columns: minmax(0, 1fr);
 	}
 }
 :root[data-theme='dark'] .product-entry-body > p a {
