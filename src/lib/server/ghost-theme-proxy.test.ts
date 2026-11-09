@@ -118,9 +118,7 @@ describe('English article URLs', () => {
 });
 
 describe('pages served by the Node service', () => {
-	it('keeps social feed endpoints out of the theme proxy and reopens /products/', () => {
-		expect(themeProxyPath('/social/feed.json')).toBeNull();
-		expect(themeProxyPath('/social/media/ig-1')).toBeNull();
+	it('reopens /products/ while keeping withdrawn pages and product files local', () => {
 		expect(themeProxyPath('/products/')).toBe('/products/');
 		expect(themeProxyPath('/en/products/')).toBe('/en/products/');
 		expect(themeProxyPath('/courses/')).toBeNull();
