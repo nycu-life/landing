@@ -449,7 +449,6 @@
 							class:is-new={justCreatedId === wish.id}
 							class:is-fulfilled={fulfilled}
 						>
-							<img class="wish-card-frame" src="{base}/wishpool/card-frame.svg" alt="" />
 							<span class="wish-card-meta">
 								<span class="wish-card-category" data-category={wish.category}
 									>{categoryLabel(wish.category)}</span
@@ -1097,27 +1096,21 @@
 		flex-direction: column;
 		min-height: 11.5rem;
 		gap: 0.7rem;
-		border: 0;
-		border-radius: 0;
-		padding: 1.35rem 1.55rem 1.25rem;
-		background: transparent;
+		/* A plain outline with an offset shadow echoes the sketch frame but, unlike a
+		   stretched SVG, keeps its corners and stroke whatever height a reply gives it. */
+		border: 2px solid #000033;
+		border-radius: 1.1rem;
+		padding: 1.35rem 1.4rem 1.15rem;
+		background: #fff;
+		box-shadow: 0.45rem 0.45rem 0 #ccccff;
 		color: #111c36;
-	}
-	.wish-card-frame {
-		position: absolute;
-		z-index: 0;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: fill;
-		pointer-events: none;
 	}
 	.wish-card::before {
 		content: '';
 		position: absolute;
 		z-index: 2;
-		top: 0.35rem;
-		right: 1.15rem;
+		top: -0.45rem;
+		right: 1.4rem;
 		width: 2rem;
 		height: 0.7rem;
 		background: rgba(196, 203, 255, 0.68);
@@ -1461,7 +1454,7 @@
 		}
 		.wish-card {
 			min-height: 10.75rem;
-			padding-inline: 1.4rem;
+			padding-inline: 1.2rem;
 		}
 	}
 

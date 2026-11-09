@@ -367,17 +367,15 @@ test('wide wish pool keeps designer frames aligned without a tinted page seam', 
 
 	const readLayout = () =>
 		page.evaluate(async () => {
-			const [composerSource, cardSource] = await Promise.all([
-				fetch('/wishpool/composer-frame.svg').then((response) => response.text()),
-				fetch('/wishpool/card-frame.svg').then((response) => response.text())
-			]);
+			const composerSource = await fetch('/wishpool/composer-frame.svg').then((response) =>
+				response.text()
+			);
 			const readAspectMode = (source: string) =>
 				new DOMParser()
 					.parseFromString(source, 'image/svg+xml')
 					.documentElement.getAttribute('preserveAspectRatio');
 			return {
 				composerAspectMode: readAspectMode(composerSource),
-				cardAspectMode: readAspectMode(cardSource),
 				pageBackground: getComputedStyle(document.querySelector<HTMLElement>('.wish-page')!)
 					.backgroundImage,
 				overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -395,8 +393,53 @@ test('wide wish pool keeps designer frames aligned without a tinted page seam', 
 		await expect(page.locator('.wish-card')).toHaveCount(1);
 		const result = await readLayout();
 		expect(result.composerAspectMode).toBe('none');
-		expect(result.cardAspectMode).toBe('none');
 		expect(result.pageBackground).toBe('none');
 		expect(result.overflow).toBe(0);
+	}
+});
+
+test('wish card frames grow with long team replies instead of clipping them', async ({ page }) => {
+	const longReply = [
+		'嗨嗨！我們有跟課外活動輔導一組聯絡。',
+		'',
+		'以下為陽明校區目前的體能類社團清單：',
+		...Array.from({ length: 10 }, (_, index) => `${index + 1}. 示範社團 ${index + 1}`),
+		'',
+		'若有其他需求，都可以跟我們討論喲！'
+	].join('\n');
+	const wishes = [
+		{ ...fulfilledWishes[0], id: 'wish-table-tennis', title: '希望陽明有桌球社', reply: longReply },
+		...fulfilledWishes
+	];
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.route('**/api/wishes**', (route) => route.fulfill({ json: { data: wishes } }));
+
+	await page.goto('/wishpool/');
+	await page.getByRole('tab', { name: /已實現/ }).click();
+	const cards = page.locator('#wishes .wish-card');
+	await expect(cards).toHaveCount(3);
+
+	const escapes = await cards.evaluateAll((elements) =>
+		elements.flatMap((card) => {
+			const box = card.getBoundingClientRect();
+			const border = parseFloat(getComputedStyle(card).borderTopWidth);
+			return [...card.children]
+				.map((child) => child.getBoundingClientRect())
+				.filter(
+					(child) =>
+						child.top < box.top + border ||
+						child.bottom > box.bottom - border ||
+						child.left < box.left + border ||
+						child.right > box.right - border
+				)
+				.map(() => card.querySelector('.wish-card-title')?.textContent ?? '');
+		})
+	);
+	expect(escapes).toEqual([]);
+	if (process.env.VISUAL_AUDIT_SCREENSHOTS) {
+		await page.locator('#wishes').screenshot({
+			path: `${process.env.VISUAL_AUDIT_SCREENSHOTS}/wish-pool-long-reply.png`,
+			animations: 'disabled'
+		});
 	}
 });
