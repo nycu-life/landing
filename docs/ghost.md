@@ -125,11 +125,17 @@ with the same email. No shared password is needed by the bridge. Ghost's own
 role and author/history records therefore remain per person. The gate logs the
 NYCU One subject when the session is created.
 
-Ghost does not create staff users through the SSO adapter. An Owner must invite
-or create each staff email in Ghost first, then assign its Ghost role. A user
-whose NYCU One email has no matching active Ghost staff account is denied by the
-adapter. This makes the Ghost staff list the CMS allowlist even though the outer
-NYCU One gate can authenticate any account.
+On the first sign-in, a NYCU One email with no Ghost staff account gets one
+automatically as a **Contributor**: drafts only, no publishing. An
+Administrator promotes it under Settings → Staff when needed. Ghost's role then
+stays authoritative, and a suspended account is never re-created or unlocked.
+`NYCU_CMS_SSO_PROVISION_ROLE` picks the role for new accounts (`Contributor` by
+default, or `Author`) or turns provisioning off (`none`). Stronger roles are
+always granted by hand.
+
+Who may reach the CMS at all is therefore decided by the `wishpool-admin` NYCU
+One (Authentik) application, the same sign-in that already grants Wish Pool
+moderation. Keep its access policy limited to team members.
 
 `docker/ghost/Dockerfile` packages the adapter outside the persistent content
 volume. Activate with `adapters__sso__active=NycuOneSSO` and inject the same

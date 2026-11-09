@@ -9,8 +9,12 @@
  * the request it forwards to Ghost (replacing any client-supplied value).
  *
  * This adapter verifies that token and signs the visitor in as the Ghost staff
- * account with the same email as the NYCU One identity. Ghost staff accounts
- * must be invited by an owner first; their Ghost role remains authoritative.
+ * account with the same email as the NYCU One identity. On the first sign-in
+ * without an account it creates one as a Contributor (drafts only), which an
+ * Administrator can later promote; the Ghost role remains authoritative and a
+ * suspended account stays suspended. `NYCU_CMS_SSO_PROVISION_ROLE` picks the
+ * role for new accounts (`Contributor` or `Author`) or turns this off (`none`).
+ * Who may reach the Admin at all is decided by the gate (the NYCU One app).
  * `NYCU_CMS_SSO_STAFF_EMAIL` is retained only as a short-lived migration
  * fallback for tokens minted by an older wish-api image that do not include an
  * email. Without an identity email (or that fallback) it does nothing.
@@ -31,6 +35,51 @@ const CLOCK_SKEW_S = 60;
 // Ghost staff statuses that may sign in (`warn-*` are active users nearing a lockout).
 const ACTIVE_STATUSES = new Set(['active', 'warn-1', 'warn-2', 'warn-3', 'warn-4']);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Roles a new account may get automatically; anything stronger is granted by hand.
+const PROVISION_ROLES = new Set(['Contributor', 'Author']);
+const GHOST_ROOTS = () => [
+	process.cwd(),
+	path.join(process.cwd(), 'current'),
+	'/var/lib/ghost/current'
+];
+
+function provisionRole() {
+	const raw = (process.env.NYCU_CMS_SSO_PROVISION_ROLE ?? 'Contributor').trim();
+	if (/^(none|off|false|0)$/i.test(raw)) return null;
+	const role = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+	if (PROVISION_ROLES.has(role)) return role;
+	console.warn(`[NycuOneSSO] ignoring NYCU_CMS_SSO_PROVISION_ROLE=${raw}; using Contributor`);
+	return 'Contributor';
+}
+
+/**
+ * Create a staff account through Ghost's own User model (the SSO base class only
+ * offers lookups). The password is random and never shown: these accounts sign
+ * in through NYCU One.
+ */
+async function createGhostStaff({ email, name, role }) {
+	let models;
+	for (const root of GHOST_ROOTS()) {
+		try {
+			models = require(path.join(root, 'core/server/models'));
+			break;
+		} catch {
+			// try the next root
+		}
+	}
+	if (!models?.User) throw new Error('Cannot load Ghost models');
+	const user = await models.User.add(
+		{
+			email,
+			name,
+			password: crypto.randomBytes(32).toString('base64url'),
+			status: 'active',
+			roles: [role]
+		},
+		{ context: { internal: true } }
+	);
+	return { id: user.id, email: user.get('email'), status: user.get('status') };
+}
 
 /** The base class from Ghost's own install: the adapter lives outside Ghost's node_modules. */
 function loadSSOBase() {
@@ -96,6 +145,9 @@ function verifyToken(token, secret, nowMs = Date.now()) {
 const SSOBase = loadSSOBase();
 
 class NycuOneSSO extends SSOBase {
+	/** Replaced in tests; Ghost's User model in production. */
+	createStaff = createGhostStaff;
+
 	/**
 	 * Only the Admin entry page (`GET <subdir>/ghost/`, a full page load) signs in:
 	 * Ghost regenerates the session on every SSO sign-in, so doing it for each
@@ -123,13 +175,36 @@ class NycuOneSSO extends SSOBase {
 			console.warn(`[NycuOneSSO] NYCU One subject ${identity.sub} has no usable email`);
 			return null;
 		}
-		const user = await this.getUserByEmail(email);
+		let user = await this.getUserByEmail(email);
+		if (!user && identityEmail) user = await this.provision(identity, identityEmail);
 		if (!user || (user.status && !ACTIVE_STATUSES.has(user.status))) {
 			console.warn(`[NycuOneSSO] staff account ${email} is missing or not active`);
 			return null;
 		}
 		console.info(`[NycuOneSSO] signed in NYCU One subject ${identity.sub} as Ghost staff ${email}`);
 		return user;
+	}
+
+	/** First sign-in: create the account, or null when provisioning is off or fails. */
+	async provision(identity, email) {
+		const role = provisionRole();
+		if (!role) return null;
+		const name = (identity.name || '').trim().slice(0, 191) || email.split('@')[0];
+		try {
+			const user = await this.createStaff({ email, name, role });
+			console.info(
+				`[NycuOneSSO] created ${role} account ${email} for NYCU One subject ${identity.sub}`
+			);
+			return user;
+		} catch (error) {
+			// A parallel first sign-in may have created it a moment ago.
+			const existing = await this.getUserByEmail(email).catch(() => null);
+			if (existing) return existing;
+			console.warn(
+				`[NycuOneSSO] could not create an account for ${email}: ${error?.message ?? error}`
+			);
+			return null;
+		}
 	}
 }
 

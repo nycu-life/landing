@@ -88,3 +88,63 @@ test('keeps the shared account only as a migration fallback for old tokens', asy
 	assert.equal(await adapter.getUserForIdentity({ sub: 'old-token' }), user);
 	delete process.env.NYCU_CMS_SSO_STAFF_EMAIL;
 });
+
+test('creates a Contributor account on the first NYCU One sign-in', async () => {
+	const adapter = new NycuOneSSO();
+	const accounts = new Map();
+	const created = [];
+	adapter.setUserRepository({ getByEmail: async (email) => accounts.get(email) ?? null });
+	adapter.createStaff = async (input) => {
+		created.push(input);
+		const user = { id: `u${created.length}`, email: input.email, status: 'active' };
+		accounts.set(input.email, user);
+		return user;
+	};
+	const first = await adapter.getUserForIdentity({
+		sub: 'new',
+		name: ' 新成員 ',
+		email: 'New@NYCU.one'
+	});
+	assert.deepEqual(created, [{ email: 'new@nycu.one', name: '新成員', role: 'Contributor' }]);
+	assert.equal(first.email, 'new@nycu.one');
+	// The second sign-in finds the account instead of creating another.
+	assert.equal(await adapter.getUserForIdentity({ sub: 'new', email: 'new@nycu.one' }), first);
+	assert.equal(created.length, 1);
+	// Without a display name the account is named after the mailbox.
+	await adapter.getUserForIdentity({ sub: 'anon', email: 'anon@nycu.one' });
+	assert.equal(created[1].name, 'anon');
+});
+
+test('never provisions for suspended accounts, legacy tokens, or when turned off', async () => {
+	const adapter = new NycuOneSSO();
+	let calls = 0;
+	adapter.createStaff = async () => {
+		calls += 1;
+		return { id: 'x', email: 'x@nycu.one', status: 'active' };
+	};
+	adapter.setUserRepository({ getByEmail: async () => ({ id: 's', status: 'inactive' }) });
+	assert.equal(await adapter.getUserForIdentity({ sub: 's', email: 's@nycu.one' }), null);
+	adapter.setUserRepository({ getByEmail: async () => null });
+	process.env.NYCU_CMS_SSO_STAFF_EMAIL = 'legacy@nycu.one';
+	assert.equal(await adapter.getUserForIdentity({ sub: 'old-token' }), null);
+	delete process.env.NYCU_CMS_SSO_STAFF_EMAIL;
+	process.env.NYCU_CMS_SSO_PROVISION_ROLE = 'none';
+	assert.equal(await adapter.getUserForIdentity({ sub: 'n', email: 'n@nycu.one' }), null);
+	process.env.NYCU_CMS_SSO_PROVISION_ROLE = 'Administrator';
+	await adapter.getUserForIdentity({ sub: 'a', email: 'a@nycu.one' });
+	delete process.env.NYCU_CMS_SSO_PROVISION_ROLE;
+	assert.equal(calls, 1, 'only the misconfigured role case creates, and as Contributor');
+});
+
+test('recovers when a parallel sign-in created the account first', async () => {
+	const adapter = new NycuOneSSO();
+	const user = { id: 'race', email: 'race@nycu.one', status: 'active' };
+	let lookups = 0;
+	adapter.setUserRepository({ getByEmail: async () => (lookups++ === 0 ? null : user) });
+	adapter.createStaff = async () => {
+		throw new Error('duplicate email');
+	};
+	assert.equal(await adapter.getUserForIdentity({ sub: 'race', email: 'race@nycu.one' }), user);
+	adapter.setUserRepository({ getByEmail: async () => null });
+	assert.equal(await adapter.getUserForIdentity({ sub: 'fail', email: 'fail@nycu.one' }), null);
+});
