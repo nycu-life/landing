@@ -43,7 +43,7 @@ func (s *PostgresStore) List(ctx context.Context, actorHash []byte, status Statu
 		       (SELECT count(*) FROM wish_supports s WHERE s.wish_id = w.id)::int,
 		       EXISTS(SELECT 1 FROM wish_supports s WHERE s.wish_id = w.id AND s.actor_hash = $1)
 		FROM wishes w
-		WHERE w.visibility = 'published' AND w.status = $2::text
+		WHERE w.visibility = 'published' AND w.status = $2::text AND w.withdrawn_at IS NULL
 		ORDER BY CASE WHEN $2::text = 'fulfilled' THEN w.fulfilled_at END DESC NULLS LAST,
 		         w.created_at DESC
 		LIMIT $3`, actorHash, status, limit)
@@ -110,7 +110,7 @@ func (s *PostgresStore) ToggleSupport(ctx context.Context, id string, actorHash 
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	var visibility Visibility
-	if err := tx.QueryRow(ctx, `SELECT visibility FROM wishes WHERE id = $1::uuid FOR UPDATE`, id).Scan(&visibility); err != nil {
+	if err := tx.QueryRow(ctx, `SELECT visibility FROM wishes WHERE id = $1::uuid AND withdrawn_at IS NULL FOR UPDATE`, id).Scan(&visibility); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return SupportResult{}, ErrNotFound
 		}
@@ -156,7 +156,7 @@ func (s *PostgresStore) AdminList(ctx context.Context, visibility Visibility, st
 		       (SELECT count(*) FROM wish_supports s WHERE s.wish_id = w.id)::int,
 		       false
 		FROM wishes w
-		WHERE w.visibility = $1 AND ($2::text IS NULL OR w.status = $2::text)
+		WHERE w.visibility = $1 AND ($2::text IS NULL OR w.status = $2::text) AND w.withdrawn_at IS NULL
 		ORDER BY w.created_at DESC
 		LIMIT $3`, visibility, statusFilter, limit)
 	if err != nil {
@@ -197,7 +197,7 @@ func (s *PostgresStore) AdminUpdate(ctx context.Context, id string, input Update
 				ELSE now()
 			END,
 			updated_at = now()
-		WHERE w.id = $1::uuid
+		WHERE w.id = $1::uuid AND w.withdrawn_at IS NULL
 		RETURNING `+wishColumns+`,
 		          (SELECT count(*) FROM wish_supports s WHERE s.wish_id = w.id)::int,
 		          false`, id, visibility, status, reply))
@@ -205,6 +205,86 @@ func (s *PostgresStore) AdminUpdate(ctx context.Context, id string, input Update
 		return Wish{}, ErrNotFound
 	}
 	return wish, err
+}
+
+func (s *PostgresStore) ListOwn(ctx context.Context, actorHash []byte, limit int) ([]Wish, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT `+wishColumns+`,
+		       (SELECT count(*) FROM wish_supports s WHERE s.wish_id = w.id)::int,
+		       EXISTS(SELECT 1 FROM wish_supports s WHERE s.wish_id = w.id AND s.actor_hash = $1)
+		FROM wishes w
+		WHERE w.actor_hash = $1 AND w.withdrawn_at IS NULL
+		ORDER BY w.created_at DESC
+		LIMIT $2`, actorHash, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanWishRows(rows)
+}
+
+func (s *PostgresStore) UpdateOwn(
+	ctx context.Context,
+	id string,
+	actorHash []byte,
+	input OwnUpdateInput,
+) (Wish, error) {
+	var title, detail, category any
+	if input.Title != nil {
+		title = *input.Title
+	}
+	if input.Detail != nil {
+		detail = *input.Detail
+	}
+	if input.Category != nil {
+		category = *input.Category
+	}
+	wish, err := scanWish(s.pool.QueryRow(ctx, `
+		UPDATE wishes AS w SET
+			title = COALESCE($3::text, w.title),
+			detail = COALESCE($4::text, w.detail),
+			category = COALESCE($5::text, w.category),
+			updated_at = now()
+		WHERE w.id = $1::uuid AND w.actor_hash = $2 AND w.withdrawn_at IS NULL
+		  AND w.visibility = 'pending'
+		RETURNING `+wishColumns+`,
+		          (SELECT count(*) FROM wish_supports s WHERE s.wish_id = w.id)::int,
+		          EXISTS(SELECT 1 FROM wish_supports s WHERE s.wish_id = w.id AND s.actor_hash = $2)`,
+		id, actorHash, title, detail, category))
+	if errors.Is(err, pgx.ErrNoRows) {
+		if _, err := s.ownVisibility(ctx, id, actorHash); err != nil {
+			return Wish{}, err
+		}
+		return Wish{}, ErrNotEditable
+	}
+	return wish, err
+}
+
+func (s *PostgresStore) WithdrawOwn(ctx context.Context, id string, actorHash []byte) (bool, error) {
+	var visibility Visibility
+	err := s.pool.QueryRow(ctx, `
+		UPDATE wishes SET withdrawn_at = now(), updated_at = now()
+		WHERE id = $1::uuid AND actor_hash = $2 AND withdrawn_at IS NULL AND status <> 'fulfilled'
+		RETURNING visibility`, id, actorHash).Scan(&visibility)
+	if errors.Is(err, pgx.ErrNoRows) {
+		if _, err := s.ownVisibility(ctx, id, actorHash); err != nil {
+			return false, err
+		}
+		return false, ErrNotWithdrawable
+	}
+	return visibility == VisibilityPublished, err
+}
+
+// ownVisibility returns ErrNotFound unless the actor has this live wish.
+func (s *PostgresStore) ownVisibility(ctx context.Context, id string, actorHash []byte) (Visibility, error) {
+	var visibility Visibility
+	err := s.pool.QueryRow(ctx,
+		`SELECT visibility FROM wishes WHERE id = $1::uuid AND actor_hash = $2 AND withdrawn_at IS NULL`,
+		id, actorHash).Scan(&visibility)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return visibility, err
 }
 
 type rowScanner interface {

@@ -26,6 +26,37 @@ type fakeStore struct {
 	listActor     []byte
 	listStatus    Status
 	adminStatus   Status
+	ownItems      []Wish
+	ownActor      []byte
+	ownUpdate     OwnUpdateInput
+	ownErr        error
+	ownWasPublic  bool
+	ownWithdrawn  string
+}
+
+func (f *fakeStore) ListOwn(_ context.Context, actorHash []byte, _ int) ([]Wish, error) {
+	f.ownActor = actorHash
+	return f.ownItems, f.ownErr
+}
+func (f *fakeStore) UpdateOwn(_ context.Context, id string, actorHash []byte, input OwnUpdateInput) (Wish, error) {
+	f.ownActor = actorHash
+	f.ownUpdate = input
+	if f.ownErr != nil {
+		return Wish{}, f.ownErr
+	}
+	wish := Wish{ID: id, Title: "old title", Category: CategoryLife, Visibility: VisibilityPending, Status: StatusOpen}
+	if input.Title != nil {
+		wish.Title = *input.Title
+	}
+	return wish, nil
+}
+func (f *fakeStore) WithdrawOwn(_ context.Context, id string, actorHash []byte) (bool, error) {
+	f.ownActor = actorHash
+	if f.ownErr != nil {
+		return false, f.ownErr
+	}
+	f.ownWithdrawn = id
+	return f.ownWasPublic, nil
 }
 
 type fakeAdminAuthenticator struct {

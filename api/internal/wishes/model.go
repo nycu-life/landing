@@ -132,4 +132,6 @@ var MigrationStatements = []string{
 	`ALTER TABLE wishes ADD COLUMN IF NOT EXISTS fulfilled_at timestamptz`,
 	`CREATE INDEX IF NOT EXISTS wishes_public_status_created_idx
 		ON wishes (status, created_at DESC) WHERE visibility = 'published'`,
+	// Author withdrawal. The row stays for abuse review but leaves every list.
+	`ALTER TABLE wishes ADD COLUMN IF NOT EXISTS withdrawn_at timestamptz`,
 }
