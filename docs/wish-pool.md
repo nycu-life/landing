@@ -139,8 +139,8 @@ any other signed-out request gets `401`. `return` only accepts local paths under
 
 After OIDC, the gate includes the NYCU One subject, display name, and email in
 the short-lived CMS identity token. Ghost resolves that email to an existing
-staff user, so Ghost roles and edit history stay per person. The Ghost Owner
-must invite or create staff users before they can use SSO.
+staff user, so Ghost roles and edit history stay per person. A first sign-in
+without a staff account creates a Contributor account (see `docs/ghost.md`).
 
 ## Wish JSON
 
