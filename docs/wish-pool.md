@@ -232,6 +232,33 @@ characters and the detail at most 500. Every new wish is `pending` until an
 administrator publishes it, exactly as for browsers. `GET /api/wishes/events`
 (SSE) needs no authentication; it only signals that lists changed.
 
+### My wishes
+
+Service clients only. A browser request without a bearer credential gets `401`:
+a device cookie is too easily lost to manage wishes by. The end user is the
+`X-Wish-Actor` (required) the wishes were posted with, so the BFF must send the
+same stable id every time.
+
+| Method and path                | Success response                                                       |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| `GET /api/wishes/mine`         | `200 {"data": [OwnWish…]}` (newest 100, every review state)            |
+| `PATCH /api/wishes/mine/{id}`  | `200 {"data": OwnWish}`; body has any of `title`, `detail`, `category` |
+| `DELETE /api/wishes/mine/{id}` | `204` (withdraws the wish)                                             |
+
+`OwnWish` is the [Wish JSON](#wish-json) plus:
+
+- `visibility`: `pending` (awaiting review), `published` (public), or `hidden`
+  (not shown publicly).
+- `editable`: `true` only while `pending`. Edits after review would bypass
+  moderation, so they return `409`.
+- `withdrawable`: `false` once the wish is `fulfilled`; withdrawing it returns `409`.
+
+Edits follow the same rules as a new wish (title 4–120 characters, detail at
+most 500, a known category). A withdrawn wish disappears from every list,
+including this one and the moderation queue, and can no longer be supported,
+edited, or moderated. The row stays in the database for abuse review.
+Someone else's wish, or a withdrawn one, returns `404`.
+
 ### Errors and limits
 
 Errors use `{"error": {"message": "…"}}`.
@@ -240,7 +267,8 @@ Errors use `{"error": {"message": "…"}}`.
 | ------ | ---------------------------------------------------------------------------------------------- |
 | `400`  | invalid JSON or fields, invalid `status`, missing or invalid `X-Wish-Actor` on a service write |
 | `401`  | unknown, malformed, or non-`Bearer` credential (`WWW-Authenticate: Bearer`)                    |
-| `404`  | wish not found or not published (support toggle)                                               |
+| `404`  | wish not found or not published (support toggle), or not the actor's own wish (my wishes)      |
+| `409`  | editing a reviewed wish, or withdrawing a fulfilled one                                        |
 | `429`  | more than three new wishes per actor per hour (`Retry-After: 3600`)                            |
 | `500`  | `the Wish Pool is temporarily unavailable`                                                     |
 
@@ -264,6 +292,15 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H 'X-Wish-Actor: user-7f3a9c' \
 
 curl -X POST -H "Authorization: Bearer $TOKEN" -H 'X-Wish-Actor: user-7f3a9c' \
   "$API/WISH_ID/support"
+
+curl -H "Authorization: Bearer $TOKEN" -H 'X-Wish-Actor: user-7f3a9c' "$API/mine"
+
+curl -X PATCH -H "Authorization: Bearer $TOKEN" -H 'X-Wish-Actor: user-7f3a9c' \
+  -H 'Content-Type: application/json' -d '{"detail":"補充：尖峰時段最需要"}' \
+  "$API/mine/WISH_ID"
+
+curl -X DELETE -H "Authorization: Bearer $TOKEN" -H 'X-Wish-Actor: user-7f3a9c' \
+  "$API/mine/WISH_ID"
 ```
 
 ## Local development
