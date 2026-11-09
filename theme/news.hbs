@@ -1,0 +1,24 @@
+{{!< default}}
+{{#contentFor "lang"}}[[lang]]{{/contentFor}}
+{{#contentFor "header"}}{{> "[[locale]]/header"}}{{/contentFor}}
+{{#contentFor "footer"}}{{> "[[locale]]/footer"}}{{/contentFor}}
+<div class="page devlog-page news-page">
+    <header class="page-head"><span class="devlog-eyebrow">NYCU LIFE / NEWS</span><h1 class="page-title">{{copy 'news_title'}}</h1><p class="page-lede">{{copy 'news_lede'}}</p></header>
+    {{!-- Instagram and Threads posts come from the Node service (/social/feed.json);
+          without JavaScript or tokens the profile links remain. --}}
+    <section class="social-feed" data-social-feed data-open-label="{{copy 'news_social_open'}}" aria-labelledby="social-feed-title">
+        <div class="social-feed-head">
+            <h2 id="social-feed-title">{{copy 'news_social_title'}}</h2>
+            <p class="social-profiles"><a href="https://www.instagram.com/nycu.life/" target="_blank" rel="noopener noreferrer">Instagram</a><a href="https://www.threads.com/@nycu.life" target="_blank" rel="noopener noreferrer">Threads</a></p>
+        </div>
+        <ol class="social-grid" data-social-list hidden></ol>
+        <p class="social-fallback" data-social-fallback>{{copy 'news_social_follow'}}</p>
+    </section>
+    {{#if posts}}
+    <section class="news-posts" aria-labelledby="news-posts-title">
+        <h2 id="news-posts-title">{{copy 'news_posts_title'}}</h2>
+        <div class="native-post-grid">{{#foreach posts}}{{> "card"}}{{/foreach}}</div>
+        {{pagination}}
+    </section>
+    {{/if}}
+</div>

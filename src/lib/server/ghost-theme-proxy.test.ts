@@ -116,3 +116,14 @@ describe('English article URLs', () => {
 		expect(chineseArticlePath('/en/devlogs/')).toBeNull();
 	});
 });
+
+describe('pages served by the Node service', () => {
+	it('keeps social feed endpoints out of the theme proxy and reopens /products/', () => {
+		expect(themeProxyPath('/social/feed.json')).toBeNull();
+		expect(themeProxyPath('/social/media/ig-1')).toBeNull();
+		expect(themeProxyPath('/products/')).toBe('/products/');
+		expect(themeProxyPath('/en/products/')).toBe('/en/products/');
+		expect(themeProxyPath('/courses/')).toBeNull();
+		expect(themeProxyPath('/products/bus-phone-1.png')).toBeNull();
+	});
+});

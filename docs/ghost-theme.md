@@ -7,20 +7,21 @@ Admin 憑證只留在服務端，不放入主題。
 
 ## 網址和責任
 
-| 網址                                         | 服務                                       |
-| -------------------------------------------- | ------------------------------------------ |
-| `/`、`/en/`                                  | Ghost 主題首頁                             |
-| `/about/`、`/en/about/`                      | Ghost Page 和主題                          |
-| `/devlog/`、`/devlog/<slug>/`                | Ghost 開發日誌集合                         |
-| `/comics/`、`/comics/<slug>/`                | Ghost 漫畫集合                             |
-| `/news/`                                     | 未分類文章，避免新文章沒有公開網址         |
-| `/en/devlog/…`、`/en/comics/…`、`/en/news/…` | 308 轉到中文原文；文章只寫中文             |
-| `/<page-slug>/`                              | 一般 Ghost Page                            |
-| `/ghost/`                                    | Ghost Admin，經 NYCU One gate              |
-| `/cms/`、`/cms/ghost/`                       | 轉址到 `/ghost/`，沒有第二套部落格         |
-| `/cms/content/images/…`                      | 舊圖片網址，相容轉送到 `/content/images/…` |
-| `/wishpool/`、`/wishpool/admin/`             | 原 SvelteKit 互動介面與獨立 Go API         |
-| `/healthz`                                   | Node 程序健康檢查，不依賴 Ghost            |
+| 網址                                         | 服務                                                           |
+| -------------------------------------------- | -------------------------------------------------------------- |
+| `/`、`/en/`                                  | Ghost 主題首頁                                                 |
+| `/about/`、`/en/about/`                      | Ghost Page 和主題                                              |
+| `/devlog/`、`/devlog/<slug>/`                | Ghost 開發日誌集合                                             |
+| `/comics/`、`/comics/<slug>/`                | Ghost 漫畫集合                                                 |
+| `/products/`、`/en/products/`                | 產品頁，讀首頁產品 Pages（`#theme-product-*`）                 |
+| `/news/`                                     | 最新消息：Instagram／Threads 自動同步，加上未分類的 Ghost 文章 |
+| `/en/devlog/…`、`/en/comics/…`、`/en/news/…` | 308 轉到中文原文；文章只寫中文                                 |
+| `/<page-slug>/`                              | 一般 Ghost Page                                                |
+| `/ghost/`                                    | Ghost Admin，經 NYCU One gate                                  |
+| `/cms/`、`/cms/ghost/`                       | 轉址到 `/ghost/`，沒有第二套部落格                             |
+| `/cms/content/images/…`                      | 舊圖片網址，相容轉送到 `/content/images/…`                     |
+| `/wishpool/`、`/wishpool/admin/`             | 原 SvelteKit 互動介面與獨立 Go API                             |
+| `/healthz`                                   | Node 程序健康檢查，不依賴 Ghost                                |
 
 Node 的 `PUBLIC_SITE_ENGINE=ghost` 啟用公開頁面轉送，`GHOST_THEME_URL` 指向
 Ghost 的叢集內 **origin，沒有 `/cms`**。轉送保留 Ghost 的 HTML、404、重新導向和
@@ -174,3 +175,20 @@ Ghost，也不讓 Ghost 尾斜線轉址變成無限資料轉址。已累積 `__d
 外部 Referer 繼續帶到 Ghost，導致 Ghost 的 session 來源檢查拒絕登入。保留 Ghost
 原有來源檢查，不需第二組 Ghost 密碼。驗證時需清除官網 cookie，並模擬從 IdP
 頁面返回；只有既有 IdP session 的靜默重新導向無法涵蓋這個情境。
+
+## 最新消息與社群同步
+
+`/news/` 上方的「社群動態」由 Node 服務讀取 Instagram 與 Threads 官方 API
+（`src/lib/server/social.ts`，`/social/feed.json`），每 10 分鐘更新，API 故障時沿用
+最多 6 小時的上一份結果。小編只要在 Instagram／Threads 發文，不必再到 Ghost 重發。
+下方「公告」列出沒有 `#devlog`、`#comics` 標籤的 Ghost 文章。
+
+需要兩個執行期環境變數（都可省略，省略時只顯示追蹤連結）：
+
+- `INSTAGRAM_ACCESS_TOKEN`：Instagram API with Instagram Login 的長效權杖，帳號需為專業帳號。
+- `THREADS_ACCESS_TOKEN`：Threads API 的長效權杖。
+
+長效權杖 60 天到期。服務每天在記憶體中更新一次，並在日誌輸出
+`[social] … token expires in N days`（少於 14 天時為 warning）。若服務停機超過
+60 天或權杖被撤銷，需重新產生並更新 Secret。圖片經 `/social/media/<id>` 轉送，
+只接受目前動態中的貼文 id。

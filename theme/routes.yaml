@@ -11,6 +11,10 @@ routes:
   /en/about/:
     template: about-en
     data: page.theme-en-about
+  /products/:
+    template: products
+  /en/products/:
+    template: products-en
   /wishpool/:
     template: page
     data: page.theme-wishpool

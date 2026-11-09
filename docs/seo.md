@@ -68,13 +68,12 @@ cookie-selected locale HTML.
 `/devlog/` was withdrawn on the same day and reinstated on 2026-11-05 as the
 Ghost-backed dev log (in the sitemap once a post is published).
 
-| URL                                                          | Response | Why                                                                                                                                                                                                                |
-| ------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/team/<slug>/` (incl. `/team/hsuan/`, `/team/einstein706/`) | 410      | Member profile pages were deliberately withdrawn (`bc6c0fb`, 2026-09-04). No equivalent page exists and the site no longer links to them.                                                                          |
-| `/products/`                                                 | 410      | Unfinished destination page withdrawn (`a9a448c`, 2026-09-04). Products are now a chapter of the home page, not a page of their own; redirecting would be a home-page redirect, which Google treats as a soft 404. |
-| `/courses/`                                                  | 410      | Withdrawn with no replacement.                                                                                                                                                                                     |
-| `/demo/`, `/demo/paraglide/`                                 | 404      | SvelteKit template scaffolding, removed 2026-10-23 (was publicly 200 and indexable).                                                                                                                               |
-| any other unknown path                                       | 404      | Real 404 (see below).                                                                                                                                                                                              |
+| URL                                                          | Response | Why                                                                                                                                       |
+| ------------------------------------------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `/team/<slug>/` (incl. `/team/hsuan/`, `/team/einstein706/`) | 410      | Member profile pages were deliberately withdrawn (`bc6c0fb`, 2026-09-04). No equivalent page exists and the site no longer links to them. |
+| `/courses/`                                                  | 410      | Withdrawn with no replacement.                                                                                                            |
+| `/demo/`, `/demo/paraglide/`                                 | 404      | SvelteKit template scaffolding, removed 2026-10-23 (was publicly 200 and indexable).                                                      |
+| any other unknown path                                       | 404      | Real 404 (see below).                                                                                                                     |
 
 Search Console groups 410 under "Not found (404)"; that is expected and those
 entries age out on their own. Only add a 301 when a page has a genuine
@@ -150,3 +149,9 @@ noindex error page with a real 404. `e2e/devlog.test.ts` and
 | `/api/wishes?limit=1`                                     | 200 JSON (Wish API unaffected)                          |
 
 Published Public Ghost Pages without the reserved `site-` slug prefix render at `/pages/<slug>/` and join the runtime sitemap. Reserved management Pages return 404 through that route and are never listed. Drafts, private Pages, and withdrawn Pages are absent. `e2e/seo.test.ts` covers the management-page boundary, ordinary missing pages, existing 410 routes, and the CMS-independent `/healthz` endpoint.
+
+## 2026-11-09: `/products/` reinstated
+
+`/products/` (and `/en/products/`) is a real page again: the Ghost theme lists the
+same product Pages as the home products chapter (`theme/products.hbs`). It is no
+longer withdrawn, so it answers 200 under the native Ghost engine.

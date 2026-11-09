@@ -128,7 +128,9 @@ for (const locale of ['zh-tw', 'en']) {
 			path.join(output, `partials/${locale}/${partial}.hbs`),
 			render(await read(`partials/${partial}.hbs`))
 		);
-	for (const file of english ? ['home', 'page', 'about'] : ['home', 'page', 'index', 'about'])
+	for (const file of english
+		? ['home', 'page', 'about', 'products']
+		: ['home', 'page', 'index', 'about', 'products'])
 		await writeFile(
 			path.join(output, `${file}${english ? '-en' : ''}.hbs`),
 			render(await read(`${file}.hbs`))
@@ -144,14 +146,7 @@ for (const locale of ['zh-tw', 'en']) {
 			sectionDescription: copy.comics_page_lede
 		})
 	);
-	await writeFile(
-		path.join(output, 'news.hbs'),
-		render(await read('index.hbs'), {
-			section: 'NEWS',
-			sectionTitle: '最新消息',
-			sectionDescription: '{{@site.description}}'
-		})
-	);
+	await writeFile(path.join(output, 'news.hbs'), render(await read('news.hbs')));
 }
 await rm(path.join(root, 'dist/nycu-life.zip'), { force: true });
 const archive = {};

@@ -29,7 +29,7 @@ test('publishes a complete production sitemap and advertises it to crawlers', as
 	for (const location of sitemapLocations.slice(expectedLocations.length)) {
 		expect(location.replace(siteOrigin, '')).toMatch(ghostRoute);
 	}
-	for (const withdrawnRoute of ['/courses/', '/products/']) {
+	for (const withdrawnRoute of ['/courses/']) {
 		expect(sitemap).not.toContain(withdrawnRoute);
 	}
 	expect(sitemap).not.toContain('/team/');
@@ -107,7 +107,7 @@ test('lists the dev log and comics only when they have Ghost content', async ({
 });
 
 test('preserves retired routes and API failures on the Node server', async ({ page, request }) => {
-	for (const route of ['/courses/', '/products/', '/team/', '/team/former-member/']) {
+	for (const route of ['/courses/', '/team/', '/team/former-member/']) {
 		expect((await page.goto(route))?.status()).toBe(410);
 		await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
 		await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);

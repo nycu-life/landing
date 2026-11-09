@@ -522,3 +522,251 @@ html:has(.prototype-story) {
 	outline: 3px solid var(--ink);
 	outline-offset: 3px;
 }
+
+/* 產品 (/products/): the home product Pages as a catalog. */
+.product-catalog {
+	display: grid;
+	gap: 1.5rem;
+}
+.product-entry {
+	display: grid;
+	grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr);
+	gap: clamp(1.25rem, 4vw, 3rem);
+	align-items: center;
+	padding: clamp(1.25rem, 3vw, 2rem);
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 1.4rem;
+}
+.product-entry-shot img {
+	display: block;
+	width: 100%;
+	height: auto;
+	border-radius: 1.6rem;
+	box-shadow: 0 1.2rem 2.5rem rgb(17 28 54 / 0.14);
+}
+.product-entry-copy h2 {
+	margin: 0;
+	font-size: clamp(1.5rem, 3vw, 2rem);
+	line-height: 1.2;
+}
+.product-entry-tagline {
+	margin: 0.5rem 0 0;
+	color: var(--brand-ink);
+	font-weight: 650;
+}
+.product-entry-body figure {
+	display: none;
+}
+.product-entry-body ul {
+	display: grid;
+	gap: 0.45rem;
+	margin: 1.1rem 0;
+	padding-left: 1.2rem;
+	color: var(--ink-soft);
+	line-height: 1.6;
+}
+.product-entry-body > p {
+	margin: 0;
+	color: var(--ink-soft);
+	font-weight: 650;
+}
+.product-entry-body > p a {
+	display: inline-flex;
+	align-items: center;
+	min-height: 2.75rem;
+	padding: 0 1.3rem;
+	border-radius: 999px;
+	background: var(--brand);
+	color: #fff;
+	text-decoration: none;
+}
+.product-entry-body > p a::after {
+	content: ' →';
+	white-space: pre;
+}
+.product-entry-body > p a:hover {
+	filter: brightness(1.08);
+}
+.product-entry-body > p a:focus-visible {
+	outline: 3px solid var(--ink);
+	outline-offset: 3px;
+}
+.product-app {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem 2rem;
+	margin-top: 2.5rem;
+	padding: 1.5rem clamp(1.25rem, 3vw, 2rem);
+	border: 1px dashed var(--line-strong, var(--line));
+	border-radius: 1.4rem;
+}
+.product-app h2 {
+	margin: 0;
+	font-size: 1.25rem;
+}
+.product-app .store-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+.product-app .store-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.6rem;
+	min-height: 3rem;
+	padding: 0.4rem 1rem;
+	border-radius: 0.8rem;
+	background: var(--ink);
+	color: var(--base);
+	text-decoration: none;
+}
+.product-app .store-mark svg {
+	width: 1.4rem;
+	height: 1.4rem;
+}
+.product-app .store-copy {
+	display: grid;
+	line-height: 1.15;
+}
+.product-app .store-copy small {
+	font-size: 0.68rem;
+	opacity: 0.8;
+}
+@media (max-width: 640px) {
+	.product-entry {
+		grid-template-columns: 1fr;
+	}
+	.product-entry-shot {
+		max-width: 14rem;
+		margin-inline: auto;
+	}
+}
+
+/* 最新消息 (/news/): Instagram and Threads posts, then Ghost announcements. */
+.social-feed,
+.news-posts {
+	margin-top: 2.5rem;
+}
+.social-feed-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 0.5rem 1.5rem;
+	margin-bottom: 1.25rem;
+}
+.social-feed h2,
+.news-posts h2 {
+	margin: 0;
+	font-size: 1.5rem;
+}
+.news-posts h2 {
+	margin-bottom: 1.25rem;
+}
+.social-profiles {
+	display: flex;
+	gap: 1rem;
+	margin: 0;
+	font-weight: 650;
+}
+.social-profiles a {
+	color: var(--brand-ink);
+}
+.social-fallback {
+	margin: 0;
+	padding: 1.5rem;
+	border: 1px dashed var(--line-strong, var(--line));
+	border-radius: 1.2rem;
+	color: var(--ink-soft);
+}
+.social-fallback[hidden],
+.social-grid[hidden] {
+	display: none;
+}
+.social-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1.25rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.social-card a {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	overflow: hidden;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 1.2rem;
+	color: inherit;
+	text-decoration: none;
+	transition: transform 0.15s ease;
+}
+.social-card a:hover {
+	transform: translateY(-2px);
+}
+.social-card a:focus-visible {
+	outline: 3px solid var(--brand);
+	outline-offset: 3px;
+}
+.social-card img {
+	width: 100%;
+	aspect-ratio: 1;
+	object-fit: cover;
+	background: var(--line);
+}
+.social-card-copy {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 0.55rem;
+	padding: 1.1rem 1.2rem 1.2rem;
+}
+.social-card-meta {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.5rem;
+	margin: 0;
+	color: var(--ink-soft);
+	font-size: 0.8rem;
+	font-weight: 650;
+}
+.social-card-text {
+	display: -webkit-box;
+	overflow: hidden;
+	margin: 0;
+	line-height: 1.6;
+	white-space: pre-line;
+	overflow-wrap: anywhere;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 5;
+	line-clamp: 5;
+}
+.social-card-open {
+	margin-top: auto;
+	color: var(--brand-ink);
+	font-size: 0.85rem;
+	font-weight: 650;
+}
+@media (max-width: 900px) {
+	.social-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 560px) {
+	.social-grid {
+		grid-template-columns: 1fr;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.social-card a {
+		transition: none;
+	}
+}
+:root[data-theme='dark'] .product-entry-body > p a {
+	color: var(--base);
+}

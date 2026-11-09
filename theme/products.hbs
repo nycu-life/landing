@@ -1,0 +1,24 @@
+{{!< default}}
+{{#contentFor "lang"}}[[lang]]{{/contentFor}}
+{{#contentFor "header"}}{{> "[[locale]]/header"}}{{/contentFor}}
+{{#contentFor "footer"}}{{> "[[locale]]/footer"}}{{/contentFor}}
+{{!-- The same product Pages as the home products chapter (#theme-product-[[locale]]):
+      title = name, excerpt = tagline, feature image = screenshot, content = features + link. --}}
+<div class="page products-page">
+    <header class="page-head"><span class="devlog-eyebrow">NYCU LIFE / PRODUCTS</span><h1 class="page-title">{{copy 'products_title'}}</h1><p class="page-lede">{{copy 'products_lede'}}</p></header>
+    <div class="product-catalog">
+        {{#get "pages" filter="tag:hash-theme-product-[[locale]]" order="published_at asc" limit="100"}}{{#foreach pages}}
+        <article class="product-entry" data-product-entry>
+            <div class="product-entry-shot">{{#if feature_image}}<img src="{{feature_image}}" alt="{{feature_image_alt}}" loading="lazy" data-product-default>{{/if}}</div>
+            <div class="product-entry-copy"><h2>{{title}}</h2>{{#if custom_excerpt}}<p class="product-entry-tagline">{{custom_excerpt}}</p>{{/if}}<div class="product-entry-body">{{content}}</div></div>
+        </article>
+        {{/foreach}}{{/get}}
+    </div>
+    <section class="product-app" aria-labelledby="product-app-title">
+        <h2 id="product-app-title">{{copy 'footer_download_title'}}</h2>
+        <div class="store-links">
+            <a class="store-link" href="https://play.google.com/store/apps/details?id=one.nycu.life&amp;pcampaignid=web_share" target="_blank" rel="noopener noreferrer" aria-label="{{copy 'footer_download_android'}}"><span class="store-mark" aria-hidden="true">{{> "store-play"}}</span><span class="store-copy"><small>{{copy 'footer_download_android_kicker'}}</small><span>Google Play</span></span></a>
+            <a class="store-link" href="https://apps.apple.com/us/app/nycu-life/id6800430694" target="_blank" rel="noopener noreferrer" aria-label="{{copy 'footer_download_ios'}}"><span class="store-mark" aria-hidden="true">{{> "store-apple"}}</span><span class="store-copy"><small>{{copy 'footer_download_ios_kicker'}}</small><span>App Store</span></span></a>
+        </div>
+    </section>
+</div>
