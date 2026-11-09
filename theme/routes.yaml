@@ -14,14 +14,6 @@ routes:
   /wishpool/:
     template: page
     data: page.theme-wishpool
-  /en/devlog/:
-    controller: channel
-    template: index-en
-    filter: 'tag:[hash-devlog,devlog]+tag:-[hash-comics,comics]'
-  /en/comics/:
-    controller: channel
-    template: comics-en
-    filter: 'tag:[hash-comics,comics]'
 
 collections:
   /comics/:

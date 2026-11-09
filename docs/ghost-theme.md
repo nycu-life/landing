@@ -7,19 +7,20 @@ Admin 憑證只留在服務端，不放入主題。
 
 ## 網址和責任
 
-| 網址                             | 服務                                       |
-| -------------------------------- | ------------------------------------------ |
-| `/`、`/en/`                      | Ghost 主題首頁                             |
-| `/about/`、`/en/about/`          | Ghost Page 和主題                          |
-| `/devlog/`、`/devlog/<slug>/`    | Ghost 開發日誌集合                         |
-| `/comics/`、`/comics/<slug>/`    | Ghost 漫畫集合                             |
-| `/news/`                         | 未分類文章，避免新文章沒有公開網址         |
-| `/<page-slug>/`                  | 一般 Ghost Page                            |
-| `/ghost/`                        | Ghost Admin，經 NYCU One gate              |
-| `/cms/`、`/cms/ghost/`           | 轉址到 `/ghost/`，沒有第二套部落格         |
-| `/cms/content/images/…`          | 舊圖片網址，相容轉送到 `/content/images/…` |
-| `/wishpool/`、`/wishpool/admin/` | 原 SvelteKit 互動介面與獨立 Go API         |
-| `/healthz`                       | Node 程序健康檢查，不依賴 Ghost            |
+| 網址                                         | 服務                                       |
+| -------------------------------------------- | ------------------------------------------ |
+| `/`、`/en/`                                  | Ghost 主題首頁                             |
+| `/about/`、`/en/about/`                      | Ghost Page 和主題                          |
+| `/devlog/`、`/devlog/<slug>/`                | Ghost 開發日誌集合                         |
+| `/comics/`、`/comics/<slug>/`                | Ghost 漫畫集合                             |
+| `/news/`                                     | 未分類文章，避免新文章沒有公開網址         |
+| `/en/devlog/…`、`/en/comics/…`、`/en/news/…` | 308 轉到中文原文；文章只寫中文             |
+| `/<page-slug>/`                              | 一般 Ghost Page                            |
+| `/ghost/`                                    | Ghost Admin，經 NYCU One gate              |
+| `/cms/`、`/cms/ghost/`                       | 轉址到 `/ghost/`，沒有第二套部落格         |
+| `/cms/content/images/…`                      | 舊圖片網址，相容轉送到 `/content/images/…` |
+| `/wishpool/`、`/wishpool/admin/`             | 原 SvelteKit 互動介面與獨立 Go API         |
+| `/healthz`                                   | Node 程序健康檢查，不依賴 Ghost            |
 
 Node 的 `PUBLIC_SITE_ENGINE=ghost` 啟用公開頁面轉送，`GHOST_THEME_URL` 指向
 Ghost 的叢集內 **origin，沒有 `/cms`**。轉送保留 Ghost 的 HTML、404、重新導向和
@@ -56,6 +57,7 @@ FAQ 的標題是問題，內文是答案。職缺的標題是職稱、Excerpt �
 首頁組件 Pages 的 canonical 指向首頁對應章節，因此不會重複列入 Ghost sitemap。
 
 導覽選單在 Ghost Settings → Navigation 編輯：Primary 是中文，Secondary 是英文。
+英文版只有首頁、About 與一般 Page；文章（開發日誌、漫畫、最新消息）只有中文，英文選單不放文章連結。
 Ghost Design 的站名、圖示和字型設定生效；原生主題版型、插圖和動畫則在 `theme/`
 與共用設計元件中維護。App 商店入口是主題固定連結。
 

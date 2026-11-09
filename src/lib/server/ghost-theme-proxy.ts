@@ -16,6 +16,14 @@ export function themeProxyPath(pathname: string): string | null {
 	return pathname;
 }
 
+/**
+ * Articles (dev log, comics, news) are written in Chinese only, so English has no
+ * article lists. Retired `/en/devlog/…`-style URLs map to the Chinese original.
+ */
+export function chineseArticlePath(pathname: string): string | null {
+	return /^\/en(\/(?:devlog|comics|news)(?:\/.*)?)$/.exec(pathname)?.[1] ?? null;
+}
+
 /** Stale Svelte clients must reload Ghost documents, never follow a data URL as a page. */
 export function ghostNavigationResponse(url: URL, isDataRequest: boolean): Response | null {
 	if (isDataRequest)

@@ -43,6 +43,7 @@ document.addEventListener('keydown', (event) => {
 });
 for (const link of document.querySelectorAll('[data-locale-switch]')) {
 	const current = location.pathname.replace(/^\/en(?=\/)/, '');
-	if (['/', '/about/', '/devlog/', '/comics/'].includes(current))
+	// Only the home and About pages have an English version; articles are Chinese only.
+	if (['/', '/about/'].includes(current))
 		link.href = `${link.dataset.localeSwitch === 'en' ? '/en' : ''}${current}${location.hash}`;
 }

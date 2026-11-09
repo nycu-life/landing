@@ -105,7 +105,8 @@ try {
 				{ label: english ? 'Products' : '產品', url: `${p}/#products` },
 				{ label: 'FAQ', url: `${p}/#faq` },
 				{ label: english ? 'Join us' : '加入我們', url: `${p}/#join` },
-				{ label: english ? 'Dev log' : '開發日誌', url: `${p}/devlog/` }
+				// Articles are Chinese only, so the English menu has no dev log.
+				...(english ? [] : [{ label: '開發日誌', url: '/devlog/' }])
 			];
 		};
 		await admin('settings/', {

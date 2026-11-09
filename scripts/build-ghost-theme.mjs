@@ -94,6 +94,11 @@ for (const locale of ['zh-tw', 'en']) {
 		previousProduct: english ? 'Previous product' : '上一個產品',
 		nextProduct: english ? 'Next product' : '下一個產品',
 		enableFilmSound: english ? 'Play with sound' : '開啟聲音',
+		// Articles (dev log, comics, news) are written in Chinese only; English covers
+		// the home and About pages and never links to an English article list.
+		devlogMore: english
+			? ''
+			: `<p class="milestone-more"><a href="/devlog/">${escape(copy.about_milestone_devlog_link)} →</a></p>`,
 		section: 'DEVLOG',
 		sectionTitle: copy.devlog_page_title,
 		sectionDescription: copy.devlog_page_lede
@@ -123,30 +128,30 @@ for (const locale of ['zh-tw', 'en']) {
 			path.join(output, `partials/${locale}/${partial}.hbs`),
 			render(await read(`partials/${partial}.hbs`))
 		);
-	for (const file of ['home', 'page', 'index', 'about'])
+	for (const file of english ? ['home', 'page', 'about'] : ['home', 'page', 'index', 'about'])
 		await writeFile(
 			path.join(output, `${file}${english ? '-en' : ''}.hbs`),
 			render(await read(`${file}.hbs`))
 		);
 	// Custom templates are selectable for normal English Pages in Admin.
 	await writeFile(path.join(output, `custom-${locale}.hbs`), render(await read('page.hbs')));
+	if (english) continue;
 	await writeFile(
-		path.join(output, `comics${english ? '-en' : ''}.hbs`),
+		path.join(output, 'comics.hbs'),
 		render(await read('index.hbs'), {
 			section: 'COMICS',
 			sectionTitle: copy.comics_page_title,
 			sectionDescription: copy.comics_page_lede
 		})
 	);
-	if (!english)
-		await writeFile(
-			path.join(output, 'news.hbs'),
-			render(await read('index.hbs'), {
-				section: 'NEWS',
-				sectionTitle: '最新消息',
-				sectionDescription: '{{@site.description}}'
-			})
-		);
+	await writeFile(
+		path.join(output, 'news.hbs'),
+		render(await read('index.hbs'), {
+			section: 'NEWS',
+			sectionTitle: '最新消息',
+			sectionDescription: '{{@site.description}}'
+		})
+	);
 }
 await rm(path.join(root, 'dist/nycu-life.zip'), { force: true });
 const archive = {};
