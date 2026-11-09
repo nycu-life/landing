@@ -3,6 +3,7 @@ import type { Handle } from '@sveltejs/kit';
 import { getTextDirection } from '$lib/paraglide/runtime';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 import {
+	chineseArticlePath,
 	ghostNavigationResponse,
 	proxyGhostTheme,
 	themeProxyPath
@@ -37,6 +38,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 				}
 			});
 		}
+		const article = chineseArticlePath(path);
+		if (article)
+			return new Response(null, {
+				status: 308,
+				headers: { location: article + event.url.search }
+			});
 		if (path.startsWith('/pages/'))
 			return new Response(null, {
 				status: 308,

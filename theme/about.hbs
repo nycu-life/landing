@@ -33,7 +33,7 @@
                 {{#get "pages" filter="tag:hash-theme-milestone-[[locale]]" include="tags" order="published_at asc" limit="100"}}{{#foreach pages}}<li class="milestone {{#has tag='#upcoming'}}upcoming{{/has}}"><span class="milestone-dot" aria-hidden="true"></span><div class="milestone-card"><span class="milestone-date">{{custom_excerpt}}</span><h3>{{title}}</h3><div class="milestone-body">{{content}}</div></div></li>{{/foreach}}{{/get}}
             </ol>
         </div>
-        <p class="milestone-more"><a href="[[prefix]]/devlog/">{{copy 'about_milestone_devlog_link'}} →</a></p>
+        [[devlogMore]]
     </section>
     <section class="page about-section about-wish" aria-labelledby="about-wish-title"><div class="about-wish-card"><img class="about-wish-art" src="{{asset 'story/designer/wishpool/machine.svg'}}" alt=""><div class="about-wish-copy"><h2 id="about-wish-title">{{copy 'about_wish_title'}}</h2><p>{{copy 'about_wish_lede'}}</p><a class="about-wish-link" href="/wishpool/">{{copy 'wish_cta'}} <span aria-hidden="true">→</span></a></div></div></section>
 </div>

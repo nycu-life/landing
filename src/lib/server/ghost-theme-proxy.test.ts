@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ghostNavigationResponse, proxyGhostTheme, themeProxyPath } from './ghost-theme-proxy';
+import {
+	chineseArticlePath,
+	ghostNavigationResponse,
+	proxyGhostTheme,
+	themeProxyPath
+} from './ghost-theme-proxy';
 
 describe('native Ghost routing boundary', () => {
 	it('keeps Admin, API, Wish Pool and withdrawn routes away from the public proxy', () => {
@@ -97,5 +102,17 @@ describe('native Ghost routing boundary', () => {
 		);
 		expect(down.status).toBe(503);
 		expect(down.headers.get('retry-after')).toBe('30');
+	});
+});
+
+describe('English article URLs', () => {
+	it('send retired English article lists to the Chinese originals', () => {
+		expect(chineseArticlePath('/en/devlog/')).toBe('/devlog/');
+		expect(chineseArticlePath('/en/devlog/coming-soon/')).toBe('/devlog/coming-soon/');
+		expect(chineseArticlePath('/en/comics')).toBe('/comics');
+		expect(chineseArticlePath('/en/news/')).toBe('/news/');
+		expect(chineseArticlePath('/en/about/')).toBeNull();
+		expect(chineseArticlePath('/en/')).toBeNull();
+		expect(chineseArticlePath('/en/devlogs/')).toBeNull();
 	});
 });
