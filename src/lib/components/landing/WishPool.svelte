@@ -1524,11 +1524,11 @@
 
 	@media (max-width: 620px) {
 		.wish-pool {
-			gap: 2.25rem;
+			gap: 1.75rem;
 		}
 		.wish-composer {
-			min-height: 22rem;
-			padding: 2rem 1.45rem 1.4rem;
+			min-height: 0;
+			padding: 1.5rem 1.3rem 1.2rem;
 		}
 		.wish-composer-row {
 			grid-template-columns: minmax(0, 1fr) auto;
@@ -1624,8 +1624,27 @@
 		object-position: 100% 50%;
 		margin-bottom: 0.4rem;
 	}
-	.wish-list {
-		align-items: start;
+	/* Wide screens: a masonry board (columns fill top to bottom), so cards keep their
+	   own height without ragged rows or stretched blanks. */
+	@media (min-width: 901px) {
+		.wish-list:not(.wish-skeletons) {
+			display: block;
+			columns: 3;
+			column-gap: clamp(0.85rem, 2vw, 1.3rem);
+		}
+		.wish-list:not(.wish-skeletons) > .wish-card {
+			break-inside: avoid;
+			margin-bottom: clamp(1.1rem, 2.2vw, 1.5rem);
+		}
+	}
+	.wish-card-time,
+	.wish-support-count,
+	.wish-card-fulfilled-on {
+		color: #2f3b57;
+		font-size: 0.875rem;
+	}
+	.wish-privacy {
+		font-size: 0.9rem;
 	}
 
 	/* Dark appearance: the same sketch language (ink outline, offset shadow, tape) on

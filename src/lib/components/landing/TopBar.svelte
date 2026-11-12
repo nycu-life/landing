@@ -262,6 +262,9 @@
 	.sticker-link[aria-current='page'] .sticker-label {
 		color: #33f;
 	}
+	.sticker-link[aria-current='page'] .sticker-label {
+		color: #1a1ab8;
+	}
 	.theme-toggle,
 	.menu-toggle {
 		display: inline-grid;

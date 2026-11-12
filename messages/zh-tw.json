@@ -502,8 +502,8 @@
 	"wish_retry": "重新載入",
 	"footer_credit": "由 NYCU LIFE 學生團隊用心打造",
 	"footer_source": "原始碼",
-	"footer_editor": "編輯登入",
 	"wish_admin_copy_id": "複製 ID",
 	"wish_admin_copied_id": "已複製",
-	"wish_empty_cta": "寫下第一個願望"
+	"wish_empty_cta": "寫下第一個願望",
+	"wish_admin_more": "更多"
 }

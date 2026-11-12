@@ -502,8 +502,8 @@
 	"wish_retry": "Try again",
 	"footer_credit": "Made with care by the NYCU LIFE student team",
 	"footer_source": "Source code",
-	"footer_editor": "Editor sign-in",
 	"wish_admin_copy_id": "Copy ID",
 	"wish_admin_copied_id": "Copied",
-	"wish_empty_cta": "Make the first wish"
+	"wish_empty_cta": "Make the first wish",
+	"wish_admin_more": "More"
 }

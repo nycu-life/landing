@@ -453,26 +453,38 @@
 								>
 							</div>
 							<div class="card-actions">
-								{#if editingId !== wish.id}
+								{#snippet secondaryActions()}
+									{#if editingId !== wish.id}
+										<button
+											class="action-button secondary"
+											type="button"
+											disabled={Boolean(updatingId)}
+											onclick={() => startReply(wish)}
+											>{wish.reply ? m.wish_admin_reply_edit() : m.wish_admin_reply_write()}</button
+										>
+									{/if}
 									<button
 										class="action-button secondary"
+										class:fulfil={wish.status !== 'fulfilled'}
 										type="button"
 										disabled={Boolean(updatingId)}
-										onclick={() => startReply(wish)}
-										>{wish.reply ? m.wish_admin_reply_edit() : m.wish_admin_reply_write()}</button
+										onclick={() =>
+											updateStatus(wish, wish.status === 'fulfilled' ? 'open' : 'fulfilled')}
+										>{wish.status === 'fulfilled'
+											? m.wish_admin_reopen()
+											: m.wish_admin_mark_fulfilled()}</button
 									>
+								{/snippet}
+								{#if visibility === 'pending'}
+									<!-- The review queue leads with the decision (publish or hide); replying
+									     and status changes stay one step away. -->
+									<details class="more-actions">
+										<summary class="action-button secondary">{m.wish_admin_more()}</summary>
+										<div class="more-menu">{@render secondaryActions()}</div>
+									</details>
+								{:else}
+									{@render secondaryActions()}
 								{/if}
-								<button
-									class="action-button secondary"
-									class:fulfil={wish.status !== 'fulfilled'}
-									type="button"
-									disabled={Boolean(updatingId)}
-									onclick={() =>
-										updateStatus(wish, wish.status === 'fulfilled' ? 'open' : 'fulfilled')}
-									>{wish.status === 'fulfilled'
-										? m.wish_admin_reopen()
-										: m.wish_admin_mark_fulfilled()}</button
-								>
 								{#if visibility === 'pending'}
 									<button
 										class="action-button danger"
@@ -939,6 +951,48 @@
 		border-color: var(--line-strong);
 		background: var(--surface);
 		color: var(--ink-soft);
+	}
+	.more-actions {
+		position: relative;
+	}
+	.more-actions > summary {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		list-style: none;
+		cursor: pointer;
+	}
+	.more-actions > summary::-webkit-details-marker {
+		display: none;
+	}
+	.more-actions > summary::after {
+		content: '';
+		width: 0.4rem;
+		height: 0.4rem;
+		border-right: 1.5px solid currentColor;
+		border-bottom: 1.5px solid currentColor;
+		transform: translateY(-0.1rem) rotate(45deg);
+	}
+	.more-actions[open] > summary::after {
+		transform: translateY(0.1rem) rotate(-135deg);
+	}
+	.more-menu {
+		position: absolute;
+		z-index: 5;
+		right: 0;
+		top: calc(100% + 0.4rem);
+		display: grid;
+		gap: 0.4rem;
+		min-width: 11rem;
+		padding: 0.5rem;
+		border: 1px solid var(--line-strong);
+		border-radius: 0.8rem;
+		background: var(--surface);
+		box-shadow: var(--shadow);
+	}
+	.more-menu > .action-button {
+		width: 100%;
+		text-align: left;
 	}
 	.action-button.danger {
 		border-color: rgba(180, 35, 24, 0.35);

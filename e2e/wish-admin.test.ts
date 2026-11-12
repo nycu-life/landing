@@ -173,6 +173,8 @@ test('admins mark wishes fulfilled, reopen them, and write or clear the team rep
 
 	await page.goto('/wishpool/admin/');
 	const card = page.locator('.admin-card').filter({ hasText: adminWishes[0].title });
+	// In the review queue, replying and status changes sit behind 「更多」.
+	await card.getByText('更多', { exact: true }).click();
 	await card.getByRole('button', { name: '撰寫回覆' }).click();
 	await card.getByRole('textbox', { name: '團隊回覆' }).fill('  謝謝建議，我們會評估！  ');
 	await expect(card.getByText('15 / 1000')).toBeVisible();
