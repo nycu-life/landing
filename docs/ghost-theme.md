@@ -62,6 +62,11 @@ FAQ 的標題是問題，內文是答案。職缺的標題是職稱、Excerpt �
 Ghost Design 的站名、圖示和字型設定生效；原生主題版型、插圖和動畫則在 `theme/`
 與共用設計元件中維護。App 商店入口是主題固定連結。
 
+若 Ghost 尚未設定站台圖示，主題安裝會上傳 NYCU LIFE 的 96×96 PNG 並設為 `icon`，
+讓 `/favicon.ico` 和搜尋結果使用品牌圖示；既有自訂圖示會保留，原設定也納入回退備份。
+尚未執行安裝時，主題會使用內建 SVG／96×96 PNG 作為 favicon。
+圖示更新後，搜尋結果仍需等待搜尋引擎重新抓取。
+
 開發日誌繼續使用 `#devlog`，漫畫使用 `#comics`。既有 slug 網址保留；一般 Page
 改用 Ghost 原生 `/<slug>/`，原 `/pages/<slug>/` 會轉址。文章內所有 Ghost 卡片由
 原生 `{{content}}` 呈現。英文一般 Page 可在 Page settings 選擇 `en` 自訂模板。

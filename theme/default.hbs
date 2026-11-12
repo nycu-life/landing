@@ -8,6 +8,11 @@
 		>try{document.documentElement.dataset.theme=localStorage.getItem('nycu-life-theme')==='dark'?'dark':'light'}catch{}</script>
 		<link rel='stylesheet' href='{{asset "site.css"}}' />
 		{{ghost_head}}
+		{{#unless @site.icon}}
+			<link rel='icon' href='{{asset "favicon-96.png"}}' type='image/png' sizes='96x96' />
+			<link rel='icon' href='{{asset "favicon.svg"}}' type='image/svg+xml' sizes='any' />
+		{{/unless}}
+		<link rel='apple-touch-icon' href='{{asset "apple-touch-icon.png"}}' sizes='180x180' />
 		{{{block 'ghost_head'}}}
 	</head>
 	<body class='ghost-theme {{body_class}}'>
