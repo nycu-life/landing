@@ -288,6 +288,13 @@
 		}
 	}
 
+	let titleInput: HTMLInputElement | undefined = $state();
+
+	function focusComposer() {
+		titleInput?.scrollIntoView({ block: 'center' });
+		titleInput?.focus({ preventScroll: true });
+	}
+
 	function retryLoad() {
 		failed[activeTab] = false;
 		void requestFetch?.(activeTab, true);
@@ -321,6 +328,7 @@
 			<label class="wish-title-field">
 				<span class="wish-field-label">{m.wish_input_label()}</span>
 				<input
+					bind:this={titleInput}
 					bind:value={title}
 					maxlength="120"
 					placeholder={m.wish_input_placeholder()}
@@ -373,7 +381,9 @@
 		</p>
 		<div class="wish-feedback" aria-live="polite">
 			{#if error}<p class="wish-error">{error}</p>{/if}
-			{#if notice}<p class="wish-notice">{notice}</p>{/if}
+			{#if notice}<p class="wish-notice" role="status">
+					<span class="wish-notice-mark" aria-hidden="true">✓</span>{notice}
+				</p>{/if}
 		</div>
 	</form>
 
@@ -457,8 +467,18 @@
 						<strong>{m.wish_fulfilled_empty_title()}</strong>
 						<span>{m.wish_fulfilled_empty_body()}</span>
 					{:else}
+						<img
+							class="wish-state-art"
+							src="{base}/story/designer/wishpool/machine.svg"
+							alt=""
+							width="120"
+							height="120"
+						/>
 						<strong>{m.wish_empty_title()}</strong>
 						<span>{m.wish_empty_body()}</span>
+						<button type="button" class="wish-retry" onclick={focusComposer}
+							>{m.wish_empty_cta()}</button
+						>
 					{/if}
 				</div>
 			{:else}
@@ -1559,6 +1579,55 @@
 		}
 	}
 
+	/* Review round 4: legible secondary text, a clear success callout, an empty
+	   board that invites the first wish, and cards that keep their own height. */
+	.wish-privacy {
+		font-size: 0.86rem;
+		line-height: 1.65;
+		color: #3f4d6e;
+	}
+	.wish-feedback .wish-notice {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		margin-top: 0.85rem;
+		padding: 0.75rem 1rem;
+		border: 1.5px solid #12855b;
+		border-radius: 0.9rem;
+		background: #e8f7ef;
+		color: #0d6b48;
+		font-size: 0.95rem;
+		font-weight: 650;
+		letter-spacing: 0;
+	}
+	.wish-notice-mark {
+		display: grid;
+		flex: none;
+		place-items: center;
+		width: 1.6rem;
+		height: 1.6rem;
+		border-radius: 50%;
+		background: #12855b;
+		color: #fff;
+		font-size: 0.85rem;
+	}
+	.wish-feedback .wish-error {
+		font-size: 0.92rem;
+		font-weight: 650;
+		letter-spacing: 0;
+	}
+	/* machine.svg is a 1366×768 slide; frame the machine itself (right two thirds). */
+	.wish-state-art {
+		width: 9rem;
+		aspect-ratio: 5 / 4;
+		object-fit: cover;
+		object-position: 100% 50%;
+		margin-bottom: 0.4rem;
+	}
+	.wish-list {
+		align-items: start;
+	}
+
 	/* Dark appearance: the same sketch language (ink outline, offset shadow, tape) on
 	   the site's dark surfaces, so the board does not read as light cards pasted on a
 	   dark page. The composer's wide SVG frame is light-only; dark uses its outline. */
@@ -1655,5 +1724,13 @@
 	}
 	:global(:root[data-theme='dark']) .wish-retry {
 		background: transparent;
+	}
+	:global(:root[data-theme='dark']) .wish-feedback .wish-notice {
+		border-color: #4cc58f;
+		background: #123326;
+		color: #9be7c4;
+	}
+	:global(:root[data-theme='dark']) .wish-privacy {
+		color: var(--ink-soft);
 	}
 </style>

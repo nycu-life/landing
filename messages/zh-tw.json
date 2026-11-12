@@ -504,5 +504,6 @@
 	"footer_source": "原始碼",
 	"footer_editor": "編輯登入",
 	"wish_admin_copy_id": "複製 ID",
-	"wish_admin_copied_id": "已複製"
+	"wish_admin_copied_id": "已複製",
+	"wish_empty_cta": "寫下第一個願望"
 }

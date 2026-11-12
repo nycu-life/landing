@@ -1075,3 +1075,13 @@ html:has(.prototype-story) {
 	border-radius: 50%;
 	background: var(--brand);
 }
+
+/* machine.svg is a 1366×768 slide with the machine in its right two thirds; frame
+   just the machine (5:4, anchored right) so it reads at card size. */
+.collection-empty-art,
+.status-art {
+	width: clamp(8rem, 18vw, 12rem);
+	aspect-ratio: 5 / 4;
+	object-fit: cover;
+	object-position: 100% 50%;
+}

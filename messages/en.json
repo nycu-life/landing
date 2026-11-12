@@ -504,5 +504,6 @@
 	"footer_source": "Source code",
 	"footer_editor": "Editor sign-in",
 	"wish_admin_copy_id": "Copy ID",
-	"wish_admin_copied_id": "Copied"
+	"wish_admin_copied_id": "Copied",
+	"wish_empty_cta": "Make the first wish"
 }

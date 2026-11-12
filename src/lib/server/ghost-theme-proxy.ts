@@ -160,7 +160,7 @@ header img{display:block;height:1.6rem;width:auto}
 :root[data-theme=dark] .dark-logo{display:block!important}
 main{display:grid;place-items:center;padding:2rem clamp(1.25rem,4vw,2.5rem)}
 section{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(1.25rem,4vw,3rem);align-items:center;max-width:56rem;width:100%;padding:clamp(1.5rem,4vw,2.75rem);border:1.5px dashed var(--line);border-radius:1.6rem;background:var(--surface)}
-section>img{width:clamp(7rem,16vw,11rem);height:auto}
+section>img{width:clamp(8rem,18vw,12rem);height:auto;aspect-ratio:5/4;object-fit:cover;object-position:100% 50%}
 span{color:var(--brand);font-size:.8rem;font-weight:700;letter-spacing:.14em}
 h1{margin:.6rem 0;font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.2}
 p{margin:0;color:var(--ink-soft);line-height:1.75}

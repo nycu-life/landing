@@ -462,8 +462,10 @@
 										>{wish.reply ? m.wish_admin_reply_edit() : m.wish_admin_reply_write()}</button
 									>
 								{/if}
+								<!-- Status follows the visibility decision; in the review queue it is a
+								     quieter, secondary step after publishing or hiding. -->
 								<button
-									class="action-button secondary"
+									class="action-button {visibility === 'pending' ? 'tertiary' : 'secondary'}"
 									class:fulfil={wish.status !== 'fulfilled'}
 									type="button"
 									disabled={Boolean(updatingId)}
@@ -475,7 +477,7 @@
 								>
 								{#if visibility === 'pending'}
 									<button
-										class="action-button secondary"
+										class="action-button danger"
 										type="button"
 										disabled={Boolean(updatingId)}
 										onclick={() => updateVisibility(wish, 'hidden')}>{m.wish_admin_hide()}</button
@@ -879,8 +881,8 @@
 		font-weight: 700;
 	}
 	.card-meta time {
-		font-size: 0.74rem;
-		color: var(--muted);
+		font-size: 0.82rem;
+		color: var(--ink-soft);
 	}
 	.admin-card h3,
 	.admin-card p {
@@ -906,8 +908,8 @@
 	.wish-facts {
 		min-width: 0;
 		gap: 0.8rem;
-		color: var(--muted);
-		font-size: 0.74rem;
+		color: var(--ink-soft);
+		font-size: 0.82rem;
 	}
 	.wish-id {
 		min-height: 2rem;
@@ -941,8 +943,16 @@
 		color: var(--ink-soft);
 	}
 	.action-button.danger {
-		background: rgba(217, 45, 32, 0.1);
+		border-color: rgba(180, 35, 24, 0.35);
+		background: rgba(217, 45, 32, 0.08);
 		color: #b42318;
+	}
+	.action-button.tertiary {
+		border-color: transparent;
+		background: transparent;
+		color: var(--ink-soft);
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
 	}
 	.action-button:hover:not(:disabled),
 	.toolbar-button:hover:not(:disabled) {
