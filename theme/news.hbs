@@ -3,7 +3,7 @@
 {{#contentFor "header"}}{{> "[[locale]]/header"}}{{/contentFor}}
 {{#contentFor "footer"}}{{> "[[locale]]/footer"}}{{/contentFor}}
 <div class="page devlog-page news-page">
-    <header class="page-head"><span class="devlog-eyebrow">NYCU LIFE / NEWS</span><h1 class="page-title">{{copy 'news_title'}}</h1><p class="page-lede">{{copy 'news_lede'}}</p></header>
+    <header class="page-head"><span class="devlog-eyebrow">{{copy 'eyebrow_news'}}</span><h1 class="page-title">{{copy 'news_title'}}</h1><p class="page-lede">{{copy 'news_lede'}}</p></header>
     <p class="news-follow">{{copy 'news_social_follow'}} <span class="social-profiles"><a href="https://www.instagram.com/nycu.life/" target="_blank" rel="noopener noreferrer">Instagram</a><a href="https://www.threads.com/@nycu.life" target="_blank" rel="noopener noreferrer">Threads</a></span></p>
     {{#if posts}}
     {{!-- A post whose body is only an Instagram or Threads link is shown as the

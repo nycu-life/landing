@@ -505,5 +505,11 @@
 	"wish_admin_copy_id": "Copy ID",
 	"wish_admin_copied_id": "Copied",
 	"wish_empty_cta": "Make the first wish",
-	"wish_admin_more": "More"
+	"wish_admin_more": "More",
+	"eyebrow_wishpool": "NYCU LIFE / WISH POOL",
+	"eyebrow_wish_admin": "WISH POOL / ADMIN",
+	"eyebrow_news": "NYCU LIFE / NEWS",
+	"eyebrow_devlog": "NYCU LIFE / DEV LOG",
+	"eyebrow_comics": "NYCU LIFE / COMICS",
+	"eyebrow_products": "NYCU LIFE / PRODUCTS"
 }

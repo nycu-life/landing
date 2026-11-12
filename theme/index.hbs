@@ -3,7 +3,7 @@
 {{#contentFor "header"}}{{> "[[locale]]/header"}}{{/contentFor}}
 {{#contentFor "footer"}}{{> "[[locale]]/footer"}}{{/contentFor}}
 <div class="page devlog-page">
-    <header class="page-head"><span class="devlog-eyebrow">NYCU LIFE / [[section]]</span><h1 class="page-title">[[sectionTitle]]</h1><p class="page-lede">[[sectionDescription]]</p></header>
+    <header class="page-head"><span class="devlog-eyebrow">[[sectionEyebrow]]</span><h1 class="page-title">[[sectionTitle]]</h1><p class="page-lede">[[sectionDescription]]</p></header>
     {{#if posts}}
     <div class="native-post-grid">{{#foreach posts}}{{> "card"}}{{/foreach}}</div>
     {{else}}

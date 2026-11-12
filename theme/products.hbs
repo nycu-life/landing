@@ -5,7 +5,7 @@
 {{!-- The same product Pages as the home products chapter (#theme-product-[[locale]]):
       title = name, excerpt = tagline, feature image = screenshot, content = features + link. --}}
 <div class="page products-page">
-    <header class="page-head"><span class="devlog-eyebrow">NYCU LIFE / PRODUCTS</span><h1 class="page-title">{{copy 'products_title'}}</h1><p class="page-lede">{{copy 'products_lede'}}</p></header>
+    <header class="page-head"><span class="devlog-eyebrow">{{copy 'eyebrow_products'}}</span><h1 class="page-title">{{copy 'products_title'}}</h1><p class="page-lede">{{copy 'products_lede'}}</p></header>
     <div class="product-catalog">
         {{#get "pages" filter="tag:hash-theme-product-[[locale]]" order="published_at asc" limit="100"}}{{#foreach pages}}
         <article class="product-entry" data-product-entry>

@@ -18,7 +18,7 @@
 <div id="wish-admin" class="page admin-page">
 	<header class="page-head admin-head">
 		<div>
-			<p class="admin-eyebrow">WISH POOL / ADMIN</p>
+			<p class="admin-eyebrow">{m.eyebrow_wish_admin()}</p>
 			<h1 class="page-title">{m.wish_admin_title()}</h1>
 		</div>
 		<a class="back-link" href="{base}/wishpool/">← {m.wish_admin_back()}</a>

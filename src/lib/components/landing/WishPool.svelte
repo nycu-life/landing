@@ -289,6 +289,36 @@
 	}
 
 	let titleInput: HTMLInputElement | undefined = $state();
+	let boardList: HTMLDivElement | undefined = $state();
+
+	/* Wide screens: a row-major masonry. Each card spans as many 4 px grid rows as its
+	   own height needs, so cards keep their natural height, the board has no ragged
+	   blanks, and the reading order stays the same as on phones. Without JavaScript
+	   the list is an ordinary grid. */
+	const MASONRY_ROW = 4;
+	$effect(() => {
+		const list = boardList;
+		void visibleWishes.length;
+		if (!list || typeof ResizeObserver === 'undefined') return;
+		const wide = window.matchMedia('(min-width: 901px)');
+		const layout = () => {
+			const cards = [...list.children] as HTMLElement[];
+			list.classList.toggle('is-masonry', wide.matches);
+			const gap = wide.matches ? parseFloat(getComputedStyle(list).columnGap) || 20 : 0;
+			for (const card of cards)
+				card.style.gridRowEnd = wide.matches
+					? `span ${Math.ceil((card.getBoundingClientRect().height + gap) / MASONRY_ROW)}`
+					: '';
+		};
+		const observer = new ResizeObserver(layout);
+		for (const card of list.children) observer.observe(card);
+		wide.addEventListener('change', layout);
+		layout();
+		return () => {
+			observer.disconnect();
+			wide.removeEventListener('change', layout);
+		};
+	});
 
 	function focusComposer() {
 		titleInput?.scrollIntoView({ block: 'center' });
@@ -482,7 +512,7 @@
 					{/if}
 				</div>
 			{:else}
-				<div class="wish-list">
+				<div class="wish-list" bind:this={boardList}>
 					{#each visibleWishes as wish (wish.id)}
 						{@const fulfilled = wish.status === 'fulfilled'}
 						<article
@@ -1388,9 +1418,11 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.3rem;
-		min-height: 1.75rem;
+		min-height: 2.75rem;
+		margin-block: -0.5rem;
+		padding-right: 0.75rem;
 		color: #123cff;
-		font-size: 0.8rem;
+		font-size: 0.875rem;
 		font-weight: 700;
 		cursor: pointer;
 		list-style: none;
@@ -1624,18 +1656,10 @@
 		object-position: 100% 50%;
 		margin-bottom: 0.4rem;
 	}
-	/* Wide screens: a masonry board (columns fill top to bottom), so cards keep their
-	   own height without ragged rows or stretched blanks. */
-	@media (min-width: 901px) {
-		.wish-list:not(.wish-skeletons) {
-			display: block;
-			columns: 3;
-			column-gap: clamp(0.85rem, 2vw, 1.3rem);
-		}
-		.wish-list:not(.wish-skeletons) > .wish-card {
-			break-inside: avoid;
-			margin-bottom: clamp(1.1rem, 2.2vw, 1.5rem);
-		}
+	.wish-list:global(.is-masonry) {
+		grid-auto-rows: 4px;
+		row-gap: 0;
+		align-items: start;
 	}
 	.wish-card-time,
 	.wish-support-count,

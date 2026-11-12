@@ -505,5 +505,11 @@
 	"wish_admin_copy_id": "複製 ID",
 	"wish_admin_copied_id": "已複製",
 	"wish_empty_cta": "寫下第一個願望",
-	"wish_admin_more": "更多"
+	"wish_admin_more": "更多",
+	"eyebrow_wishpool": "NYCU LIFE / 許願池",
+	"eyebrow_wish_admin": "許願池 / 管理",
+	"eyebrow_news": "NYCU LIFE / 最新消息",
+	"eyebrow_devlog": "NYCU LIFE / 開發日誌",
+	"eyebrow_comics": "NYCU LIFE / 漫畫專區",
+	"eyebrow_products": "NYCU LIFE / 產品"
 }

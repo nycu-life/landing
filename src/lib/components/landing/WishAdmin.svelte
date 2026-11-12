@@ -246,7 +246,7 @@
 	});
 </script>
 
-<section class="wish-admin" aria-label={m.wish_admin_title()}>
+<section class="wish-admin" aria-label={m.wish_admin_title()} aria-busy={loading}>
 	{#if checkingSession}
 		<div class="admin-auth glass glass-strong" aria-live="polite">
 			<div class="auth-copy">

@@ -16,7 +16,7 @@
 
 <div id="wishes" class="page wish-page">
 	<header class="page-head">
-		<span class="wish-eyebrow">NYCU LIFE&nbsp;&nbsp;/&nbsp;&nbsp;WISH POOL</span>
+		<span class="wish-eyebrow">{m.eyebrow_wishpool()}</span>
 		<h1 class="page-title">{m.wish_title()}</h1>
 		<p class="page-lede">{m.wish_lede()}</p>
 	</header>

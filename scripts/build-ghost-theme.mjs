@@ -98,7 +98,7 @@ for (const locale of ['zh-tw', 'en']) {
 		devlogMore: english
 			? ''
 			: `<p class="milestone-more"><a href="/devlog/">${escape(copy.about_milestone_devlog_link)} →</a></p>`,
-		section: 'DEVLOG',
+		sectionEyebrow: escape(copy.eyebrow_devlog),
 		sectionTitle: copy.devlog_page_title,
 		sectionDescription: copy.devlog_page_lede,
 		emptyTitle: copy.devlog_empty_title,
@@ -144,7 +144,7 @@ for (const locale of ['zh-tw', 'en']) {
 	await writeFile(
 		path.join(output, 'comics.hbs'),
 		render(await read('index.hbs'), {
-			section: 'COMICS',
+			sectionEyebrow: escape(copy.eyebrow_comics),
 			sectionTitle: copy.comics_title,
 			sectionDescription: copy.comics_lede,
 			emptyTitle: copy.comics_empty_title,
