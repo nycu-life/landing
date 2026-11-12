@@ -128,14 +128,16 @@ function unavailablePage(pathname: string): string {
 				title: 'This page cannot load right now',
 				lede: 'Our content service is not responding. Please refresh in a moment. The Wish Pool is not affected and still takes wishes.',
 				retry: 'Refresh',
-				wish: 'Go to the Wish Pool'
+				wish: 'Go to the Wish Pool',
+				wishShort: 'Wish Pool'
 			}
 		: {
 				lang: 'zh-tw',
 				title: '頁面暫時打不開',
 				lede: '網站內容服務沒有回應，請稍後重新整理。許願池不受影響，仍然可以許願。',
 				retry: '重新整理',
-				wish: '前往許願池'
+				wish: '前往許願池',
+				wishShort: '許願池'
 			};
 	return `<!doctype html>
 <html lang="${copy.lang}" data-theme="light">
@@ -150,7 +152,8 @@ function unavailablePage(pathname: string): string {
 :root[data-theme=dark]{--base:#0b1220;--surface:#131f33;--ink:#edf4ff;--ink-soft:#b5c3d6;--brand:#79a4ff;--line:rgba(121,164,255,.35);color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:var(--base);color:var(--ink);font-family:Roboto,'Noto Sans TC','PingFang TC',system-ui,sans-serif;display:grid;grid-template-rows:auto 1fr}
-header{padding:1.1rem clamp(1.25rem,4vw,2.5rem);border-bottom:1px solid rgba(127,140,160,.2)}
+header{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.1rem clamp(1.25rem,4vw,2.5rem);border-bottom:1px solid rgba(127,140,160,.2)}
+header nav{margin:0}
 header img{display:block;height:1.6rem;width:auto}
 .dark-logo{display:none!important}
 :root[data-theme=dark] .light-logo{display:none!important}
@@ -169,7 +172,7 @@ a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 </style>
 </head>
 <body>
-<header><a href="${english ? '/en/' : '/'}" aria-label="NYCU LIFE"><img class="light-logo" src="/brand/logo-horizontal-blue.svg" alt="NYCU LIFE" width="160" height="26"><img class="dark-logo" src="/brand/logo-horizontal-white.svg" alt="NYCU LIFE" width="160" height="26"></a></header>
+<header><a href="${english ? '/en/' : '/'}" aria-label="NYCU LIFE"><img class="light-logo" src="/brand/logo-horizontal-blue.svg" alt="NYCU LIFE" width="160" height="26"><img class="dark-logo" src="/brand/logo-horizontal-white.svg" alt="NYCU LIFE" width="160" height="26"></a><nav><a class="primary" href="/wishpool/">${copy.wishShort}</a></nav></header>
 <main><section aria-labelledby="title"><img src="/story/designer/wishpool/machine.svg" alt="" width="176" height="176"><div><span>503</span><h1 id="title">${copy.title}</h1><p>${copy.lede}</p><nav><a class="primary" href="${english ? '/en/' : '/'}">${copy.retry}</a><a href="/wishpool/">${copy.wish} →</a></nav></div></section></main>
 </body>
 </html>`;

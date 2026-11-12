@@ -29,6 +29,19 @@
 	let loading = $state(false);
 	/** The last list request failed: show that instead of an "all clear" empty list. */
 	let loadFailed = $state(false);
+	let copiedId = $state('');
+
+	async function copyId(id: string) {
+		try {
+			await navigator.clipboard.writeText(id);
+			copiedId = id;
+			setTimeout(() => {
+				if (copiedId === id) copiedId = '';
+			}, 1500);
+		} catch {
+			// Clipboard access can be refused; the full ID stays in the tooltip.
+		}
+	}
 	let loggingOut = $state(false);
 	let updatingId = $state('');
 	let error = $state('');
@@ -327,7 +340,7 @@
 		<div class="list-heading">
 			<div>
 				<span>{visibilityLabel(visibility)}</span>
-				<strong>{filteredWishes.length}</strong>
+				<strong>{loading ? '–' : filteredWishes.length}</strong>
 			</div>
 			<p>{m.wish_admin_list_hint()}</p>
 		</div>
@@ -428,7 +441,16 @@
 						<div class="card-footer">
 							<div class="wish-facts">
 								<span>{supportCountLabel(wish.supportCount)}</span>
-								<code title={wish.id}>{wish.id}</code>
+								<button
+									type="button"
+									class="wish-id"
+									title={wish.id}
+									aria-label={`${m.wish_admin_copy_id()}：${wish.id}`}
+									onclick={() => copyId(wish.id)}
+									>{copiedId === wish.id
+										? m.wish_admin_copied_id()
+										: `ID ${wish.id.slice(0, 8)}`}</button
+								>
 							</div>
 							<div class="card-actions">
 								{#if editingId !== wish.id}
@@ -887,12 +909,21 @@
 		color: var(--muted);
 		font-size: 0.74rem;
 	}
-	.wish-facts code {
-		max-width: 11rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+	.wish-id {
+		min-height: 2rem;
+		padding: 0.15rem 0.6rem;
+		border: 1px solid var(--line-strong);
+		border-radius: 999px;
+		background: transparent;
 		color: inherit;
+		font: 600 0.78rem var(--font-sans);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		cursor: copy;
+	}
+	.wish-id:hover {
+		border-color: var(--brand);
+		color: var(--brand);
 	}
 	.action-button {
 		padding: 0.58rem 0.86rem;
@@ -1068,7 +1099,7 @@
 		.wish-facts {
 			justify-content: space-between;
 		}
-		.wish-facts code {
+		.wish-id {
 			max-width: 9rem;
 		}
 	}

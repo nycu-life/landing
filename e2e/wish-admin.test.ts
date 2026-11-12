@@ -40,7 +40,7 @@ test('signed-out administrators are sent to NYCU LIFE OAuth without a browser to
 		'/api/wishes/auth/login'
 	);
 	await expect(page.locator('input[type="password"]')).toHaveCount(0);
-	await expect(page.getByText('這個頁面不會取得或儲存你的密碼與 OAuth token')).toBeVisible();
+	await expect(page.getByText('這個頁面不會看到或保存你的密碼')).toBeVisible();
 });
 
 test('OAuth session moderates, switches lists, and signs out without authorization headers', async ({
@@ -239,7 +239,7 @@ test('OAuth callback failures explain authorization denial without keeping the e
 	);
 
 	await page.goto('/wishpool/admin/?auth=denied');
-	await expect(page.getByRole('alert')).toHaveText('這個帳號目前無法通過 OAuth 授權，請重新登入。');
+	await expect(page.getByRole('alert')).toHaveText('NYCU LIFE 帳號沒有完成登入授權，請重新登入。');
 	await expect(page).toHaveURL('/wishpool/admin/');
 });
 

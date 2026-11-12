@@ -1247,8 +1247,8 @@
 		content: '✦';
 	}
 	.wish-card-time {
-		color: #536489;
-		font-size: 0.78rem;
+		color: #3f4d6e;
+		font-size: 0.82rem;
 	}
 	.wish-card-title {
 		font-size: clamp(1rem, 1.6vw, 1.15rem);
@@ -1261,7 +1261,8 @@
 	}
 	.wish-support {
 		position: relative;
-		width: 4.8rem;
+		/* 5.6rem keeps the sticker's 95:47 shape at a 44 px touch height. */
+		width: 5.6rem;
 		min-width: 0;
 		aspect-ratio: 95 / 47;
 		border: 0;
@@ -1278,8 +1279,8 @@
 		color: transparent;
 	}
 	.wish-support-count {
-		color: #536489;
-		font-size: 0.8rem;
+		color: #3f4d6e;
+		font-size: 0.82rem;
 	}
 	.wish-state {
 		border: 1.5px dashed #2462ff;

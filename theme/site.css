@@ -1011,3 +1011,67 @@ html:has(.prototype-story) {
 	white-space: nowrap;
 	text-decoration: none;
 }
+
+/* Film poster under the YouTube iframe (theme/site.js); the iframe covers it once
+   the player has painted. */
+.has-film-poster {
+	position: relative;
+	background:
+		radial-gradient(circle at 50% 50%, rgb(0 0 0 / 0) 0 30%, rgb(9 20 48 / 0.35) 100%),
+		var(--film-poster) center / cover no-repeat,
+		var(--brand);
+}
+.has-film-poster::before {
+	content: '';
+	position: absolute;
+	z-index: 0;
+	top: 50%;
+	left: 50%;
+	width: 4.5rem;
+	height: 3.2rem;
+	border-radius: 0.9rem;
+	background: #ff0033
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M8 5v14l11-7z'/%3E%3C/svg%3E")
+		center / 1.6rem no-repeat;
+	transform: translate(-50%, -50%);
+	pointer-events: none;
+}
+.has-film-poster iframe,
+.has-film-poster .kg-embed-card {
+	position: relative;
+	z-index: 1;
+}
+
+/* 產品: two product cards per row on wide screens, phone beside the copy, and the
+   feature list aligned with the heading. */
+@media (min-width: 1100px) {
+	.product-catalog {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.product-entry {
+		grid-template-columns: 9.5rem minmax(0, 1fr);
+		align-items: start;
+	}
+}
+.product-entry-copy h2 {
+	font-weight: 750;
+	letter-spacing: -0.01em;
+}
+.product-entry-body ul {
+	padding-left: 0;
+	list-style: none;
+}
+.product-entry-body li {
+	position: relative;
+	padding-left: 1.1rem;
+}
+.product-entry-body li::before {
+	content: '';
+	position: absolute;
+	top: 0.72em;
+	left: 0.1rem;
+	width: 0.4rem;
+	height: 0.4rem;
+	border-radius: 50%;
+	background: var(--brand);
+}

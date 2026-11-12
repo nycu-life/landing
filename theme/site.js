@@ -233,3 +233,14 @@ for (const item of document.querySelectorAll('[data-news-item]')) {
 	else socialNetworks.add(official.matches('.instagram-media') ? 'instagram' : 'threads');
 }
 loadSocialScripts(socialNetworks);
+
+// Team film (home About chapter and /about/): the YouTube player paints only after
+// it loads, which leaves an empty block. Show the video's own poster and a play
+// mark underneath the iframe until then.
+for (const frame of document.querySelectorAll('.team-film, .film-frame')) {
+	const src = frame.querySelector('iframe')?.getAttribute('src') ?? '';
+	const id = /youtube(?:-nocookie)?\.com\/embed\/([\w-]{6,})/.exec(src)?.[1];
+	if (!id) continue;
+	frame.classList.add('has-film-poster');
+	frame.style.setProperty('--film-poster', `url("https://i.ytimg.com/vi/${id}/hqdefault.jpg")`);
+}

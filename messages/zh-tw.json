@@ -367,9 +367,9 @@
 	"wish_admin_lede": "審核待公開內容、下架不適當資訊，並管理目前的公開狀態。",
 	"wish_admin_back": "返回公開許願池",
 	"wish_admin_login_title": "使用 NYCU LIFE 帳號登入",
-	"wish_admin_login_body": "登入後即可審核願望、下架不適當內容；任何成功通過 NYCU LIFE OAuth 的帳號都可以進入。",
+	"wish_admin_login_body": "用 NYCU LIFE 帳號登入後，就能審核願望、公開或下架內容，並回覆同學。",
 	"wish_admin_sign_in": "使用 NYCU LIFE 登入",
-	"wish_admin_auth_note": "登入由 auth.nycu.one 安全處理；這個頁面不會取得或儲存你的密碼與 OAuth token。",
+	"wish_admin_auth_note": "登入在 auth.nycu.one 完成，這個頁面不會看到或保存你的密碼。",
 	"wish_admin_checking": "正在確認登入狀態…",
 	"wish_admin_checking_body": "請稍候，我們正在安全地連接許願池管理後台。",
 	"wish_admin_connected": "已登入許願池管理",
@@ -395,7 +395,7 @@
 	"wish_admin_notice_hidden": "願望已下架，不會再出現在公開許願池。",
 	"wish_admin_notice_published": "願望已公開，現在會出現在許願池。",
 	"wish_admin_error_session_expired": "登入已失效，請重新使用 NYCU LIFE 帳號登入。",
-	"wish_admin_error_denied": "這個帳號目前無法通過 OAuth 授權，請重新登入。",
+	"wish_admin_error_denied": "NYCU LIFE 帳號沒有完成登入授權，請重新登入。",
 	"wish_admin_error_auth_unavailable": "目前無法連接 NYCU LIFE 登入服務，請稍後再試。",
 	"wish_admin_error_auth_callback": "登入流程未完成或已逾時，請重新登入。",
 	"wish_admin_error_load": "目前無法讀取管理資料，請稍後再試。",
@@ -502,5 +502,7 @@
 	"wish_retry": "重新載入",
 	"footer_credit": "由 NYCU LIFE 學生團隊用心打造",
 	"footer_source": "原始碼",
-	"footer_editor": "編輯登入"
+	"footer_editor": "編輯登入",
+	"wish_admin_copy_id": "複製 ID",
+	"wish_admin_copied_id": "已複製"
 }
