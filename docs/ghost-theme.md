@@ -58,7 +58,7 @@ FAQ 的標題是問題，內文是答案。職缺的標題是職稱、Excerpt �
 首頁組件 Pages 的 canonical 指向首頁對應章節，因此不會重複列入 Ghost sitemap。
 
 導覽選單在 Ghost Settings → Navigation 編輯：Primary 是中文，Secondary 是英文。
-英文版只有首頁、About 與一般 Page；文章（開發日誌、漫畫、最新消息）只有中文，英文選單不放文章連結。
+英文版只有首頁、About 與一般 Page；文章（開發日誌、漫畫、最新消息）只有中文。`--initialize-navigation` 的英文選單預設以「Dev log (中文)」「News (中文)」標示連到中文文章，編輯者可自行調整。
 Ghost Design 的站名、圖示和字型設定生效；原生主題版型、插圖和動畫則在 `theme/`
 與共用設計元件中維護。App 商店入口是主題固定連結。
 

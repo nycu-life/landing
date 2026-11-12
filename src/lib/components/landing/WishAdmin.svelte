@@ -462,10 +462,8 @@
 										>{wish.reply ? m.wish_admin_reply_edit() : m.wish_admin_reply_write()}</button
 									>
 								{/if}
-								<!-- Status follows the visibility decision; in the review queue it is a
-								     quieter, secondary step after publishing or hiding. -->
 								<button
-									class="action-button {visibility === 'pending' ? 'tertiary' : 'secondary'}"
+									class="action-button secondary"
 									class:fulfil={wish.status !== 'fulfilled'}
 									type="button"
 									disabled={Boolean(updatingId)}
@@ -947,13 +945,7 @@
 		background: rgba(217, 45, 32, 0.08);
 		color: #b42318;
 	}
-	.action-button.tertiary {
-		border-color: transparent;
-		background: transparent;
-		color: var(--ink-soft);
-		text-decoration: underline;
-		text-underline-offset: 0.2em;
-	}
+
 	.action-button:hover:not(:disabled),
 	.toolbar-button:hover:not(:disabled) {
 		transform: translateY(-1px);
@@ -1045,6 +1037,10 @@
 	:global(html[data-theme='dark']) .status-chip,
 	:global(html[data-theme='dark']) .action-button.secondary.fulfil {
 		color: #71d5aa;
+	}
+	/* Dark brand blue is light, so primary actions take dark text. */
+	:global(html[data-theme='dark']) .action-button.primary {
+		color: var(--base);
 	}
 	:global(html[data-theme='dark']) .toolbar-button.danger,
 	:global(html[data-theme='dark']) .admin-message.error,

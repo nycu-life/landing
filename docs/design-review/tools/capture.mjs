@@ -61,7 +61,7 @@ async function shoot(page, file, size, { anchor, viewportOnly } = {}) {
 	if (viewportOnly) {
 		await page.evaluate((y) => window.scrollTo(0, y), top);
 		await page.waitForTimeout(400);
-		return page.screenshot({ path: file, animations: 'disabled' });
+		return page.screenshot({ path: file, animations: 'disabled', timeout: 120000 });
 	}
 	const full = await page.evaluate(() => document.documentElement.scrollHeight);
 	const height = Math.round(Math.max(size.height, Math.min(full - top, size.maxHeight)));
@@ -81,6 +81,7 @@ async function shoot(page, file, size, { anchor, viewportOnly } = {}) {
 	return page.screenshot({
 		path: file,
 		animations: 'disabled',
+		timeout: 120000,
 		fullPage: true,
 		clip: { x: 0, y: top, width: size.width, height: Math.min(height, full - top) }
 	});
@@ -92,7 +93,23 @@ function posts(status) {
 	});
 }
 
+// The host is shared: wait for load ≤ 10 before every state, and retry a state
+// once when a heavy spike makes the browser time out.
 async function captureState(browser, bases, out, sizeName, size, state) {
+	for (let attempt = 1; ; attempt++) {
+		execFileSync(path.join(here, 'wait-load.sh'), ['10'], {
+			stdio: ['ignore', 'ignore', 'ignore']
+		});
+		try {
+			return await captureOnce(browser, bases, out, sizeName, size, state);
+		} catch (error) {
+			if (attempt >= 2) throw error;
+			console.warn(state.id, sizeName, 'retrying after', error.message.split('\n')[0]);
+		}
+	}
+}
+
+async function captureOnce(browser, bases, out, sizeName, size, state) {
 	const context = await browser.newContext({
 		viewport: { width: size.width, height: size.height },
 		deviceScaleFactor: size.deviceScaleFactor,
@@ -192,10 +209,15 @@ async function captureState(browser, bases, out, sizeName, size, state) {
 		await page.waitForTimeout(700);
 	}
 	if (state.fill || state.click) await page.waitForTimeout(600);
+	// Park the pointer so a clicked control's neighbour is not caught mid-hover.
+	await page.mouse.move(0, 0);
 	const file = `${out}/${state.id}_${sizeName}.png`;
-	await shoot(page, file, size, state);
-	console.log(file);
-	await context.close();
+	try {
+		await shoot(page, file, size, state);
+		console.log(file);
+	} finally {
+		await context.close();
+	}
 }
 
 if (mode === 'site') {

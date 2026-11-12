@@ -1085,3 +1085,13 @@ html:has(.prototype-story) {
 	object-fit: cover;
 	object-position: 100% 50%;
 }
+
+/* Store buttons keep full-strength labels in both appearances. */
+.product-app .store-copy small {
+	opacity: 1;
+}
+:root[data-theme='dark'] .product-app .store-link {
+	background: var(--surface-2);
+	border: 1px solid var(--line-strong);
+	color: var(--ink);
+}
