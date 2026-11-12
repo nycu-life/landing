@@ -37,7 +37,8 @@ const snapshot = settings.settings
 			'title',
 			'description',
 			'cover_image',
-			'logo'
+			'logo',
+			'icon'
 		].includes(s.key)
 	)
 	.map(({ key, value }) => ({ key, value }));
@@ -65,6 +66,17 @@ try {
 	// Replace only Ghost's untouched sample branding; custom editor settings stay intact.
 	const branding = [];
 	const setting = (key) => settings.settings.find((s) => s.key === key)?.value;
+	// Ghost otherwise serves its own default /favicon.ico, including in search results.
+	if (!setting('icon')) {
+		const image = new FormData();
+		image.set(
+			'file',
+			new Blob([await readFile('static/favicon-96.png')], { type: 'image/png' }),
+			'nycu-life-icon.png'
+		);
+		const uploaded = await admin('images/upload/', { method: 'POST', body: image });
+		branding.push({ key: 'icon', value: uploaded.images[0].url });
+	}
 	if (
 		String(setting('cover_image')).includes('static.ghost.org/v5.0.0/images/publication-cover.jpg')
 	) {
