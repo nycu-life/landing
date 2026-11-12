@@ -9,11 +9,14 @@
     <div class="product-catalog">
         {{#get "pages" filter="tag:hash-theme-product-[[locale]]" order="published_at asc" limit="100"}}{{#foreach pages}}
         <article class="product-entry" data-product-entry>
-            <div class="product-entry-shot">{{#if feature_image}}<img src="{{feature_image}}" alt="{{feature_image_alt}}" loading="lazy" data-product-default>{{/if}}</div>
+            <div class="product-entry-shot">{{#if feature_image}}<img src="{{img_url feature_image size='m' format='webp'}}" srcset="{{img_url feature_image size='s' format='webp'}} 320w, {{img_url feature_image size='m' format='webp'}} 600w, {{img_url feature_image size='l' format='webp'}} 960w" sizes="(max-width: 640px) 14rem, 15rem" alt="{{feature_image_alt}}" loading="lazy" decoding="async" data-original="{{feature_image}}" data-product-default>{{/if}}</div>
             <div class="product-entry-copy"><h2>{{title}}</h2>{{#if custom_excerpt}}<p class="product-entry-tagline">{{custom_excerpt}}</p>{{/if}}<div class="product-entry-body">{{content}}</div></div>
         </article>
         {{/foreach}}{{/get}}
     </div>
+    {{!-- Dark visitors: drop the light screenshot before layout so the browser only
+          downloads the dark one that theme/site.js puts in its place. --}}
+    <script>if(document.documentElement.dataset.theme==='dark')for(const e of document.querySelectorAll('[data-product-entry]')){const i=e.querySelector('.product-entry-shot img');if(i&&[...e.querySelectorAll('.product-entry-body figcaption')].some(c=>c.textContent.trim().toLowerCase()==='dark')){i.removeAttribute('srcset');i.removeAttribute('src')}}</script>
     <section class="product-app" aria-labelledby="product-app-title">
         <h2 id="product-app-title">{{copy 'footer_download_title'}}</h2>
         <div class="store-links">

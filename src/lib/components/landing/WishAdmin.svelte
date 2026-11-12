@@ -27,6 +27,8 @@
 	let query = $state('');
 	let checkingSession = $state(true);
 	let loading = $state(false);
+	/** The last list request failed: show that instead of an "all clear" empty list. */
+	let loadFailed = $state(false);
 	let loggingOut = $state(false);
 	let updatingId = $state('');
 	let error = $state('');
@@ -106,6 +108,7 @@
 		if (!identity) return;
 		const version = ++requestVersion;
 		loading = true;
+		loadFailed = false;
 		error = '';
 		notice = '';
 		try {
@@ -125,6 +128,7 @@
 				return;
 			}
 			error = errorMessage(caught);
+			loadFailed = true;
 		} finally {
 			if (version === requestVersion) loading = false;
 		}
@@ -144,16 +148,14 @@
 		}
 		try {
 			identity = await getAdminSession();
-			if (identity) {
-				await load('pending');
-			} else {
-				error = callbackError;
-			}
+			if (!identity) error = callbackError;
 		} catch {
 			error = callbackError || m.wish_admin_error_auth_unavailable();
 		} finally {
 			checkingSession = false;
 		}
+		// Signed in: show the workspace right away; the list has its own loading state.
+		if (identity) await load('pending');
 	}
 
 	async function disconnect() {
@@ -317,7 +319,9 @@
 			</label>
 		</div>
 
-		{#if error}<p class="admin-message error" role="alert">{error}</p>{/if}
+		{#if error && !(loadFailed && wishes.length === 0)}
+			<p class="admin-message error" role="alert">{error}</p>
+		{/if}
 		{#if notice}<p class="admin-message notice" role="status">{notice}</p>{/if}
 
 		<div class="list-heading">
@@ -329,7 +333,18 @@
 		</div>
 
 		{#if loading}
-			<div class="admin-state" aria-live="polite">{m.wish_admin_loading()}</div>
+			<div class="admin-state" role="status" aria-busy="true">
+				<span class="admin-spinner" aria-hidden="true"></span>
+				{m.wish_admin_loading()}
+			</div>
+		{:else if loadFailed && wishes.length === 0}
+			<div class="admin-state failed">
+				<span aria-hidden="true">!</span>
+				<strong role="alert">{error || m.wish_admin_error_load()}</strong>
+				<button class="action-button secondary" type="button" onclick={() => load(visibility)}
+					>{m.wish_admin_refresh()}</button
+				>
+			</div>
 		{:else if filteredWishes.length === 0}
 			<div class="admin-state empty">
 				<span aria-hidden="true">✓</span>
@@ -933,6 +948,46 @@
 		margin: 0;
 		font-size: 0.86rem;
 		color: var(--muted);
+	}
+	.admin-state[aria-busy='true'] {
+		grid-auto-flow: column;
+		gap: 0.75rem;
+		justify-content: center;
+	}
+	.admin-spinner {
+		width: 1.2rem;
+		height: 1.2rem;
+		border: 2px solid var(--brand-soft);
+		border-top-color: var(--brand);
+		border-radius: 50%;
+		animation: admin-spin 0.8s linear infinite;
+	}
+	@keyframes admin-spin {
+		to {
+			transform: rotate(1turn);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.admin-spinner {
+			animation-duration: 2.4s;
+		}
+	}
+	.admin-state.failed {
+		gap: 0.6rem;
+		border-color: color-mix(in srgb, #c2412d 45%, var(--line));
+	}
+	.admin-state.failed > span {
+		display: grid;
+		place-items: center;
+		width: 2.4rem;
+		height: 2.4rem;
+		border-radius: 50%;
+		background: rgba(194, 65, 45, 0.12);
+		color: #c2412d;
+		font-weight: 800;
+	}
+	.admin-state.failed strong {
+		color: var(--ink);
 	}
 	.sr-only {
 		position: absolute;

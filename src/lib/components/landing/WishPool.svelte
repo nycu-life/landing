@@ -198,10 +198,8 @@
 				loaded[status] = true;
 				failed[status] = false;
 			} catch {
-				if (showError && !controller.signal.aborted) {
-					failed[status] = true;
-					if (status === 'open') error = m.wish_error_load();
-				}
+				// The board shows the failure (with a retry); the form keeps its own errors.
+				if (showError && !controller.signal.aborted) failed[status] = true;
 			} finally {
 				refreshing[status] = false;
 			}
@@ -288,6 +286,11 @@
 		} finally {
 			supportingId = '';
 		}
+	}
+
+	function retryLoad() {
+		failed[activeTab] = false;
+		void requestFetch?.(activeTab, true);
 	}
 
 	function selectTab(status: WishStatus) {
@@ -427,9 +430,27 @@
 			{/if}
 
 			{#if loading}
-				<p class="wish-state" role="status">{m.wish_loading()}</p>
-			{:else if activeTab === 'fulfilled' && failed.fulfilled}
-				<p class="wish-state" role="alert">{m.wish_error_load_fulfilled()}</p>
+				<div class="wish-list wish-skeletons" role="status" aria-busy="true">
+					<span class="sr-only">{m.wish_loading()}</span>
+					{#each [0, 1, 2] as index (index)}
+						<div class="wish-card wish-skeleton" aria-hidden="true">
+							<span class="wish-skeleton-bar is-chip"></span>
+							<span class="wish-skeleton-bar is-title"></span>
+							<span class="wish-skeleton-bar is-title-short"></span>
+							<span class="wish-skeleton-bar is-action"></span>
+						</div>
+					{/each}
+				</div>
+			{:else if failed[activeTab]}
+				<div class="wish-state is-error" role="alert">
+					<strong>{m.wish_error_load_title()}</strong>
+					<span
+						>{activeTab === 'fulfilled'
+							? m.wish_error_load_fulfilled()
+							: m.wish_error_load_body()}</span
+					>
+					<button type="button" class="wish-retry" onclick={retryLoad}>{m.wish_retry()}</button>
+				</div>
 			{:else if visibleWishes.length === 0}
 				<div class="wish-state">
 					{#if activeTab === 'fulfilled'}
@@ -844,6 +865,75 @@
 	.wish-state strong {
 		color: var(--ink);
 	}
+	.wish-state.is-error strong {
+		color: #c2412d;
+	}
+	.wish-retry {
+		margin-top: 0.75rem;
+		min-height: 2.75rem;
+		padding: 0 1.25rem;
+		border: 1.5px solid var(--brand);
+		border-radius: 999px;
+		background: var(--surface);
+		color: var(--brand);
+		font: inherit;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.wish-retry:hover {
+		background: var(--brand-soft);
+	}
+	.wish-retry:focus-visible {
+		outline: 3px solid var(--brand);
+		outline-offset: 3px;
+	}
+	/* Loading: card-shaped placeholders hold the board's layout until wishes arrive. */
+	.wish-skeleton {
+		display: grid;
+		align-content: start;
+		gap: 0.75rem;
+		min-height: 9.5rem;
+	}
+	.wish-skeleton-bar {
+		display: block;
+		height: 0.85rem;
+		border-radius: 999px;
+		background: linear-gradient(
+				90deg,
+				var(--surface-3) 0%,
+				var(--surface-2) 50%,
+				var(--surface-3) 100%
+			)
+			0 0 / 200% 100%;
+		animation: wish-shimmer 1.4s ease-in-out infinite;
+	}
+	.wish-skeleton-bar.is-chip {
+		width: 3.5rem;
+		height: 1.6rem;
+	}
+	.wish-skeleton-bar.is-title {
+		width: 85%;
+		height: 1.05rem;
+	}
+	.wish-skeleton-bar.is-title-short {
+		width: 55%;
+		height: 1.05rem;
+	}
+	.wish-skeleton-bar.is-action {
+		width: 4.5rem;
+		height: 2.2rem;
+		margin-top: 0.4rem;
+	}
+	@keyframes wish-shimmer {
+		to {
+			background-position: -200% 0;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.wish-skeleton-bar {
+			animation: none;
+		}
+	}
 
 	@keyframes wish-in {
 		from {
@@ -1255,8 +1345,7 @@
 		line-height: 1.6;
 	}
 
-	/* Fulfilled cards and team replies. Cards keep their white designer frame in both
-	   themes, so the reply bubble uses fixed light colours as well. */
+	/* Fulfilled cards and team replies (dark variants at the end of this block). */
 	.wish-card-badge {
 		display: inline-flex;
 		align-items: center;
@@ -1467,5 +1556,103 @@
 			animation: none;
 			transition: none;
 		}
+	}
+
+	/* Dark appearance: the same sketch language (ink outline, offset shadow, tape) on
+	   the site's dark surfaces, so the board does not read as light cards pasted on a
+	   dark page. The composer's wide SVG frame is light-only; dark uses its outline. */
+	:global(:root[data-theme='dark']) .wish-composer {
+		border: 2px solid #8fa8ff;
+		border-radius: 1.75rem;
+		background: var(--surface);
+		box-shadow:
+			0 0 0 4px var(--base),
+			0 0 0 5px #8fa8ff;
+		color: var(--ink);
+	}
+	:global(:root[data-theme='dark']) .wish-composer-frame {
+		display: none;
+	}
+	:global(:root[data-theme='dark']) .wish-field-label,
+	:global(:root[data-theme='dark']) .wish-privacy strong {
+		color: var(--ink);
+	}
+	:global(:root[data-theme='dark']) .wish-title-field input,
+	:global(:root[data-theme='dark']) .wish-category-field select,
+	:global(:root[data-theme='dark']) .wish-detail-field textarea {
+		border-color: #8c9db4;
+		background: var(--surface-2);
+		color: var(--ink);
+	}
+	:global(:root[data-theme='dark']) .wish-title-field input:focus-visible,
+	:global(:root[data-theme='dark']) .wish-category-field select:focus-visible,
+	:global(:root[data-theme='dark']) .wish-detail-field textarea:focus-visible {
+		border-color: var(--brand);
+		background: var(--surface-2);
+		box-shadow: 0 0 0 3px var(--brand-soft);
+	}
+	:global(:root[data-theme='dark']) .wish-detail-field summary,
+	:global(:root[data-theme='dark']) .wish-privacy,
+	:global(:root[data-theme='dark']) .wish-card-time,
+	:global(:root[data-theme='dark']) .wish-support-count,
+	:global(:root[data-theme='dark']) .wish-card-fulfilled-on {
+		color: var(--ink-soft);
+	}
+	:global(:root[data-theme='dark']) .wish-card {
+		border-color: #9fb4ff;
+		background: var(--surface);
+		box-shadow: 0.45rem 0.45rem 0 #2c3d78;
+		color: var(--ink);
+	}
+	:global(:root[data-theme='dark']) .wish-card::before {
+		background: rgba(143, 168, 255, 0.45);
+		border-color: rgba(143, 168, 255, 0.5);
+	}
+	:global(:root[data-theme='dark']) .wish-card-category,
+	:global(:root[data-theme='dark']) .wish-filter button {
+		border-color: #8aa9ff;
+		background: transparent;
+		color: #c3d2ff;
+	}
+	:global(:root[data-theme='dark']) .wish-filter button.active {
+		border-color: #8aa9ff;
+		background: #3d4dff;
+		color: #fff;
+	}
+	:global(:root[data-theme='dark']) .wish-card-detail summary {
+		color: #a9c5ff;
+	}
+	:global(:root[data-theme='dark']) .wish-card-detail p {
+		color: var(--ink-soft);
+	}
+	:global(:root[data-theme='dark']) .wish-reply {
+		border-color: #8aa9ff;
+		background: #1c2a4a;
+		color: var(--ink);
+	}
+	:global(:root[data-theme='dark']) .wish-reply-label {
+		color: #a9c5ff;
+	}
+	:global(:root[data-theme='dark']) .wish-tabs {
+		border-color: #8aa9ff;
+		background: var(--surface);
+	}
+	:global(:root[data-theme='dark']) .wish-tabs button {
+		color: #c3d2ff;
+	}
+	:global(:root[data-theme='dark']) .wish-tabs button.active {
+		background: #3d4dff;
+		color: #fff;
+	}
+	:global(:root[data-theme='dark']) .wish-state {
+		border-color: #8aa9ff;
+		background: var(--surface);
+		color: var(--ink-soft);
+	}
+	:global(:root[data-theme='dark']) .wish-state.is-error strong {
+		color: #ff9c8a;
+	}
+	:global(:root[data-theme='dark']) .wish-retry {
+		background: transparent;
 	}
 </style>

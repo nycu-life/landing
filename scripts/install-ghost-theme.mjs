@@ -118,7 +118,12 @@ try {
 				{ label: 'FAQ', url: `${p}/#faq` },
 				{ label: english ? 'Join us' : '加入我們', url: `${p}/#join` },
 				// Articles are Chinese only, so the English menu has no dev log.
-				...(english ? [] : [{ label: '開發日誌', url: '/devlog/' }])
+				...(english
+					? []
+					: [
+							{ label: '開發日誌', url: '/devlog/' },
+							{ label: '最新消息', url: '/news/' }
+						])
 			];
 		};
 		await admin('settings/', {

@@ -104,13 +104,73 @@ export async function proxyGhostTheme(
 			responseHeaders.set('cache-control', 'private, no-cache');
 		return new Response(result.body, { status: result.status, headers: responseHeaders });
 	} catch {
-		return new Response('Content is temporarily unavailable. Please try again shortly.', {
+		return new Response(request.method === 'HEAD' ? null : unavailablePage(incoming.pathname), {
 			status: 503,
 			headers: {
-				'content-type': 'text/plain; charset=utf-8',
+				'content-type': 'text/html; charset=utf-8',
 				'retry-after': '30',
 				'cache-control': 'no-store'
 			}
 		});
 	}
+}
+
+/**
+ * Shown while Ghost cannot answer. It only uses files the Node service serves
+ * itself (static/), keeps the site's colours and appearance setting, and points to
+ * the Wish Pool, which does not depend on Ghost.
+ */
+function unavailablePage(pathname: string): string {
+	const english = pathname === '/en' || pathname.startsWith('/en/');
+	const copy = english
+		? {
+				lang: 'en',
+				title: 'This page cannot load right now',
+				lede: 'Our content service is not responding. Please refresh in a moment. The Wish Pool is not affected and still takes wishes.',
+				retry: 'Refresh',
+				wish: 'Go to the Wish Pool'
+			}
+		: {
+				lang: 'zh-tw',
+				title: '頁面暫時打不開',
+				lede: '網站內容服務沒有回應，請稍後重新整理。許願池不受影響，仍然可以許願。',
+				retry: '重新整理',
+				wish: '前往許願池'
+			};
+	return `<!doctype html>
+<html lang="${copy.lang}" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>${copy.title}｜NYCU LIFE</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('nycu-life-theme')==='dark'?'dark':'light'}catch{}</script>
+<style>
+:root{--base:#f4f6fb;--surface:#fff;--ink:#17212e;--ink-soft:#5d6b7a;--brand:#0045f2;--line:rgba(0,69,242,.3);color-scheme:light}
+:root[data-theme=dark]{--base:#0b1220;--surface:#131f33;--ink:#edf4ff;--ink-soft:#b5c3d6;--brand:#79a4ff;--line:rgba(121,164,255,.35);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--base);color:var(--ink);font-family:Roboto,'Noto Sans TC','PingFang TC',system-ui,sans-serif;display:grid;grid-template-rows:auto 1fr}
+header{padding:1.1rem clamp(1.25rem,4vw,2.5rem);border-bottom:1px solid rgba(127,140,160,.2)}
+header img{display:block;height:1.6rem;width:auto}
+.dark-logo{display:none!important}
+:root[data-theme=dark] .light-logo{display:none!important}
+:root[data-theme=dark] .dark-logo{display:block!important}
+main{display:grid;place-items:center;padding:2rem clamp(1.25rem,4vw,2.5rem)}
+section{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(1.25rem,4vw,3rem);align-items:center;max-width:56rem;width:100%;padding:clamp(1.5rem,4vw,2.75rem);border:1.5px dashed var(--line);border-radius:1.6rem;background:var(--surface)}
+section>img{width:clamp(7rem,16vw,11rem);height:auto}
+span{color:var(--brand);font-size:.8rem;font-weight:700;letter-spacing:.14em}
+h1{margin:.6rem 0;font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.2}
+p{margin:0;color:var(--ink-soft);line-height:1.75}
+nav{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;align-items:center;margin-top:1.25rem;font-weight:700}
+a{color:var(--brand)}
+.primary{display:inline-flex;align-items:center;min-height:2.75rem;padding:0 1.25rem;border-radius:999px;background:var(--brand);color:var(--base);text-decoration:none}
+a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+@media (max-width:640px){section{grid-template-columns:1fr;justify-items:center;text-align:center}nav{justify-content:center}}
+</style>
+</head>
+<body>
+<header><a href="${english ? '/en/' : '/'}" aria-label="NYCU LIFE"><img class="light-logo" src="/brand/logo-horizontal-blue.svg" alt="NYCU LIFE" width="160" height="26"><img class="dark-logo" src="/brand/logo-horizontal-white.svg" alt="NYCU LIFE" width="160" height="26"></a></header>
+<main><section aria-labelledby="title"><img src="/story/designer/wishpool/machine.svg" alt="" width="176" height="176"><div><span>503</span><h1 id="title">${copy.title}</h1><p>${copy.lede}</p><nav><a class="primary" href="${english ? '/en/' : '/'}">${copy.retry}</a><a href="/wishpool/">${copy.wish} →</a></nav></div></section></main>
+</body>
+</html>`;
 }

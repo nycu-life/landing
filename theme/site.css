@@ -722,3 +722,292 @@ html:has(.prototype-story) {
 :root[data-theme='dark'] .product-entry-body > p a {
 	color: var(--base);
 }
+
+/* Product image cards are the source of the phone screenshots (story.js); they are
+   never shown in the copy, including with reduced motion or without JavaScript.
+   Hidden lazy images are not downloaded. */
+.native-product-content figure,
+.native-product-content .kg-gallery-card {
+	display: none;
+}
+/* A single page of posts needs no "Page 1 of 1" line. */
+.pagination:not(:has(a)) {
+	display: none;
+}
+
+/* Empty collections (news, dev log, comics) and the error page share one card:
+   the wish machine artwork, a plain-language title, and one next step. */
+.collection-empty,
+.status-card {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	gap: clamp(1.25rem, 4vw, 3rem);
+	padding: clamp(1.5rem, 4vw, 2.75rem);
+	border: 1.5px dashed color-mix(in srgb, var(--brand) 35%, var(--line));
+	border-radius: 1.6rem;
+	background: color-mix(in srgb, var(--surface) 82%, var(--brand-soft));
+}
+.collection-empty {
+	margin-top: 2.5rem;
+}
+.collection-empty-art,
+.status-art {
+	width: clamp(7rem, 16vw, 11rem);
+	height: auto;
+}
+.collection-empty-copy,
+.status-copy {
+	display: grid;
+	gap: 0.75rem;
+	justify-items: start;
+}
+.collection-empty h2 {
+	margin: 0;
+	font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+	line-height: 1.3;
+}
+.collection-empty p {
+	margin: 0;
+	max-width: 36rem;
+	color: var(--ink-soft);
+	line-height: 1.75;
+}
+.collection-empty-link,
+.status-primary {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-height: 2.75rem;
+	margin-top: 0.25rem;
+	padding: 0 1.25rem;
+	border-radius: 999px;
+	background: var(--brand);
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+}
+:root[data-theme='dark'] .collection-empty-link,
+:root[data-theme='dark'] .status-primary {
+	color: var(--base);
+}
+.collection-empty-link:hover,
+.status-primary:hover {
+	filter: brightness(1.08);
+}
+.collection-empty-link:focus-visible,
+.status-actions a:focus-visible {
+	outline: 3px solid var(--ink);
+	outline-offset: 3px;
+}
+.status-page {
+	display: grid;
+	align-content: center;
+	min-height: min(70vh, 44rem);
+}
+.status-code {
+	color: var(--brand);
+	font-size: 0.8rem;
+	font-weight: 750;
+	letter-spacing: 0.14em;
+}
+.status-copy .page-title {
+	margin: 0;
+}
+.status-copy .page-lede {
+	margin: 0;
+	max-width: 38rem;
+}
+.status-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem 1.5rem;
+	margin: 0.5rem 0 0;
+	font-weight: 650;
+}
+.status-actions a:not(.status-primary) {
+	color: var(--brand-ink);
+}
+@media (max-width: 640px) {
+	.collection-empty,
+	.status-card {
+		grid-template-columns: 1fr;
+		justify-items: center;
+		text-align: center;
+	}
+	.collection-empty-copy,
+	.status-copy {
+		justify-items: center;
+	}
+	.status-actions {
+		justify-content: center;
+	}
+}
+
+/* Reduced motion (and no JavaScript): the chapters stack as ordinary sections.
+   Undo the scroll-driven offsets that only make sense inside the pinned stage. */
+.ghost-theme:not(.story-enhanced) .about-copy {
+	translate: none;
+}
+@media (min-width: 901px) {
+	.ghost-theme:not(.story-enhanced) .about-copy {
+		text-align: start;
+	}
+	.ghost-theme:not(.story-enhanced) .about-copy p {
+		margin-inline: 0;
+	}
+}
+/* The hand and cable artwork bleed past the phone; keep them inside the chapter. */
+.ghost-theme:not(.story-enhanced) .product-scene {
+	overflow: hidden;
+}
+@media (max-width: 900px) {
+	.ghost-theme:not(.story-enhanced) .story-scene,
+	.ghost-theme:not(.story-enhanced) .section-shell {
+		min-height: 0;
+	}
+	.ghost-theme:not(.story-enhanced) .section-shell {
+		padding-block: 3.5rem;
+	}
+	.ghost-theme:not(.story-enhanced) .hero-scene {
+		padding-block: 2.5rem 1.5rem;
+	}
+	/* The phone hangs from the top of the demo area, which the pinned stage sized;
+	   give it a fixed stage of its own when the chapter is an ordinary section. */
+	.ghost-theme:not(.story-enhanced) .product-shell {
+		padding-bottom: 0;
+	}
+	.ghost-theme:not(.story-enhanced) .product-demo {
+		height: min(118vw, 34rem);
+	}
+}
+
+/* Current section in the top bar (theme/site.js sets aria-current), matching the
+   Wish Pool's Svelte top bar. */
+.topbar-nav .nav a[aria-current='page'] {
+	color: var(--brand);
+}
+.topbar-nav .nav a[aria-current='page']::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: -0.1rem;
+	height: 2px;
+	border-radius: 2px;
+	background: currentColor;
+}
+.topbar-menu .nav a[aria-current='page'] {
+	color: var(--brand);
+	font-weight: 750;
+}
+
+/* Post lists (news, dev log, comics): rows of equal cards, three across on wide
+   screens. A post without a cover gets a brand-blue cover with its tag instead of an
+   empty block, so every card has the same anatomy. */
+.native-post-grid,
+.news-stream {
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+	align-items: stretch;
+	gap: clamp(1rem, 2vw, 1.5rem);
+}
+.news-item > .native-post-card,
+.native-post-card {
+	height: 100%;
+}
+.native-post-card > a {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	color: inherit;
+	text-decoration: none;
+}
+.native-post-card {
+	transition:
+		border-color 0.18s ease,
+		box-shadow 0.18s ease,
+		transform 0.18s ease;
+}
+.native-post-card:hover {
+	border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+	box-shadow: var(--shadow-soft);
+	transform: translateY(-2px);
+}
+.native-post-card:focus-within {
+	outline: 3px solid var(--brand);
+	outline-offset: 3px;
+}
+.native-post-card > a:focus-visible {
+	outline: none;
+}
+.native-post-cover {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+	background: var(--surface-3);
+}
+.native-post-cover-fallback {
+	display: grid;
+	place-items: center;
+	padding: 1.5rem;
+	background:
+		radial-gradient(circle at 82% 22%, rgb(255 255 255 / 0.22) 0 18%, transparent 19%),
+		linear-gradient(135deg, var(--brand) 0%, #6d9bff 100%);
+	color: #fff;
+}
+.native-post-cover-fallback > span {
+	padding: 0.4rem 1rem;
+	border: 1.5px solid rgb(255 255 255 / 0.7);
+	border-radius: 999px;
+	font-size: 1.05rem;
+	font-weight: 750;
+	letter-spacing: 0.04em;
+}
+.native-post-copy {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 1.25rem 1.35rem 1.4rem;
+}
+.native-post-copy time {
+	font-size: 0.85rem;
+	font-variant-numeric: tabular-nums;
+}
+.native-post-copy h2 {
+	margin: 0;
+	font-size: 1.25rem;
+	line-height: 1.4;
+	text-wrap: pretty;
+}
+.native-post-copy p {
+	margin: 0;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	overflow: hidden;
+	line-height: 1.65;
+}
+.post-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin-top: auto;
+	padding-top: 0.5rem;
+}
+.post-chip {
+	padding: 0.2rem 0.65rem;
+	border-radius: 999px;
+	background: var(--brand-soft);
+	color: var(--brand);
+	font-size: 0.8rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.article-tag {
+	white-space: nowrap;
+	text-decoration: none;
+}

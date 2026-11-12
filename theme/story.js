@@ -66,21 +66,24 @@ if (storyEl) {
 	const touchThreshold = 28;
 	const productStepMs = 460;
 	// Ordinary image cards remain editable in Ghost. A Light/Dark caption picks
-	// the appearance; uncaptained images work as the default screenshot set.
+	// the appearance; uncaptioned images work as the default screenshot set.
+	// Shots only receive a (resized WebP) source once they are shown, so a visit
+	// downloads the current appearance's screenshots, not every light and dark PNG.
+	const SHOT_SIZES = '(max-width: 900px) 46vw, 320px';
 	for (const product of products) {
 		const target = storyEl.querySelector(`[data-product-image="${product.dataset.productIndex}"]`);
-		const images = [...product.querySelectorAll('.native-product-content figure img')];
-		if (!images.length || !target) continue;
+		const shots = captionedShots(product.querySelector('.native-product-content'));
+		if (!shots.length || !target) continue;
 		target.replaceChildren();
-		for (const image of images) {
+		for (const { url, alt, appearance } of shots) {
 			const shot = document.createElement('div');
 			shot.className = 'device-shot';
-			shot.dataset.appearance =
-				image.closest('figure').querySelector('figcaption')?.textContent.trim().toLowerCase() ===
-				'dark'
-					? 'dark'
-					: 'light';
-			shot.append(image.cloneNode());
+			shot.dataset.appearance = appearance;
+			const image = document.createElement('img');
+			image.alt = alt;
+			image.decoding = 'async';
+			image.dataset.url = url;
+			shot.append(image);
 			target.append(shot);
 		}
 	}
@@ -97,6 +100,10 @@ if (storyEl) {
 			for (const shot of shots) {
 				const selected = shot === candidates[screenshotIndex % candidates.length];
 				shot.classList.toggle('active', selected);
+				const image = shot.querySelector('img[data-url]');
+				// Hidden product groups stay unloaded until their product is shown.
+				if (selected && image && !image.getAttribute('src') && !group.hidden)
+					setGhostImage(image, image.dataset.url, SHOT_SIZES);
 			}
 		}
 	};
@@ -115,7 +122,6 @@ if (storyEl) {
 		if (renderedProduct === activeProduct) return;
 		renderedProduct = activeProduct;
 		screenshotIndex = 0;
-		refreshScreenshots();
 		for (const element of storyEl.querySelectorAll('[data-product-index], [data-product-image]')) {
 			const selected =
 				Number(element.dataset.productIndex ?? element.dataset.productImage) === activeProduct;
@@ -134,6 +140,8 @@ if (storyEl) {
 					}
 				);
 		}
+		// After the groups' hidden state is set, so the shown product loads its shot.
+		refreshScreenshots();
 		for (const button of storyEl.querySelectorAll('[data-select-product]')) {
 			const selected = Number(button.dataset.selectProduct) === activeProduct;
 			button.classList.toggle('active', selected);

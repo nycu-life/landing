@@ -488,5 +488,19 @@
 	"devlog_post_nav_aria": "More posts",
 	"devlog_newer": "Newer post",
 	"devlog_older": "Older post",
-	"about_milestone_devlog_link": "Read the full dev log"
+	"about_milestone_devlog_link": "Read the full dev log",
+	"news_empty_title": "No news yet",
+	"news_empty_body": "Announcements and event news will appear here. Follow NYCU LIFE on Instagram or Threads to hear first.",
+	"comics_empty_title": "Episode one is still being drawn",
+	"comics_empty_body": "It will appear here once it is ready. Meanwhile, the dev log shows what we have been working on.",
+	"comics_empty_cta": "Read the dev log",
+	"error_title": "This page cannot load right now",
+	"error_lede": "Something went wrong on our side. Please refresh in a moment. The Wish Pool is not affected and still takes wishes.",
+	"error_retry": "Refresh",
+	"wish_error_load_title": "The Wish Pool is not responding",
+	"wish_error_load_body": "The network may be unstable or the server is under maintenance. Every wish is still there; please try again shortly.",
+	"wish_retry": "Try again",
+	"footer_credit": "Made with care by the NYCU LIFE student team",
+	"footer_source": "Source code",
+	"footer_editor": "Editor sign-in"
 }

@@ -102,6 +102,12 @@ describe('native Ghost routing boundary', () => {
 		);
 		expect(down.status).toBe(503);
 		expect(down.headers.get('retry-after')).toBe('30');
+		// A branded page that still offers the Ghost-independent Wish Pool.
+		expect(down.headers.get('content-type')).toContain('text/html');
+		const page = await down.text();
+		expect(page).toContain('頁面暫時打不開');
+		expect(page).toContain('href="/wishpool/"');
+		expect(page).not.toContain('/assets/');
 	});
 });
 

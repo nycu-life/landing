@@ -488,5 +488,19 @@
 	"devlog_post_nav_aria": "更多日誌",
 	"devlog_newer": "較新的日誌",
 	"devlog_older": "較舊的日誌",
-	"about_milestone_devlog_link": "看完整開發日誌"
+	"about_milestone_devlog_link": "看完整開發日誌",
+	"news_empty_title": "還沒有新消息",
+	"news_empty_body": "公告和活動消息整理好就會放在這裡。想第一時間知道，可以先到 Instagram 或 Threads 追蹤 NYCU LIFE。",
+	"comics_empty_title": "小貢的第一集還在畫",
+	"comics_empty_body": "畫好就會放在這裡。在那之前，可以先看看開發日誌，了解我們最近在忙什麼。",
+	"comics_empty_cta": "看開發日誌",
+	"error_title": "頁面暫時打不開",
+	"error_lede": "我們這邊出了點狀況，請稍後重新整理。許願池不受影響，仍然可以許願。",
+	"error_retry": "重新整理",
+	"wish_error_load_title": "暫時連不上許願池",
+	"wish_error_load_body": "可能是網路不穩，或伺服器正在維護。願望都還在，稍後再試就好。",
+	"wish_retry": "重新載入",
+	"footer_credit": "由 NYCU LIFE 學生團隊用心打造",
+	"footer_source": "原始碼",
+	"footer_editor": "編輯登入"
 }

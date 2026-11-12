@@ -44,7 +44,7 @@
                     <div class="device-card">
                         <img class="device-hand" src="{{asset 'story/designer/hand/back-fingers-v2.svg'}}" alt="">
                         <div class="device-phone"><div class="device-screen">
-                            {{#foreach pages}}<div class="device-shot-group" data-product-image="{{@index}}" {{#unless @first}}hidden{{/unless}}>{{#if feature_image}}<div class="device-shot active"><img src="{{feature_image}}" alt="{{feature_image_alt}}"></div>{{else}}<div class="map-placeholder"><span>NYCU</span><strong>MAP</strong><i></i></div>{{/if}}</div>{{/foreach}}
+                            {{#foreach pages}}<div class="device-shot-group" data-product-image="{{@index}}" {{#unless @first}}hidden{{/unless}}>{{#if feature_image}}<div class="device-shot active"><img src="{{img_url feature_image size='m' format='webp'}}" srcset="{{img_url feature_image size='s' format='webp'}} 320w, {{img_url feature_image size='m' format='webp'}} 600w, {{img_url feature_image size='l' format='webp'}} 960w" sizes="(max-width: 900px) 46vw, 320px" alt="{{feature_image_alt}}" loading="lazy" decoding="async"></div>{{else}}<div class="map-placeholder"><span>NYCU</span><strong>MAP</strong><i></i></div>{{/if}}</div>{{/foreach}}
                         </div></div>
                         <img class="device-frame" src="{{asset 'story/designer/hand/phone-v2.svg'}}" alt="">
                         <img class="device-hand-front" src="{{asset 'story/designer/hand/front-palm-v2.svg'}}" alt="">
