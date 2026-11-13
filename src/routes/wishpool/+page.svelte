@@ -35,6 +35,10 @@
 	.page-head {
 		max-width: 42rem;
 	}
+	/* Wide tracking suits the Latin eyebrow only; Chinese keeps normal spacing. */
+	:global(:root:lang(zh)) .wish-eyebrow {
+		letter-spacing: 0.04em;
+	}
 	.wish-eyebrow {
 		color: var(--brand);
 		font-size: 0.78rem;

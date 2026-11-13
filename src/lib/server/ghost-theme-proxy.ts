@@ -129,7 +129,8 @@ function unavailablePage(pathname: string): string {
 				lede: 'Our content service is not responding. Please refresh in a moment. The Wish Pool is not affected and still takes wishes.',
 				retry: 'Refresh',
 				wish: 'Go to the Wish Pool',
-				wishShort: 'Wish Pool'
+				wishShort: 'Wish Pool',
+				theme: 'Switch light or dark appearance'
 			}
 		: {
 				lang: 'zh-tw',
@@ -137,7 +138,8 @@ function unavailablePage(pathname: string): string {
 				lede: '網站內容服務沒有回應，請稍後重新整理。許願池不受影響，仍然可以許願。',
 				retry: '重新整理',
 				wish: '前往許願池',
-				wishShort: '許願池'
+				wishShort: '許願池',
+				theme: '切換淺色或深色外觀'
 			};
 	return `<!doctype html>
 <html lang="${copy.lang}" data-theme="light">
@@ -151,9 +153,15 @@ function unavailablePage(pathname: string): string {
 :root{--base:#f4f6fb;--surface:#fff;--ink:#17212e;--ink-soft:#5d6b7a;--brand:#0045f2;--line:rgba(0,69,242,.3);color-scheme:light}
 :root[data-theme=dark]{--base:#0b1220;--surface:#131f33;--ink:#edf4ff;--ink-soft:#b5c3d6;--brand:#79a4ff;--line:rgba(121,164,255,.35);color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:var(--base);color:var(--ink);font-family:Roboto,'Noto Sans TC','PingFang TC',system-ui,sans-serif;display:grid;grid-template-rows:auto 1fr}
+body{margin:0;min-height:100vh;background:var(--base);color:var(--ink);font-family:Roboto,'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;display:grid;grid-template-rows:auto 1fr auto}
 header{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.1rem clamp(1.25rem,4vw,2.5rem);border-bottom:1px solid rgba(127,140,160,.2)}
-header nav{margin:0}
+header nav{display:flex;align-items:center;gap:.6rem;margin:0}
+.sticker{position:relative;display:inline-grid;place-items:center;width:7.4rem;height:2.6rem;background:url(/ui/wishpool-mobile.svg) center/100% 100% no-repeat;color:#fff;font-size:.9rem;font-weight:800;text-decoration:none}
+.sticker i{position:absolute;inset:27% 14% 25% 23%;background:#33f}
+.sticker b{position:relative}
+.toggle{display:inline-grid;place-items:center;width:2.5rem;height:2.5rem;border:1px solid rgba(127,140,160,.35);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem 1.5rem;padding:1.4rem clamp(1.25rem,4vw,2.5rem);background:#374151;color:#e5e7eb;font-size:.85rem}
+footer a{color:#fff}
 header img{display:block;height:1.6rem;width:auto}
 .dark-logo{display:none!important}
 :root[data-theme=dark] .light-logo{display:none!important}
@@ -161,7 +169,7 @@ header img{display:block;height:1.6rem;width:auto}
 main{display:grid;place-items:center;padding:2rem clamp(1.25rem,4vw,2.5rem)}
 section{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(1.25rem,4vw,3rem);align-items:center;max-width:56rem;width:100%;padding:clamp(1.5rem,4vw,2.75rem);border:1.5px dashed var(--line);border-radius:1.6rem;background:var(--surface)}
 section>img{width:clamp(8rem,18vw,12rem);height:auto;aspect-ratio:5/4;object-fit:cover;object-position:100% 50%}
-span{color:var(--brand);font-size:.8rem;font-weight:700;letter-spacing:.14em}
+section span{color:var(--brand);font-size:.8rem;font-weight:700;letter-spacing:.14em}
 h1{margin:.6rem 0;font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.2}
 p{margin:0;color:var(--ink-soft);line-height:1.75}
 nav{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;align-items:center;margin-top:1.25rem;font-weight:700}
@@ -172,8 +180,9 @@ a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 </style>
 </head>
 <body>
-<header><a href="${english ? '/en/' : '/'}" aria-label="NYCU LIFE"><img class="light-logo" src="/brand/logo-horizontal-blue.svg" alt="NYCU LIFE" width="160" height="26"><img class="dark-logo" src="/brand/logo-horizontal-white.svg" alt="NYCU LIFE" width="160" height="26"></a><nav><a class="primary" href="/wishpool/">${copy.wishShort}</a></nav></header>
+<header><a href="${english ? '/en/' : '/'}" aria-label="NYCU LIFE"><img class="light-logo" src="/brand/logo-horizontal-blue.svg" alt="NYCU LIFE" width="160" height="26"><img class="dark-logo" src="/brand/logo-horizontal-white.svg" alt="NYCU LIFE" width="160" height="26"></a><nav><a class="sticker" href="/wishpool/"><i aria-hidden="true"></i><b>${copy.wishShort} ✦</b></a><button class="toggle" type="button" aria-label="${copy.theme}" onclick="var r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('nycu-life-theme',r.dataset.theme)}catch(e){}">◐</button></nav></header>
 <main><section aria-labelledby="title"><img src="/story/designer/wishpool/machine.svg" alt="" width="176" height="176"><div><span>503</span><h1 id="title">${copy.title}</h1><p>${copy.lede}</p><nav><a class="primary" href="${english ? '/en/' : '/'}">${copy.retry}</a><a href="/wishpool/">${copy.wish} →</a></nav></div></section></main>
+<footer><span>© ${new Date().getFullYear()} NYCU LIFE</span><span><a href="mailto:life@nycu.edu.tw">life@nycu.edu.tw</a> · <a href="https://www.instagram.com/nycu.life/" rel="noopener noreferrer">Instagram</a></span></footer>
 </body>
 </html>`;
 }

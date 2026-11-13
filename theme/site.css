@@ -1095,3 +1095,8 @@ html:has(.prototype-story) {
 	border: 1px solid var(--line-strong);
 	color: var(--ink);
 }
+
+/* Eyebrows: wide tracking for Latin labels only; Chinese keeps normal spacing. */
+:root:lang(zh) .devlog-eyebrow {
+	letter-spacing: 0.04em;
+}

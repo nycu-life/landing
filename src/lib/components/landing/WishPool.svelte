@@ -1776,4 +1776,21 @@
 	:global(:root[data-theme='dark']) .wish-privacy {
 		color: var(--ink-soft);
 	}
+	/* The +1 sticker art is light; in dark mode show it as an inked outline sticker so it
+	   sits at the same level as the card instead of glaring. */
+	:global(:root[data-theme='dark']) .wish-support-art img {
+		filter: invert(1) hue-rotate(180deg) brightness(1.15);
+	}
+	:global(:root[data-theme='dark']) .wish-support-label {
+		color: #dbe4ff;
+	}
+	.wish-support:focus-visible,
+	.wish-card-detail summary:focus-visible {
+		outline: 3px solid #123cff;
+		outline-offset: 3px;
+		border-radius: 0.6rem;
+	}
+	:global(:root[data-theme='dark']) .wish-support:focus-visible {
+		outline-color: #a9c5ff;
+	}
 </style>

@@ -42,6 +42,9 @@
 		display: grid;
 		gap: 0.65rem;
 	}
+	:global(:root:lang(zh)) .admin-eyebrow {
+		letter-spacing: 0.04em;
+	}
 	.admin-eyebrow {
 		margin: 0;
 		font-size: 0.74rem;

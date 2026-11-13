@@ -1143,6 +1143,17 @@
 		.card-actions > :last-child:nth-child(odd) {
 			grid-column: 1 / -1;
 		}
+		/* Hide never takes the full-width slot: it leads the first row and the positive
+		   action beside it gets the full width instead. */
+		.card-actions > .action-button.danger {
+			order: -1;
+		}
+		.card-actions > .action-button.danger:last-child:nth-child(odd) {
+			grid-column: auto;
+		}
+		.card-actions:has(> .action-button.danger:last-child:nth-child(odd)) > :nth-last-child(2) {
+			grid-column: 1 / -1;
+		}
 		.action-button {
 			white-space: nowrap;
 		}
