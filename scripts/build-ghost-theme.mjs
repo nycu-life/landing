@@ -70,7 +70,7 @@ await writeFile(
 	path.join(output, 'assets/site.js'),
 	`${await read('site.js')}\n${await read('story.js')}\n${await read('about.js')}`
 );
-for (const file of ['package.json', 'default.hbs', 'post.hbs', 'error.hbs', 'routes.yaml'])
+for (const file of ['package.json', 'default.hbs', 'post.hbs', 'routes.yaml'])
 	await cp(path.join(source, file), path.join(output, file));
 await mkdir(path.join(output, 'partials'), { recursive: true });
 for (const file of ['card', 'store-play', 'store-apple', 'appearance'])
@@ -89,7 +89,6 @@ for (const locale of ['zh-tw', 'en']) {
 		introTitle: JSON.stringify(`${copy.story_about_title_1} ${copy.story_about_title_2}`),
 		zhCurrent: english ? 'false' : 'true',
 		enCurrent: english ? 'true' : 'false',
-		adminLabel: english ? 'Content management' : '內容管理',
 		navigation: english ? '{{navigation type="secondary"}}' : '{{navigation}}',
 		previousProduct: english ? 'Previous product' : '上一個產品',
 		nextProduct: english ? 'Next product' : '下一個產品',
@@ -99,9 +98,13 @@ for (const locale of ['zh-tw', 'en']) {
 		devlogMore: english
 			? ''
 			: `<p class="milestone-more"><a href="/devlog/">${escape(copy.about_milestone_devlog_link)} →</a></p>`,
-		section: 'DEVLOG',
+		sectionEyebrow: escape(copy.eyebrow_devlog),
 		sectionTitle: copy.devlog_page_title,
-		sectionDescription: copy.devlog_page_lede
+		sectionDescription: copy.devlog_page_lede,
+		emptyTitle: copy.devlog_empty_title,
+		emptyBody: copy.devlog_empty_body,
+		emptyHref: '/about/#milestones',
+		emptyCta: copy.devlog_empty_cta
 	};
 	const render = (input, overrides = {}) => {
 		const result = input
@@ -141,12 +144,18 @@ for (const locale of ['zh-tw', 'en']) {
 	await writeFile(
 		path.join(output, 'comics.hbs'),
 		render(await read('index.hbs'), {
-			section: 'COMICS',
-			sectionTitle: copy.comics_page_title,
-			sectionDescription: copy.comics_page_lede
+			sectionEyebrow: escape(copy.eyebrow_comics),
+			sectionTitle: copy.comics_title,
+			sectionDescription: copy.comics_lede,
+			emptyTitle: copy.comics_empty_title,
+			emptyBody: copy.comics_empty_body,
+			emptyHref: '/devlog/',
+			emptyCta: copy.comics_empty_cta
 		})
 	);
 	await writeFile(path.join(output, 'news.hbs'), render(await read('news.hbs')));
+	// Ghost renders error.hbs for every locale; articles and errors are Chinese first.
+	await writeFile(path.join(output, 'error.hbs'), render(await read('error.hbs')));
 }
 await rm(path.join(root, 'dist/nycu-life.zip'), { force: true });
 const archive = {};

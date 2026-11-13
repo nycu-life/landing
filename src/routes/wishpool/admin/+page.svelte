@@ -18,7 +18,7 @@
 <div id="wish-admin" class="page admin-page">
 	<header class="page-head admin-head">
 		<div>
-			<p class="admin-eyebrow">WISH POOL / ADMIN</p>
+			<p class="admin-eyebrow">{m.eyebrow_wish_admin()}</p>
 			<h1 class="page-title">{m.wish_admin_title()}</h1>
 		</div>
 		<a class="back-link" href="{base}/wishpool/">← {m.wish_admin_back()}</a>
@@ -31,7 +31,7 @@
 
 <style>
 	.admin-page {
-		max-width: 68rem;
+		max-width: var(--shell);
 	}
 	.admin-head {
 		grid-template-columns: minmax(0, 1fr) auto;
@@ -41,6 +41,9 @@
 	.admin-head > div {
 		display: grid;
 		gap: 0.65rem;
+	}
+	:global(:root:lang(zh)) .admin-eyebrow {
+		letter-spacing: 0.04em;
 	}
 	.admin-eyebrow {
 		margin: 0;

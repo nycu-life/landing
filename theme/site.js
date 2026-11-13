@@ -22,6 +22,16 @@ for (const button of themeButtons)
 		}
 		syncThemeButtons();
 	});
+// Ghost marks only the exact menu URL; articles also belong to their collection
+// (/devlog/<slug>/ → 開發日誌). aria-current carries the state the styles show.
+for (const link of document.querySelectorAll('.topbar-nav .nav a, .topbar-menu .nav a')) {
+	const path = new URL(link.href, location.href).pathname;
+	const current =
+		link.closest('.nav-current') ||
+		(path !== '/' && path !== '/en/' && !link.hash && location.pathname.startsWith(path));
+	if (current && new URL(link.href, location.href).origin === location.origin)
+		link.setAttribute('aria-current', 'page');
+}
 const menuButton = document.querySelector('.menu-toggle');
 const menu = document.querySelector('#topbar-menu');
 const closeMenu = () => {
@@ -48,19 +58,56 @@ for (const link of document.querySelectorAll('[data-locale-switch]')) {
 		link.href = `${link.dataset.localeSwitch === 'en' ? '/en' : ''}${current}${location.hash}`;
 }
 
+// Ghost resizes and re-encodes its own uploads on request (theme image_sizes), so
+// phone screenshots arrive as small WebP files instead of 1+ MB PNGs.
+const GHOST_WIDTHS = [320, 600, 960];
+const ghostImage = (url, width) => {
+	const match = /^(.*\/content\/images\/)(?!size\/)(.+\.(?:png|jpe?g|webp))$/i.exec(url ?? '');
+	return match ? `${match[1]}size/w${width}/format/webp/${match[2]}` : url;
+};
+const ghostSrcset = (url) =>
+	ghostImage(url, 600) === url
+		? ''
+		: GHOST_WIDTHS.map((w) => `${ghostImage(url, w)} ${w}w`).join(', ');
+/** Point an <img> at a resized Ghost image; returns false when nothing changed. */
+const setGhostImage = (img, url, sizes) => {
+	const srcset = ghostSrcset(url);
+	if (srcset) {
+		img.sizes = sizes;
+		img.srcset = srcset;
+	} else img.removeAttribute('srcset');
+	img.src = srcset ? ghostImage(url, 600) : url;
+};
+/** The light/dark screenshot sources an entry's caption-tagged image cards describe. */
+const captionedShots = (container) =>
+	[...container.querySelectorAll('figure img')].map((img) => ({
+		url: img.getAttribute('src'),
+		alt: img.alt,
+		appearance:
+			img.closest('figure').querySelector('figcaption')?.textContent.trim().toLowerCase() === 'dark'
+				? 'dark'
+				: 'light'
+	}));
+
 // Products page: a "Dark" captioned image card replaces the screenshot in dark mode.
+// The server renders the light screenshot lazily; in dark mode the inline script at
+// the end of the catalogue removes its source before layout, so only one is fetched.
 const productEntries = document.querySelectorAll('[data-product-entry]');
 if (productEntries.length) {
 	const pickProductShots = () => {
 		const dark = document.documentElement.dataset.theme === 'dark';
 		for (const entry of productEntries) {
 			const shot = entry.querySelector('.product-entry-shot img');
-			const figures = [...entry.querySelectorAll('.product-entry-body figure')];
-			const caption = (f) => f.querySelector('figcaption')?.textContent.trim().toLowerCase();
-			const darkImage = figures.find((f) => caption(f) === 'dark')?.querySelector('img');
-			if (!shot || !darkImage) continue;
-			shot.dataset.lightSrc ??= shot.src;
-			shot.src = dark ? darkImage.src : shot.dataset.lightSrc;
+			const darkShot = captionedShots(entry.querySelector('.product-entry-body')).find(
+				(s) => s.appearance === 'dark'
+			);
+			if (!shot || !darkShot) continue;
+			shot.dataset.lightSrc ??= shot.dataset.original;
+			const wanted = dark ? darkShot.url : shot.dataset.lightSrc;
+			if (shot.dataset.current !== wanted) {
+				shot.dataset.current = wanted;
+				setGhostImage(shot, wanted, shot.sizes);
+			}
 		}
 	};
 	pickProductShots();
@@ -186,3 +233,26 @@ for (const item of document.querySelectorAll('[data-news-item]')) {
 	else socialNetworks.add(official.matches('.instagram-media') ? 'instagram' : 'threads');
 }
 loadSocialScripts(socialNetworks);
+
+// Team film (home About chapter and /about/): the YouTube player paints only after
+// it loads, which leaves an empty block. Show the video's own poster and a play
+// mark underneath the iframe until then.
+for (const frame of document.querySelectorAll('.team-film, .film-frame')) {
+	const src = frame.querySelector('iframe')?.getAttribute('src') ?? '';
+	const id = /youtube(?:-nocookie)?\.com\/embed\/([\w-]{6,})/.exec(src)?.[1];
+	if (!id) continue;
+	frame.classList.add('has-film-poster');
+	frame.style.setProperty('--film-poster', `url("https://i.ytimg.com/vi/${id}/hqdefault.jpg")`);
+}
+
+// Menu labels like "Dev log (中文)" (Chinese-only articles in the English menu) show
+// the language as a small badge instead of a parenthesis.
+for (const link of document.querySelectorAll('.topbar .nav a')) {
+	const match = /^(.*?)\s*\((中文|ZH)\)$/.exec(link.textContent.trim());
+	if (!match) continue;
+	const badge = document.createElement('span');
+	badge.className = 'nav-lang';
+	badge.textContent = match[2];
+	link.textContent = match[1];
+	link.append(badge);
+}

@@ -7,9 +7,18 @@ test('Ghost serves readable home content without JavaScript', async ({ browser }
 	const page = await context.newPage();
 	await page.goto(process.env.GHOST_THEME_TEST_URL!);
 	await expect(page.locator('.hero-copy h1')).toContainText('NYCU LIFE');
-	expect(await page.locator('.hero-copy').evaluate((e) => e.getBoundingClientRect().height)).toBe(
-		1
+	// The hero title and its two next steps sit under the machine artwork, never over it.
+	await expect(page.locator('.hero-copy .hero-tagline')).toBeVisible();
+	await expect(page.locator('.hero-actions a')).toHaveCount(2);
+	const [machine, copy] = await Promise.all(
+		['.hero-scene .gacha-machine', '.hero-copy'].map((selector) =>
+			page
+				.locator(selector)
+				.first()
+				.evaluate((e) => e.getBoundingClientRect())
+		)
 	);
+	expect(copy.top).toBeGreaterThanOrEqual(machine.bottom - 1);
 	await expect(page.locator('.product-copy')).toHaveCount(4);
 	for (const product of await page.locator('.product-copy').all())
 		await expect(product).toBeVisible();

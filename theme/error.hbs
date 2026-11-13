@@ -3,4 +3,23 @@
 {{#contentFor "header"}}{{> "zh-tw/header"}}{{/contentFor}}
 {{#contentFor "footer"}}{{> "zh-tw/footer"}}{{/contentFor}}
 {{#contentFor "ghost_head"}}<meta name="robots" content="noindex">{{/contentFor}}
-<div class="page"><h1 class="page-title">{{statusCode}}</h1><p class="page-lede">{{message}}</p><a class="landing-button landing-button-primary" href="/">NYCU LIFE →</a></div>
+<div class="page status-page">
+    <section class="status-card" aria-labelledby="status-title">
+        <img class="status-art" src="{{asset 'story/designer/wishpool/machine.svg'}}" alt="" width="220" height="220">
+        <div class="status-copy">
+            <span class="status-code">{{statusCode}}</span>
+            {{#match statusCode 404}}
+            <h1 id="status-title" class="page-title">{{copy 'not_found_title'}}</h1>
+            <p class="page-lede">{{copy 'not_found_lede'}}</p>
+            {{else}}
+            <h1 id="status-title" class="page-title">{{copy 'error_title'}}</h1>
+            <p class="page-lede">{{copy 'error_lede'}}</p>
+            {{/match}}
+            <p class="status-actions">
+                <a class="status-primary" href="/">{{copy 'menu_home'}} <span aria-hidden="true">→</span></a>
+                <a href="/news/">{{copy 'news_title'}}</a>
+                <a href="/wishpool/">{{copy 'nav_wishpool'}}</a>
+            </p>
+        </div>
+    </section>
+</div>

@@ -27,6 +27,21 @@
 	let query = $state('');
 	let checkingSession = $state(true);
 	let loading = $state(false);
+	/** The last list request failed: show that instead of an "all clear" empty list. */
+	let loadFailed = $state(false);
+	let copiedId = $state('');
+
+	async function copyId(id: string) {
+		try {
+			await navigator.clipboard.writeText(id);
+			copiedId = id;
+			setTimeout(() => {
+				if (copiedId === id) copiedId = '';
+			}, 1500);
+		} catch {
+			// Clipboard access can be refused; the full ID stays in the tooltip.
+		}
+	}
 	let loggingOut = $state(false);
 	let updatingId = $state('');
 	let error = $state('');
@@ -106,6 +121,7 @@
 		if (!identity) return;
 		const version = ++requestVersion;
 		loading = true;
+		loadFailed = false;
 		error = '';
 		notice = '';
 		try {
@@ -125,6 +141,7 @@
 				return;
 			}
 			error = errorMessage(caught);
+			loadFailed = true;
 		} finally {
 			if (version === requestVersion) loading = false;
 		}
@@ -144,16 +161,14 @@
 		}
 		try {
 			identity = await getAdminSession();
-			if (identity) {
-				await load('pending');
-			} else {
-				error = callbackError;
-			}
+			if (!identity) error = callbackError;
 		} catch {
 			error = callbackError || m.wish_admin_error_auth_unavailable();
 		} finally {
 			checkingSession = false;
 		}
+		// Signed in: show the workspace right away; the list has its own loading state.
+		if (identity) await load('pending');
 	}
 
 	async function disconnect() {
@@ -231,7 +246,7 @@
 	});
 </script>
 
-<section class="wish-admin" aria-label={m.wish_admin_title()}>
+<section class="wish-admin" aria-label={m.wish_admin_title()} aria-busy={loading}>
 	{#if checkingSession}
 		<div class="admin-auth glass glass-strong" aria-live="polite">
 			<div class="auth-copy">
@@ -317,19 +332,32 @@
 			</label>
 		</div>
 
-		{#if error}<p class="admin-message error" role="alert">{error}</p>{/if}
+		{#if error && !(loadFailed && wishes.length === 0)}
+			<p class="admin-message error" role="alert">{error}</p>
+		{/if}
 		{#if notice}<p class="admin-message notice" role="status">{notice}</p>{/if}
 
 		<div class="list-heading">
 			<div>
 				<span>{visibilityLabel(visibility)}</span>
-				<strong>{filteredWishes.length}</strong>
+				<strong>{loading ? '–' : filteredWishes.length}</strong>
 			</div>
 			<p>{m.wish_admin_list_hint()}</p>
 		</div>
 
 		{#if loading}
-			<div class="admin-state" aria-live="polite">{m.wish_admin_loading()}</div>
+			<div class="admin-state" role="status" aria-busy="true">
+				<span class="admin-spinner" aria-hidden="true"></span>
+				{m.wish_admin_loading()}
+			</div>
+		{:else if loadFailed && wishes.length === 0}
+			<div class="admin-state failed">
+				<span aria-hidden="true">!</span>
+				<strong role="alert">{error || m.wish_admin_error_load()}</strong>
+				<button class="action-button secondary" type="button" onclick={() => load(visibility)}
+					>{m.wish_admin_refresh()}</button
+				>
+			</div>
 		{:else if filteredWishes.length === 0}
 			<div class="admin-state empty">
 				<span aria-hidden="true">✓</span>
@@ -413,32 +441,53 @@
 						<div class="card-footer">
 							<div class="wish-facts">
 								<span>{supportCountLabel(wish.supportCount)}</span>
-								<code title={wish.id}>{wish.id}</code>
+								<button
+									type="button"
+									class="wish-id"
+									title={wish.id}
+									aria-label={`${m.wish_admin_copy_id()}：${wish.id}`}
+									onclick={() => copyId(wish.id)}
+									>{copiedId === wish.id
+										? m.wish_admin_copied_id()
+										: `ID ${wish.id.slice(0, 8)}`}</button
+								>
 							</div>
 							<div class="card-actions">
-								{#if editingId !== wish.id}
+								{#snippet secondaryActions()}
+									{#if editingId !== wish.id}
+										<button
+											class="action-button secondary"
+											type="button"
+											disabled={Boolean(updatingId)}
+											onclick={() => startReply(wish)}
+											>{wish.reply ? m.wish_admin_reply_edit() : m.wish_admin_reply_write()}</button
+										>
+									{/if}
 									<button
 										class="action-button secondary"
+										class:fulfil={wish.status !== 'fulfilled'}
 										type="button"
 										disabled={Boolean(updatingId)}
-										onclick={() => startReply(wish)}
-										>{wish.reply ? m.wish_admin_reply_edit() : m.wish_admin_reply_write()}</button
+										onclick={() =>
+											updateStatus(wish, wish.status === 'fulfilled' ? 'open' : 'fulfilled')}
+										>{wish.status === 'fulfilled'
+											? m.wish_admin_reopen()
+											: m.wish_admin_mark_fulfilled()}</button
 									>
+								{/snippet}
+								{#if visibility === 'pending'}
+									<!-- The review queue leads with the decision (publish or hide); replying
+									     and status changes stay one step away. -->
+									<details class="more-actions">
+										<summary class="action-button secondary">{m.wish_admin_more()}</summary>
+										<div class="more-menu">{@render secondaryActions()}</div>
+									</details>
+								{:else}
+									{@render secondaryActions()}
 								{/if}
-								<button
-									class="action-button secondary"
-									class:fulfil={wish.status !== 'fulfilled'}
-									type="button"
-									disabled={Boolean(updatingId)}
-									onclick={() =>
-										updateStatus(wish, wish.status === 'fulfilled' ? 'open' : 'fulfilled')}
-									>{wish.status === 'fulfilled'
-										? m.wish_admin_reopen()
-										: m.wish_admin_mark_fulfilled()}</button
-								>
 								{#if visibility === 'pending'}
 									<button
-										class="action-button secondary"
+										class="action-button danger"
 										type="button"
 										disabled={Boolean(updatingId)}
 										onclick={() => updateVisibility(wish, 'hidden')}>{m.wish_admin_hide()}</button
@@ -842,8 +891,8 @@
 		font-weight: 700;
 	}
 	.card-meta time {
-		font-size: 0.74rem;
-		color: var(--muted);
+		font-size: 0.82rem;
+		color: var(--ink-soft);
 	}
 	.admin-card h3,
 	.admin-card p {
@@ -869,15 +918,24 @@
 	.wish-facts {
 		min-width: 0;
 		gap: 0.8rem;
-		color: var(--muted);
-		font-size: 0.74rem;
+		color: var(--ink-soft);
+		font-size: 0.82rem;
 	}
-	.wish-facts code {
-		max-width: 11rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+	.wish-id {
+		min-height: 2rem;
+		padding: 0.15rem 0.6rem;
+		border: 1px solid var(--line-strong);
+		border-radius: 999px;
+		background: transparent;
 		color: inherit;
+		font: 600 0.78rem var(--font-sans);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		cursor: copy;
+	}
+	.wish-id:hover {
+		border-color: var(--brand);
+		color: var(--brand);
 	}
 	.action-button {
 		padding: 0.58rem 0.86rem;
@@ -894,10 +952,58 @@
 		background: var(--surface);
 		color: var(--ink-soft);
 	}
+	.more-actions {
+		position: relative;
+	}
+	.more-actions > summary {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		list-style: none;
+		cursor: pointer;
+	}
+	.more-actions > summary::-webkit-details-marker {
+		display: none;
+	}
+	.more-actions > summary::after {
+		content: '';
+		width: 0.4rem;
+		height: 0.4rem;
+		border-right: 1.5px solid currentColor;
+		border-bottom: 1.5px solid currentColor;
+		transform: translateY(-0.1rem) rotate(45deg);
+	}
+	.more-actions[open] > summary::after {
+		transform: translateY(0.1rem) rotate(-135deg);
+	}
+	.more-menu {
+		position: absolute;
+		z-index: 5;
+		right: 0;
+		top: calc(100% + 0.4rem);
+		display: grid;
+		gap: 0.4rem;
+		min-width: 11rem;
+		padding: 0.5rem;
+		border: 1px solid var(--line-strong);
+		border-radius: 0.8rem;
+		background: var(--surface);
+		box-shadow: var(--shadow);
+	}
+	.more-menu > .action-button {
+		width: 100%;
+		text-align: left;
+	}
+	/* Keep the destructive action a clear step away from Publish. */
+	.action-button.danger + .action-button.primary {
+		margin-left: 0.85rem;
+	}
 	.action-button.danger {
-		background: rgba(217, 45, 32, 0.1);
+		border-color: rgba(180, 35, 24, 0.35);
+		background: rgba(217, 45, 32, 0.08);
 		color: #b42318;
 	}
+
 	.action-button:hover:not(:disabled),
 	.toolbar-button:hover:not(:disabled) {
 		transform: translateY(-1px);
@@ -934,6 +1040,46 @@
 		font-size: 0.86rem;
 		color: var(--muted);
 	}
+	.admin-state[aria-busy='true'] {
+		grid-auto-flow: column;
+		gap: 0.75rem;
+		justify-content: center;
+	}
+	.admin-spinner {
+		width: 1.2rem;
+		height: 1.2rem;
+		border: 2px solid var(--brand-soft);
+		border-top-color: var(--brand);
+		border-radius: 50%;
+		animation: admin-spin 0.8s linear infinite;
+	}
+	@keyframes admin-spin {
+		to {
+			transform: rotate(1turn);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.admin-spinner {
+			animation-duration: 2.4s;
+		}
+	}
+	.admin-state.failed {
+		gap: 0.6rem;
+		border-color: color-mix(in srgb, #c2412d 45%, var(--line));
+	}
+	.admin-state.failed > span {
+		display: grid;
+		place-items: center;
+		width: 2.4rem;
+		height: 2.4rem;
+		border-radius: 50%;
+		background: rgba(194, 65, 45, 0.12);
+		color: #c2412d;
+		font-weight: 800;
+	}
+	.admin-state.failed strong {
+		color: var(--ink);
+	}
 	.sr-only {
 		position: absolute;
 		width: 1px;
@@ -949,6 +1095,15 @@
 	:global(html[data-theme='dark']) .status-chip,
 	:global(html[data-theme='dark']) .action-button.secondary.fulfil {
 		color: #71d5aa;
+	}
+	/* Dark brand blue is light, so primary actions take dark text. */
+	:global(html[data-theme='dark']) .action-button.primary,
+	:global(html[data-theme='dark']) .wish-admin :global(.landing-button-primary) {
+		color: var(--base);
+	}
+	.action-button {
+		min-height: 2.5rem;
+		font-size: 0.85rem;
 	}
 	:global(html[data-theme='dark']) .toolbar-button.danger,
 	:global(html[data-theme='dark']) .admin-message.error,
@@ -997,6 +1152,22 @@
 		.card-actions > :last-child:nth-child(odd) {
 			grid-column: 1 / -1;
 		}
+		.action-button.danger + .action-button.primary {
+			margin-left: 0;
+		}
+		/* Hide never takes the full-width slot: it leads the first row and the positive
+		   action beside it gets the full width instead. */
+		/* Published list only: Hide leads the first row so the positive action can
+		   take the full width; in the review queue Publish keeps its own row. */
+		.card-actions:has(> .action-button.danger:last-child) > .action-button.danger {
+			order: -1;
+		}
+		.card-actions > .action-button.danger:last-child:nth-child(odd) {
+			grid-column: auto;
+		}
+		.card-actions:has(> .action-button.danger:last-child:nth-child(odd)) > :nth-last-child(2) {
+			grid-column: 1 / -1;
+		}
 		.action-button {
 			white-space: nowrap;
 		}
@@ -1013,7 +1184,7 @@
 		.wish-facts {
 			justify-content: space-between;
 		}
-		.wish-facts code {
+		.wish-id {
 			max-width: 9rem;
 		}
 	}

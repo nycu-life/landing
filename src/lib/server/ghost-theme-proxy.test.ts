@@ -102,6 +102,23 @@ describe('native Ghost routing boundary', () => {
 		);
 		expect(down.status).toBe(503);
 		expect(down.headers.get('retry-after')).toBe('30');
+		// A branded page that still offers the Ghost-independent Wish Pool.
+		expect(down.headers.get('content-type')).toContain('text/html');
+		const page = await down.text();
+		expect(page).toContain('頁面暫時打不開');
+		expect(page).toContain('href="/wishpool/"');
+		expect(page).not.toContain('/assets/');
+		// Refresh retries the requested page, query included and attribute-escaped.
+		const article = await proxyGhostTheme(
+			new Request('https://nycu.life/devlog/post/?a=1&b="x"'),
+			'http://ghost:2368',
+			async () => {
+				throw new Error('offline');
+			}
+		);
+		expect(await article.text()).toContain(
+			'class="primary" href="/devlog/post/?a=1&amp;b=%22x%22"'
+		);
 	});
 });
 

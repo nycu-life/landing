@@ -722,3 +722,478 @@ html:has(.prototype-story) {
 :root[data-theme='dark'] .product-entry-body > p a {
 	color: var(--base);
 }
+
+/* Product image cards are the source of the phone screenshots (story.js); they are
+   never shown in the copy, including with reduced motion or without JavaScript.
+   Hidden lazy images are not downloaded. */
+.native-product-content figure,
+.native-product-content .kg-gallery-card {
+	display: none;
+}
+/* A single page of posts needs no "Page 1 of 1" line. */
+.pagination:not(:has(a)) {
+	display: none;
+}
+
+/* Empty collections (news, dev log, comics) and the error page share one card:
+   the wish machine artwork, a plain-language title, and one next step. */
+.collection-empty,
+.status-card {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	gap: clamp(1.25rem, 4vw, 3rem);
+	padding: clamp(1.5rem, 4vw, 2.75rem);
+	border: 1.5px dashed color-mix(in srgb, var(--brand) 35%, var(--line));
+	border-radius: 1.6rem;
+	background: color-mix(in srgb, var(--surface) 82%, var(--brand-soft));
+}
+.collection-empty {
+	margin-top: 2.5rem;
+}
+.collection-empty-art,
+.status-art {
+	width: clamp(7rem, 16vw, 11rem);
+	height: auto;
+}
+.collection-empty-copy,
+.status-copy {
+	display: grid;
+	gap: 0.75rem;
+	justify-items: start;
+}
+.collection-empty h2 {
+	margin: 0;
+	font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+	line-height: 1.3;
+}
+.collection-empty p {
+	margin: 0;
+	max-width: 36rem;
+	color: var(--ink-soft);
+	line-height: 1.75;
+}
+.collection-empty-link,
+.status-primary {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-height: 2.75rem;
+	margin-top: 0.25rem;
+	padding: 0 1.25rem;
+	border-radius: 999px;
+	background: var(--brand);
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+}
+:root[data-theme='dark'] .collection-empty-link,
+:root[data-theme='dark'] .status-primary {
+	color: var(--base);
+}
+.collection-empty-link:hover,
+.status-primary:hover {
+	filter: brightness(1.08);
+}
+.collection-empty-link:focus-visible,
+.status-actions a:focus-visible {
+	outline: 3px solid var(--ink);
+	outline-offset: 3px;
+}
+.status-page {
+	display: grid;
+	align-content: center;
+	min-height: min(70vh, 44rem);
+}
+.status-code {
+	color: var(--brand);
+	font-size: 0.8rem;
+	font-weight: 750;
+	letter-spacing: 0.14em;
+}
+.status-copy .page-title {
+	margin: 0;
+}
+.status-copy .page-lede {
+	margin: 0;
+	max-width: 38rem;
+}
+.status-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem 1.5rem;
+	margin: 0.5rem 0 0;
+	font-weight: 650;
+}
+.status-actions a:not(.status-primary) {
+	color: var(--brand-ink);
+}
+@media (max-width: 640px) {
+	.collection-empty,
+	.status-card {
+		grid-template-columns: 1fr;
+		justify-items: center;
+		text-align: center;
+	}
+	.collection-empty-copy,
+	.status-copy {
+		justify-items: center;
+	}
+	.status-actions {
+		justify-content: center;
+	}
+}
+
+/* Reduced motion (and no JavaScript): the chapters stack as ordinary sections.
+   Undo the scroll-driven offsets that only make sense inside the pinned stage. */
+.ghost-theme:not(.story-enhanced) .about-copy {
+	translate: none;
+}
+@media (min-width: 901px) {
+	.ghost-theme:not(.story-enhanced) .about-copy {
+		text-align: start;
+	}
+	.ghost-theme:not(.story-enhanced) .about-copy p {
+		margin-inline: 0;
+	}
+}
+/* The hand and cable artwork bleed past the phone; keep them inside the chapter. */
+.ghost-theme:not(.story-enhanced) .product-scene {
+	overflow: hidden;
+}
+@media (max-width: 900px) {
+	.ghost-theme:not(.story-enhanced) .story-scene,
+	.ghost-theme:not(.story-enhanced) .section-shell {
+		min-height: 0;
+	}
+	.ghost-theme:not(.story-enhanced) .section-shell {
+		padding-block: 3.5rem;
+	}
+	.ghost-theme:not(.story-enhanced) .hero-scene {
+		padding-block: 2.5rem 1.5rem;
+	}
+	/* The phone hangs from the top of the demo area, which the pinned stage sized;
+	   give it a fixed stage of its own when the chapter is an ordinary section. */
+	.ghost-theme:not(.story-enhanced) .product-shell {
+		padding-bottom: 0;
+	}
+	.ghost-theme:not(.story-enhanced) .product-demo {
+		height: min(118vw, 34rem);
+	}
+}
+
+/* Current section in the top bar (theme/site.js sets aria-current), matching the
+   Wish Pool's Svelte top bar. */
+.topbar-nav .nav a[aria-current='page'] {
+	color: var(--brand);
+}
+.topbar-nav .nav a[aria-current='page']::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: -0.1rem;
+	height: 2px;
+	border-radius: 2px;
+	background: currentColor;
+}
+.topbar-menu .nav a[aria-current='page'] {
+	color: var(--brand);
+	font-weight: 750;
+}
+
+/* Post lists (news, dev log, comics): rows of equal cards, three across on wide
+   screens. A post without a cover gets a brand-blue cover with its tag instead of an
+   empty block, so every card has the same anatomy. */
+.native-post-grid,
+.news-stream {
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+	align-items: stretch;
+	gap: clamp(1rem, 2vw, 1.5rem);
+}
+.news-item > .native-post-card,
+.native-post-card {
+	height: 100%;
+}
+.native-post-card > a {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	color: inherit;
+	text-decoration: none;
+}
+.native-post-card {
+	transition:
+		border-color 0.18s ease,
+		box-shadow 0.18s ease,
+		transform 0.18s ease;
+}
+.native-post-card:hover {
+	border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+	box-shadow: var(--shadow-soft);
+	transform: translateY(-2px);
+}
+.native-post-card:focus-within {
+	outline: 3px solid var(--brand);
+	outline-offset: 3px;
+}
+.native-post-card > a:focus-visible {
+	outline: none;
+}
+.native-post-cover {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+	background: var(--surface-3);
+}
+.native-post-cover-fallback {
+	display: grid;
+	place-items: center;
+	padding: 1.5rem;
+	background:
+		radial-gradient(circle at 82% 22%, rgb(255 255 255 / 0.22) 0 18%, transparent 19%),
+		linear-gradient(135deg, var(--brand) 0%, #6d9bff 100%);
+	color: #fff;
+}
+.native-post-cover-fallback > span {
+	padding: 0.4rem 1rem;
+	border: 1.5px solid rgb(255 255 255 / 0.7);
+	border-radius: 999px;
+	font-size: 1.05rem;
+	font-weight: 750;
+	letter-spacing: 0.04em;
+}
+.native-post-copy {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 1.25rem 1.35rem 1.4rem;
+}
+.native-post-copy time {
+	font-size: 0.85rem;
+	font-variant-numeric: tabular-nums;
+}
+.native-post-copy h2 {
+	margin: 0;
+	font-size: 1.25rem;
+	line-height: 1.4;
+	text-wrap: pretty;
+}
+.native-post-copy p {
+	margin: 0;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	overflow: hidden;
+	line-height: 1.65;
+}
+.post-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin-top: auto;
+	padding-top: 0.5rem;
+}
+.post-chip {
+	padding: 0.2rem 0.65rem;
+	border-radius: 999px;
+	background: var(--brand-soft);
+	color: var(--brand);
+	font-size: 0.8rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.article-tag {
+	white-space: nowrap;
+	text-decoration: none;
+}
+
+/* Film poster under the YouTube iframe (theme/site.js); the iframe covers it once
+   the player has painted. */
+.has-film-poster {
+	position: relative;
+	background:
+		radial-gradient(circle at 50% 50%, rgb(0 0 0 / 0) 0 30%, rgb(9 20 48 / 0.35) 100%),
+		var(--film-poster) center / cover no-repeat,
+		var(--brand);
+}
+.has-film-poster::before {
+	content: '';
+	position: absolute;
+	z-index: 0;
+	top: 50%;
+	left: 50%;
+	width: 4.5rem;
+	height: 3.2rem;
+	border-radius: 0.9rem;
+	background: #ff0033
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M8 5v14l11-7z'/%3E%3C/svg%3E")
+		center / 1.6rem no-repeat;
+	transform: translate(-50%, -50%);
+	pointer-events: none;
+}
+.has-film-poster iframe,
+.has-film-poster .kg-embed-card {
+	position: relative;
+	z-index: 1;
+}
+
+/* 產品: two product cards per row on wide screens, phone beside the copy, and the
+   feature list aligned with the heading. */
+@media (min-width: 1100px) {
+	.product-catalog {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.product-entry {
+		grid-template-columns: 9.5rem minmax(0, 1fr);
+		align-items: start;
+	}
+}
+.product-entry-copy h2 {
+	font-weight: 750;
+	letter-spacing: -0.01em;
+}
+.product-entry-body ul {
+	padding-left: 0;
+	list-style: none;
+}
+.product-entry-body li {
+	position: relative;
+	padding-left: 1.1rem;
+}
+.product-entry-body li::before {
+	content: '';
+	position: absolute;
+	top: 0.72em;
+	left: 0.1rem;
+	width: 0.4rem;
+	height: 0.4rem;
+	border-radius: 50%;
+	background: var(--brand);
+}
+
+/* machine.svg is a 1366×768 slide with the machine in its right two thirds; frame
+   just the machine (5:4, anchored right) so it reads at card size. */
+.collection-empty-art,
+.status-art {
+	width: clamp(8rem, 18vw, 12rem);
+	aspect-ratio: 5 / 4;
+	object-fit: cover;
+	object-position: 100% 50%;
+}
+
+/* Store buttons keep full-strength labels in both appearances. */
+.product-app .store-copy small {
+	opacity: 1;
+}
+:root[data-theme='dark'] .product-app .store-link {
+	background: var(--surface-2);
+	border: 1px solid var(--line-strong);
+	color: var(--ink);
+}
+
+/* Eyebrows: wide tracking for Latin labels only; Chinese keeps normal spacing. */
+:root:lang(zh) .devlog-eyebrow {
+	letter-spacing: 0.04em;
+}
+
+/* Hero: the editable title and the two main next steps sit under the machine, in
+   the slot of the scroll cue (and fade with it as the story starts). Phones keep
+   the art-only hero while the story is animated; reduced motion shows the copy
+   in normal flow below the machine. */
+.ghost-theme .hero-copy {
+	--hint-out: clamp(0, calc(var(--story-progress, 0) * 25), 1);
+	position: absolute;
+	z-index: 10;
+	left: 50%;
+	bottom: clamp(1.5rem, 4.5vh, 3.25rem);
+	display: grid;
+	justify-items: center;
+	gap: 0.85rem;
+	width: min(40rem, calc(100% - 2rem));
+	text-align: center;
+	opacity: calc(1 - var(--hint-out));
+	transform: translate(-50%, calc(var(--hint-out) * -4vh));
+}
+.ghost-theme .hero-copy .hero-tagline {
+	margin: 0;
+	color: var(--ink);
+	font-size: clamp(1.1rem, 1.7vw, 1.45rem);
+	font-weight: 750;
+	line-height: 1.4;
+	text-wrap: balance;
+}
+.hero-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.65rem;
+	margin: 0;
+}
+.hero-cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	min-height: 2.75rem;
+	padding: 0 1.3rem;
+	border: 1.5px solid var(--brand);
+	border-radius: 999px;
+	font-weight: 750;
+	text-decoration: none;
+}
+.hero-cta-primary {
+	background: var(--brand);
+	color: #fff;
+}
+:root[data-theme='dark'] .hero-cta-primary {
+	color: var(--base);
+}
+.hero-cta-secondary {
+	background: var(--surface);
+	color: var(--brand);
+}
+.hero-cta:hover {
+	filter: brightness(1.08);
+}
+.hero-cta:focus-visible {
+	outline: 3px solid var(--ink);
+	outline-offset: 3px;
+}
+.ghost-theme .scroll-hint {
+	display: none;
+}
+@media (max-width: 900px) {
+	.story-enhanced .hero-copy {
+		display: none;
+	}
+}
+.ghost-theme:not(.story-enhanced) .hero-copy {
+	position: static;
+	margin: 1.75rem auto 0;
+	opacity: 1;
+	transform: none;
+}
+
+/* Rich text: inline code is a chip, not the typography plugin's backticks. */
+.gh-content :not(pre) > code::before,
+.gh-content :not(pre) > code::after {
+	content: none;
+}
+.gh-content :not(pre) > code {
+	padding: 0.1em 0.4em;
+	border-radius: 0.35rem;
+	background: var(--brand-soft);
+	color: var(--brand-ink);
+	font-size: 0.92em;
+	font-weight: 600;
+}
+/* Short desktop windows: the machine fills the stage, so keep only the buttons. */
+@media (min-width: 901px) and (max-height: 800px) {
+	.story-enhanced .hero-copy .hero-tagline {
+		display: none;
+	}
+}

@@ -1,18 +1,17 @@
 @import 'tailwindcss';
 
 /* Self-hosted fonts (bundled into build/ — work offline, behind any base path).
-   Noto Sans TC carries the Chinese body text (lazy per unicode-range subset);
-   Space Grotesk is the Latin display face; Caveat is the handwritten accent. */
+   Noto Sans TC carries the Chinese text (lazy per unicode-range subset). Roboto is the
+   Latin body face and Ubuntu the Latin display face; both ship only their Latin subset
+   (the site has no Cyrillic, Greek or Vietnamese copy), so the stylesheet declares
+   and the browser can fetch at most one file per weight. Caveat is the handwritten
+   accent of the rollback scroll story. */
 @import '@fontsource-variable/noto-sans-tc';
-@import '@fontsource/roboto/400.css';
-@import '@fontsource/roboto/500.css';
-@import '@fontsource/roboto/700.css';
-@import '@fontsource/ubuntu/400.css';
-@import '@fontsource/ubuntu/500.css';
-@import '@fontsource/ubuntu/700.css';
-@import '@fontsource/space-grotesk/latin-400.css';
-@import '@fontsource/space-grotesk/latin-500.css';
-@import '@fontsource/space-grotesk/latin-700.css';
+@import '@fontsource/roboto/latin-400.css';
+@import '@fontsource/roboto/latin-500.css';
+@import '@fontsource/roboto/latin-700.css';
+@import '@fontsource/ubuntu/latin-500.css';
+@import '@fontsource/ubuntu/latin-700.css';
 @import '@fontsource/caveat/latin-700.css';
 
 @plugin '@tailwindcss/typography';
@@ -89,7 +88,7 @@
 	--shadow-soft: 0 8px 24px rgba(55, 65, 81, 0.08);
 	--glow: 0 0 0 1px rgba(0, 69, 242, 0.16), 0 12px 30px rgba(0, 69, 242, 0.14);
 
-	/* Type — Space Grotesk display + Noto Sans TC body + Caveat accent */
+	/* Type — Ubuntu display + Roboto/Noto Sans TC body + Caveat accent */
 	--font-display: 'Ubuntu', 'Noto Sans TC Variable', system-ui, sans-serif;
 	--font-sans: 'Roboto', 'Noto Sans TC Variable', 'PingFang TC', system-ui, sans-serif;
 	--font-hand: 'Caveat', cursive;

@@ -13,7 +13,17 @@
 	let { children, data } = $props();
 	const catalog = () => data.site ?? defaultSite;
 	setContext('site-messages', createSiteMessages(catalog, getLocale));
-	setContext('site-view', () => buildSiteView(catalog(), getLocale()));
+	setContext('site-view', () => {
+		const view = buildSiteView(catalog(), getLocale());
+		// Native Ghost engine: use Ghost's own menu so every page shares one navigation.
+		const ghostLinks = data.ghostNavigation?.[getLocale()];
+		return ghostLinks?.length
+			? {
+					...view,
+					navigation: ghostLinks.map((link) => ({ ...link, label: () => link.label }))
+				}
+			: view;
+	});
 
 	const siteOrigin = 'https://nycu.life';
 	const ogImage = `${siteOrigin}/og/nycu-life.jpg`;

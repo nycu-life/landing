@@ -78,10 +78,9 @@
 	<div class="footer-bottom">
 		<span>© 2026 {m.brand_name()}</span>
 		<span class="made-with">
-			{m.footer_made_with()}
-			{m.footer_made_by()}
+			{m.footer_credit()} ·
 			<a href={site.settings.repository} target="_blank" rel="noopener noreferrer"
-				>{m.brand_name()}</a
+				>{m.footer_source()}</a
 			>
 		</span>
 	</div>

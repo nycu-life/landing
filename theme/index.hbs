@@ -3,7 +3,14 @@
 {{#contentFor "header"}}{{> "[[locale]]/header"}}{{/contentFor}}
 {{#contentFor "footer"}}{{> "[[locale]]/footer"}}{{/contentFor}}
 <div class="page devlog-page">
-    <header class="page-head"><span class="devlog-eyebrow">NYCU LIFE / [[section]]</span><h1 class="page-title">[[sectionTitle]]</h1><p class="page-lede">[[sectionDescription]]</p></header>
-    <div class="native-post-grid">{{#foreach posts}}{{> "card"}}{{else}}<p>{{copy 'devlog_empty_body'}}</p>{{/foreach}}</div>
+    <header class="page-head"><span class="devlog-eyebrow">[[sectionEyebrow]]</span><h1 class="page-title">[[sectionTitle]]</h1><p class="page-lede">[[sectionDescription]]</p></header>
+    {{#if posts}}
+    <div class="native-post-grid">{{#foreach posts}}{{> "card"}}{{/foreach}}</div>
+    {{else}}
+    <section class="collection-empty" aria-labelledby="collection-empty-title">
+        <img class="collection-empty-art" src="{{asset 'story/designer/wishpool/machine.svg'}}" alt="" width="180" height="180">
+        <div class="collection-empty-copy"><h2 id="collection-empty-title">[[emptyTitle]]</h2><p>[[emptyBody]]</p><a class="collection-empty-link" href="[[emptyHref]]">[[emptyCta]] <span aria-hidden="true">→</span></a></div>
+    </section>
+    {{/if}}
     {{pagination}}
 </div>
