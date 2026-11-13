@@ -244,3 +244,15 @@ for (const frame of document.querySelectorAll('.team-film, .film-frame')) {
 	frame.classList.add('has-film-poster');
 	frame.style.setProperty('--film-poster', `url("https://i.ytimg.com/vi/${id}/hqdefault.jpg")`);
 }
+
+// Menu labels like "Dev log (中文)" (Chinese-only articles in the English menu) show
+// the language as a small badge instead of a parenthesis.
+for (const link of document.querySelectorAll('.topbar .nav a')) {
+	const match = /^(.*?)\s*\((中文|ZH)\)$/.exec(link.textContent.trim());
+	if (!match) continue;
+	const badge = document.createElement('span');
+	badge.className = 'nav-lang';
+	badge.textContent = match[2];
+	link.textContent = match[1];
+	link.append(badge);
+}

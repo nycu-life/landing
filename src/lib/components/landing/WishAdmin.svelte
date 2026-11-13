@@ -994,6 +994,10 @@
 		width: 100%;
 		text-align: left;
 	}
+	/* Keep the destructive action a clear step away from Publish. */
+	.action-button.danger + .action-button.primary {
+		margin-left: 0.85rem;
+	}
 	.action-button.danger {
 		border-color: rgba(180, 35, 24, 0.35);
 		background: rgba(217, 45, 32, 0.08);
@@ -1148,9 +1152,14 @@
 		.card-actions > :last-child:nth-child(odd) {
 			grid-column: 1 / -1;
 		}
+		.action-button.danger + .action-button.primary {
+			margin-left: 0;
+		}
 		/* Hide never takes the full-width slot: it leads the first row and the positive
 		   action beside it gets the full width instead. */
-		.card-actions > .action-button.danger {
+		/* Published list only: Hide leads the first row so the positive action can
+		   take the full width; in the review queue Publish keeps its own row. */
+		.card-actions:has(> .action-button.danger:last-child) > .action-button.danger {
 			order: -1;
 		}
 		.card-actions > .action-button.danger:last-child:nth-child(odd) {

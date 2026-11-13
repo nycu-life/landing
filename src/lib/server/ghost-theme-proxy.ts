@@ -155,14 +155,20 @@ function unavailablePage(pathname: string): string {
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:var(--base);color:var(--ink);font-family:Roboto,'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;display:grid;grid-template-rows:auto 1fr auto}
 header{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.1rem clamp(1.25rem,4vw,2.5rem);border-bottom:1px solid rgba(127,140,160,.2)}
-header nav{display:flex;align-items:center;gap:.6rem;margin:0}
+header nav{display:flex;flex-wrap:nowrap;align-items:center;gap:.5rem;margin:0}
+.lang{display:inline-flex;border:1px solid rgba(127,140,160,.35);border-radius:999px;padding:.15rem}
+.lang a{display:inline-grid;place-items:center;min-width:2.1rem;height:2.1rem;border-radius:999px;font-size:.8rem;font-weight:700;text-decoration:none}
+.lang a[aria-current]{background:var(--brand);color:var(--base)}
+.toggle svg{width:1.1rem;height:1.1rem}
+:root[data-theme=dark] .sun,:root:not([data-theme=dark]) .moon{display:none}
+@media (max-width:420px){.sticker{width:6.4rem;height:2.3rem;font-size:.82rem}.lang{display:none}}
 .sticker{position:relative;display:inline-grid;place-items:center;width:7.4rem;height:2.6rem;background:url(/ui/wishpool-mobile.svg) center/100% 100% no-repeat;color:#fff;font-size:.9rem;font-weight:800;text-decoration:none}
 .sticker i{position:absolute;inset:27% 14% 25% 23%;background:#33f}
 .sticker b{position:relative}
 .toggle{display:inline-grid;place-items:center;width:2.5rem;height:2.5rem;border:1px solid rgba(127,140,160,.35);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
 footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem 1.5rem;padding:1.4rem clamp(1.25rem,4vw,2.5rem);background:#374151;color:#e5e7eb;font-size:.85rem}
 footer a{color:#fff}
-header img{display:block;height:1.6rem;width:auto}
+header img{display:block;height:1.35rem;width:auto;max-width:9.5rem}
 .dark-logo{display:none!important}
 :root[data-theme=dark] .light-logo{display:none!important}
 :root[data-theme=dark] .dark-logo{display:block!important}
@@ -180,7 +186,7 @@ a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 </style>
 </head>
 <body>
-<header><a href="${english ? '/en/' : '/'}" aria-label="NYCU LIFE"><img class="light-logo" src="/brand/logo-horizontal-blue.svg" alt="NYCU LIFE" width="160" height="26"><img class="dark-logo" src="/brand/logo-horizontal-white.svg" alt="NYCU LIFE" width="160" height="26"></a><nav><a class="sticker" href="/wishpool/"><i aria-hidden="true"></i><b>${copy.wishShort} ✦</b></a><button class="toggle" type="button" aria-label="${copy.theme}" onclick="var r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('nycu-life-theme',r.dataset.theme)}catch(e){}">◐</button></nav></header>
+<header><a href="${english ? '/en/' : '/'}" aria-label="NYCU LIFE"><img class="light-logo" src="/brand/logo-horizontal-blue.svg" alt="NYCU LIFE" width="160" height="26"><img class="dark-logo" src="/brand/logo-horizontal-white.svg" alt="NYCU LIFE" width="160" height="26"></a><nav><a class="sticker" href="/wishpool/"><i aria-hidden="true"></i><b>${copy.wishShort} ✦</b></a><span class="lang"><a href="/"${english ? '' : ' aria-current="true"'}>中</a><a href="/en/"${english ? ' aria-current="true"' : ''}>EN</a></span><button class="toggle" type="button" aria-label="${copy.theme}" onclick="var r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('nycu-life-theme',r.dataset.theme)}catch(e){}"><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42m0-14.14-1.42 1.42m-11.3 11.3-1.42 1.42"/></svg><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.44.402.785a6.25 6.25 0 0 0 8.268 8.268c.344-.215.806-.004.803.419"/></svg></button></nav></header>
 <main><section aria-labelledby="title"><img src="/story/designer/wishpool/machine.svg" alt="" width="176" height="176"><div><span>503</span><h1 id="title">${copy.title}</h1><p>${copy.lede}</p><nav><a class="primary" href="${english ? '/en/' : '/'}">${copy.retry}</a><a href="/wishpool/">${copy.wish} →</a></nav></div></section></main>
 <footer><span>© ${new Date().getFullYear()} NYCU LIFE</span><span><a href="mailto:life@nycu.edu.tw">life@nycu.edu.tw</a> · <a href="https://www.instagram.com/nycu.life/" rel="noopener noreferrer">Instagram</a></span></footer>
 </body>

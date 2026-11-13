@@ -30,6 +30,11 @@
 	/* #105 navigation order. Home chapters stay in-page anchors; the rest are their own pages.
 	   The Wish Pool keeps the sticker slot until the comics corner (#107) has episodes. */
 	const links = $derived(site.navigation);
+	/** "Dev log (中文)" → label plus a small language badge. */
+	const splitLabel = (label: string) => {
+		const match = /^(.*?)\s*\((中文|ZH)\)$/.exec(label);
+		return match ? { text: match[1], badge: match[2] } : { text: label, badge: '' };
+	};
 
 	afterNavigate(() => {
 		menuOpen = false;
@@ -53,7 +58,10 @@
 		{#each links as link (link.href)}
 			<a
 				href={link.href.startsWith('/') ? `${base}${link.href}` : link.href}
-				aria-current={link.page && isActive(link.page) ? 'page' : undefined}>{link.label()}</a
+				aria-current={link.page && isActive(link.page) ? 'page' : undefined}
+				>{splitLabel(link.label()).text}{#if splitLabel(link.label()).badge}<span class="nav-lang"
+						>{splitLabel(link.label()).badge}</span
+					>{/if}</a
 			>
 		{/each}
 	</nav>
@@ -110,7 +118,10 @@
 				<a
 					href={link.href.startsWith('/') ? `${base}${link.href}` : link.href}
 					aria-current={link.page && isActive(link.page) ? 'page' : undefined}
-					onclick={() => (menuOpen = false)}>{link.label()}</a
+					onclick={() => (menuOpen = false)}
+					>{splitLabel(link.label()).text}{#if splitLabel(link.label()).badge}<span class="nav-lang"
+							>{splitLabel(link.label()).badge}</span
+						>{/if}</a
 				>
 			{/each}
 			<a
@@ -181,6 +192,16 @@
 	.topbar-nav a {
 		position: relative;
 		padding: 0.35rem 0;
+	}
+	.nav-lang {
+		margin-left: 0.3rem;
+		padding: 0.05rem 0.35rem;
+		border: 1px solid currentColor;
+		border-radius: 0.35rem;
+		font-size: 0.68em;
+		font-weight: 650;
+		opacity: 0.75;
+		vertical-align: 0.1em;
 	}
 	.topbar-nav a:hover,
 	.topbar-nav a[aria-current='page'] {
