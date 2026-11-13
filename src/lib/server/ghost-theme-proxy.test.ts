@@ -108,6 +108,17 @@ describe('native Ghost routing boundary', () => {
 		expect(page).toContain('頁面暫時打不開');
 		expect(page).toContain('href="/wishpool/"');
 		expect(page).not.toContain('/assets/');
+		// Refresh retries the requested page, query included and attribute-escaped.
+		const article = await proxyGhostTheme(
+			new Request('https://nycu.life/devlog/post/?a=1&b="x"'),
+			'http://ghost:2368',
+			async () => {
+				throw new Error('offline');
+			}
+		);
+		expect(await article.text()).toContain(
+			'class="primary" href="/devlog/post/?a=1&amp;b=%22x%22"'
+		);
 	});
 });
 

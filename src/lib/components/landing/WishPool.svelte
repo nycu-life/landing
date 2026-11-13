@@ -190,7 +190,11 @@
 			loaded = { open: true, fulfilled: true };
 			return cleanup;
 		}
+		// A visible load (first load or retry) that arrives while a background refresh
+		// is in flight adopts that request, so its failure still reaches the board.
+		const showErrorFor: Record<WishStatus, boolean> = { open: false, fulfilled: false };
 		const fetchList = async (status: WishStatus, showError: boolean) => {
+			if (showError) showErrorFor[status] = true;
 			if (refreshing[status]) return;
 			refreshing[status] = true;
 			try {
@@ -199,9 +203,10 @@
 				failed[status] = false;
 			} catch {
 				// The board shows the failure (with a retry); the form keeps its own errors.
-				if (showError && !controller.signal.aborted) failed[status] = true;
+				if (showErrorFor[status] && !controller.signal.aborted) failed[status] = true;
 			} finally {
 				refreshing[status] = false;
+				showErrorFor[status] = false;
 			}
 		};
 		requestFetch = fetchList;

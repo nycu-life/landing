@@ -104,14 +104,19 @@ export async function proxyGhostTheme(
 			responseHeaders.set('cache-control', 'private, no-cache');
 		return new Response(result.body, { status: result.status, headers: responseHeaders });
 	} catch {
-		return new Response(request.method === 'HEAD' ? null : unavailablePage(incoming.pathname), {
-			status: 503,
-			headers: {
-				'content-type': 'text/html; charset=utf-8',
-				'retry-after': '30',
-				'cache-control': 'no-store'
+		return new Response(
+			request.method === 'HEAD'
+				? null
+				: unavailablePage(incoming.pathname, incoming.pathname + incoming.search),
+			{
+				status: 503,
+				headers: {
+					'content-type': 'text/html; charset=utf-8',
+					'retry-after': '30',
+					'cache-control': 'no-store'
+				}
 			}
-		});
+		);
 	}
 }
 
@@ -120,7 +125,9 @@ export async function proxyGhostTheme(
  * itself (static/), keeps the site's colours and appearance setting, and points to
  * the Wish Pool, which does not depend on Ghost.
  */
-function unavailablePage(pathname: string): string {
+function unavailablePage(pathname: string, retryHref: string): string {
+	const attr = (value: string) =>
+		value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 	const english = pathname === '/en' || pathname.startsWith('/en/');
 	const copy = english
 		? {
@@ -187,7 +194,7 @@ a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 </head>
 <body>
 <header><a href="${english ? '/en/' : '/'}" aria-label="NYCU LIFE"><img class="light-logo" src="/brand/logo-horizontal-blue.svg" alt="NYCU LIFE" width="160" height="26"><img class="dark-logo" src="/brand/logo-horizontal-white.svg" alt="NYCU LIFE" width="160" height="26"></a><nav><a class="sticker" href="/wishpool/"><i aria-hidden="true"></i><b>${copy.wishShort} ✦</b></a><span class="lang"><a href="/"${english ? '' : ' aria-current="true"'}>中</a><a href="/en/"${english ? ' aria-current="true"' : ''}>EN</a></span><button class="toggle" type="button" aria-label="${copy.theme}" onclick="var r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('nycu-life-theme',r.dataset.theme)}catch(e){}"><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42m0-14.14-1.42 1.42m-11.3 11.3-1.42 1.42"/></svg><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.44.402.785a6.25 6.25 0 0 0 8.268 8.268c.344-.215.806-.004.803.419"/></svg></button></nav></header>
-<main><section aria-labelledby="title"><img src="/story/designer/wishpool/machine.svg" alt="" width="176" height="176"><div><span>503</span><h1 id="title">${copy.title}</h1><p>${copy.lede}</p><nav><a class="primary" href="${english ? '/en/' : '/'}">${copy.retry}</a><a href="/wishpool/">${copy.wish} →</a></nav></div></section></main>
+<main><section aria-labelledby="title"><img src="/story/designer/wishpool/machine.svg" alt="" width="176" height="176"><div><span>503</span><h1 id="title">${copy.title}</h1><p>${copy.lede}</p><nav><a class="primary" href="${attr(retryHref)}">${copy.retry}</a><a href="/wishpool/">${copy.wish} →</a></nav></div></section></main>
 <footer><span>© ${new Date().getFullYear()} NYCU LIFE</span><span><a href="mailto:life@nycu.edu.tw">life@nycu.edu.tw</a> · <a href="https://www.instagram.com/nycu.life/" rel="noopener noreferrer">Instagram</a></span></footer>
 </body>
 </html>`;
