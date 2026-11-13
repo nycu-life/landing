@@ -79,11 +79,8 @@ if (storyEl) {
 			const shot = document.createElement('div');
 			shot.className = 'device-shot';
 			shot.dataset.appearance = appearance;
-			const image = document.createElement('img');
-			image.alt = alt;
-			image.decoding = 'async';
-			image.dataset.url = url;
-			shot.append(image);
+			shot.dataset.url = url;
+			shot.dataset.alt = alt;
 			target.append(shot);
 		}
 	}
@@ -100,10 +97,15 @@ if (storyEl) {
 			for (const shot of shots) {
 				const selected = shot === candidates[screenshotIndex % candidates.length];
 				shot.classList.toggle('active', selected);
-				const image = shot.querySelector('img[data-url]');
-				// Hidden product groups stay unloaded until their product is shown.
-				if (selected && image && !image.getAttribute('src') && !group.hidden)
-					setGhostImage(image, image.dataset.url, SHOT_SIZES);
+				// The <img> is created the first time its shot is shown, so hidden product
+				// groups and the other appearance never download anything.
+				if (selected && !group.hidden && shot.dataset.url && !shot.querySelector('img')) {
+					const image = document.createElement('img');
+					image.alt = shot.dataset.alt ?? '';
+					image.decoding = 'async';
+					setGhostImage(image, shot.dataset.url, SHOT_SIZES);
+					shot.append(image);
+				}
 			}
 		}
 	};

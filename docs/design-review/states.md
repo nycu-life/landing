@@ -16,7 +16,10 @@
 - 深色狀態用 `localStorage['nycu-life-theme'] = 'dark'`（網站自己的開關，不跟系統）。
 - 英文許願池沿用正式站行為：`PARAGLIDE_LOCALE=en` cookie（Ghost 頁面的 `site.js` 會設定），網址同為 `/wishpool/`。
 - 瀏覽器時鐘固定在 2026-11-13 12:00（Asia/Taipei），許願的相對時間不漂移。
-- 截圖瀏覽器一次只開一個；截圖前 `tools/wait-load.sh 10`。
+- 截圖瀏覽器一次只開一個；每個狀態前都等 `tools/wait-load.sh 10`，瀏覽器逾時就重試一次。
+- 視窗維持 1440 × 900／390 × 844，用 `fullPage` 加 `clip` 截長圖（不把視窗拉高，`vh` 區塊保持原尺寸）；錨點截圖時把黏性頁首移到截圖頂端。點擊後把滑鼠移到 (0, 0)，避免拍到 hover。
+- 每次截圖前從 `/tmp/nycu-hc/wishes.sql` 還原 Wish API 的 Postgres，表單送出與 +1 不會讓資料隨輪次漂移。
+- Ghost 選單是站台資料：`capture-baseline.sh` 與 `deploy-new.sh` 都以各自版本的 `install-ghost-theme.mjs --initialize-navigation` 預設選單安裝主題。
 
 ## 測試環境（全部在本機，不連正式 Ghost、不匯入真實會員）
 

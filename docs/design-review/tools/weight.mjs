@@ -36,7 +36,8 @@ for (const path of pages)
 					bytes: sizes.responseBodySize
 				});
 			});
-			await page.goto(base + path, { waitUntil: 'load' });
+			await page.goto(base + path, { waitUntil: 'domcontentloaded', timeout: 90000 });
+			await page.waitForLoadState('load', { timeout: 30000 }).catch(() => {});
 			for (let y = 0; y < 30000; y += 700) {
 				const more = await page.evaluate((top) => {
 					window.scrollTo(0, top);
