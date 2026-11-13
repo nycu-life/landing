@@ -1093,8 +1093,13 @@
 		color: #71d5aa;
 	}
 	/* Dark brand blue is light, so primary actions take dark text. */
-	:global(html[data-theme='dark']) .action-button.primary {
+	:global(html[data-theme='dark']) .action-button.primary,
+	:global(html[data-theme='dark']) .wish-admin :global(.landing-button-primary) {
 		color: var(--base);
+	}
+	.action-button {
+		min-height: 2.5rem;
+		font-size: 0.85rem;
 	}
 	:global(html[data-theme='dark']) .toolbar-button.danger,
 	:global(html[data-theme='dark']) .admin-message.error,

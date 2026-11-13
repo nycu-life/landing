@@ -224,8 +224,11 @@
 		const cleanTitle = title.trim();
 		if (cleanTitle.length < 4) {
 			error = m.wish_error_short();
+			titleInvalid = true;
+			titleInput?.focus();
 			return;
 		}
+		titleInvalid = false;
 		error = '';
 		notice = '';
 		submitting = true;
@@ -289,6 +292,7 @@
 	}
 
 	let titleInput: HTMLInputElement | undefined = $state();
+	let titleInvalid = $state(false);
 	let boardList: HTMLDivElement | undefined = $state();
 
 	/* Wide screens: a row-major masonry. Each card spans as many 4 px grid rows as its
@@ -360,6 +364,9 @@
 				<input
 					bind:this={titleInput}
 					bind:value={title}
+					aria-invalid={titleInvalid}
+					aria-describedby={error ? 'wish-feedback' : undefined}
+					oninput={() => (titleInvalid = false)}
 					maxlength="120"
 					placeholder={m.wish_input_placeholder()}
 					autocomplete="off"
@@ -391,6 +398,12 @@
 				<span class="wish-submit-label">{submitting ? m.wish_submitting() : m.wish_submit()}</span>
 			</button>
 		</div>
+		<div id="wish-feedback" class="wish-feedback" aria-live="polite">
+			{#if error}<p class="wish-error">{error}</p>{/if}
+			{#if notice}<p class="wish-notice" role="status">
+					<span class="wish-notice-mark" aria-hidden="true">✓</span>{notice}
+				</p>{/if}
+		</div>
 		<details class="wish-detail-field">
 			<summary>{m.wish_detail_toggle()}</summary>
 			<label>
@@ -409,12 +422,6 @@
 				? '：'
 				: ': '}{m.wish_privacy_body()}
 		</p>
-		<div class="wish-feedback" aria-live="polite">
-			{#if error}<p class="wish-error">{error}</p>{/if}
-			{#if notice}<p class="wish-notice" role="status">
-					<span class="wish-notice-mark" aria-hidden="true">✓</span>{notice}
-				</p>{/if}
-		</div>
 	</form>
 
 	<section class="wish-board" aria-labelledby="wish-board-title">
@@ -1669,6 +1676,25 @@
 	}
 	.wish-privacy {
 		font-size: 0.9rem;
+	}
+
+	/* A too-short title marks the field itself, with the message right under it. */
+	.wish-title-field input[aria-invalid='true'] {
+		border-color: #c2372b;
+		box-shadow: 0 0 0 3px rgba(194, 55, 43, 0.14);
+	}
+	.wish-feedback .wish-error::before {
+		content: '!';
+		display: inline-grid;
+		place-items: center;
+		width: 1.25rem;
+		height: 1.25rem;
+		margin-right: 0.45rem;
+		border-radius: 50%;
+		background: #c2372b;
+		color: #fff;
+		font-size: 0.8rem;
+		vertical-align: 0.05em;
 	}
 
 	/* Dark appearance: the same sketch language (ink outline, offset shadow, tape) on

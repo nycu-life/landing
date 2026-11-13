@@ -12,7 +12,9 @@
             <div class="hero-orbit" aria-hidden="true"></div>
             {{> "[[locale]]/machine"}}
             {{#get "pages" filter="slug:theme-[[locale]]-hero" limit="1"}}
-                {{#foreach pages}}<div class="hero-copy sr-only"><h1>NYCU LIFE — {{title}}</h1>{{content}}</div>{{/foreach}}
+                {{!-- Nothing is drawn over the machine artwork; the editable hero title sits under it
+                     with the two main next steps (download, wish). --}}
+                {{#foreach pages}}<div class="hero-copy"><h1 class="hero-tagline"><span class="sr-only">NYCU LIFE — </span>{{title}}</h1><div class="sr-only">{{content}}</div><p class="hero-actions"><a class="hero-cta hero-cta-primary" href="#prototype-footer">{{copy 'footer_download_title'}} <span aria-hidden="true">↓</span></a><a class="hero-cta hero-cta-secondary" href="/wishpool/">{{copy 'nav_wishpool'}} <span aria-hidden="true">✦</span></a></p></div>{{/foreach}}
             {{/get}}
             <div class="scroll-hint">{{copy 'story_scroll_cue'}} ↓</div>
         </section>

@@ -31,7 +31,7 @@
 
 <style>
 	.admin-page {
-		max-width: 68rem;
+		max-width: var(--shell);
 	}
 	.admin-head {
 		grid-template-columns: minmax(0, 1fr) auto;
