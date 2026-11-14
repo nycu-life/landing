@@ -74,7 +74,7 @@
 	let aboutFilmFrame: HTMLIFrameElement;
 	let aboutFilmLoaded = false;
 	let aboutFilmShouldPlay = $state(false);
-	let aboutFilmAudioUnlocked = false;
+	let aboutFilmViewerPaused = false;
 	let aboutFilmRetryTimers: ReturnType<typeof setTimeout>[] = [];
 	let aboutFilmRetrying = $state(false);
 	let progressValue = 0;
@@ -206,30 +206,25 @@
 			return;
 		// Once YouTube reports a real player state, it is ready. Continuing the startup
 		// retries after that point can immediately undo a viewer's tap on Pause (#78).
-		if (readAboutFilmPlayerState(event.data) !== null) clearAboutFilmRetries();
+		const state = readAboutFilmPlayerState(event.data);
+		if (state === 1 || state === 2 || state === 0) clearAboutFilmRetries();
+		if (state === 2 && aboutFilmShouldPlay) aboutFilmViewerPaused = true;
+		else if (state === 1) aboutFilmViewerPaused = false;
 	};
-	const playAboutFilm = () => {
-		if (aboutFilmAudioUnlocked) {
-			sendAboutFilmCommand('unMute');
-			sendAboutFilmCommand('setVolume', [100]);
-		} else sendAboutFilmCommand('mute');
-		sendAboutFilmCommand('playVideo');
-	};
-	const unlockAboutFilmAudio = () => {
-		aboutFilmAudioUnlocked = true;
-		if (aboutFilmShouldPlay) playAboutFilm();
-	};
+	// Playback never changes volume or mute: those belong to the viewer.
+	const playAboutFilm = () => sendAboutFilmCommand('playVideo');
 	const syncAboutFilmPlayback = () => {
 		clearAboutFilmRetries();
 		if (!aboutFilmLoaded) return;
 		if (aboutFilmShouldPlay) {
+			if (aboutFilmViewerPaused) return;
 			aboutFilmRetrying = true;
 			for (const delay of [0, 120, 350, 700, 1200, 2000, 3500, 5000]) {
 				if (delay === 0) playAboutFilm();
 				else {
 					aboutFilmRetryTimers.push(
 						setTimeout(() => {
-							if (aboutFilmShouldPlay) playAboutFilm();
+							if (aboutFilmShouldPlay && !aboutFilmViewerPaused) playAboutFilm();
 						}, delay)
 					);
 				}
@@ -244,6 +239,10 @@
 	};
 	const onAboutFilmLoad = () => {
 		aboutFilmLoaded = true;
+		aboutFilmFrame.contentWindow?.postMessage(
+			JSON.stringify({ event: 'listening', id: 'nycu-life-film' }),
+			'https://www.youtube-nocookie.com'
+		);
 		sendAboutFilmCommand('addEventListener', ['onStateChange']);
 		syncAboutFilmPlayback();
 	};
@@ -484,9 +483,6 @@
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('hashchange', onHashChange);
 		window.addEventListener('message', onAboutFilmMessage);
-		window.addEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
-		window.addEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
-		window.addEventListener('keydown', unlockAboutFilmAudio, { capture: true });
 		motionQuery.addEventListener('change', updateMotionPreference);
 		if (window.location.hash) onHashChange();
 		else onScroll();
@@ -503,9 +499,6 @@
 			window.removeEventListener('keydown', onKeyDown);
 			window.removeEventListener('hashchange', onHashChange);
 			window.removeEventListener('message', onAboutFilmMessage);
-			window.removeEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
-			window.removeEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
-			window.removeEventListener('keydown', unlockAboutFilmAudio, { capture: true });
 			clearAboutFilmRetries();
 			motionQuery.removeEventListener('change', updateMotionPreference);
 			if (wheelResetTimer) clearTimeout(wheelResetTimer);

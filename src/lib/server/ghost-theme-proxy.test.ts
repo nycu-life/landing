@@ -18,6 +18,8 @@ describe('native Ghost routing boundary', () => {
 			'/wishpool/',
 			'/_app/app.js',
 			'/healthz',
+			'/install',
+			'/install/',
 			'/team/old/',
 			'/courses/',
 			'/devlog/media/image.png'
