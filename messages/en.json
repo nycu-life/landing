@@ -511,5 +511,9 @@
 	"eyebrow_news": "NYCU LIFE / NEWS",
 	"eyebrow_devlog": "NYCU LIFE / DEV LOG",
 	"eyebrow_comics": "NYCU LIFE / COMICS",
-	"eyebrow_products": "NYCU LIFE / PRODUCTS"
+	"eyebrow_products": "NYCU LIFE / PRODUCTS",
+
+	"install_title": "Download NYCU LIFE",
+	"install_description": "Choose your mobile platform and get NYCU LIFE for an easier campus life.",
+	"install_home": "Back to home"
 }

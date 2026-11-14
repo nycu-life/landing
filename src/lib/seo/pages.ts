@@ -2,7 +2,7 @@
  * Preserve explicit 404/410 behavior when adding or withdrawing a core route. */
 export const SITE_ORIGIN = 'https://nycu.life';
 
-// /install is a device-dependent redirect, so it is intentionally absent from the sitemap.
+// /install is a download selector with device-dependent redirects, so it is intentionally absent from the sitemap.
 export const indexablePages: readonly string[] = ['/', '/about/', '/wishpool/'];
 
 export const DEVLOG_INDEX = '/devlog/';
