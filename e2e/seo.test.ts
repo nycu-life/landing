@@ -35,6 +35,7 @@ test('publishes a complete production sitemap and advertises it to crawlers', as
 	expect(sitemap).not.toContain('/team/');
 	expect(sitemap).not.toContain('/demo/');
 	expect(sitemap).not.toContain('/wishpool/admin/');
+	expect(sitemap).not.toContain('/install');
 
 	const robotsResponse = await request.get('/robots.txt');
 	expect(robotsResponse.ok()).toBe(true);
@@ -45,6 +46,7 @@ test('serves unknown URLs a noindex error page without a canonical', async ({ pa
 	for (const path of [
 		'/nonexistent-page/',
 		'/demo/',
+		'/install/unknown/',
 		'/pages/not-a-page/',
 		'/pages/site-zh-tw-home/'
 	]) {

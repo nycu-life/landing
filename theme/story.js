@@ -12,7 +12,7 @@ if (storyEl) {
 	};
 	let aboutFilmLoaded = false,
 		aboutFilmShouldPlay = false,
-		aboutFilmAudioUnlocked = false;
+		aboutFilmViewerPaused = false;
 	let aboutFilmRetryTimers = [];
 	let progressValue = 0,
 		chapterIndex = 0,
@@ -309,45 +309,32 @@ if (storyEl) {
 		const state = readAboutFilmPlayerState(message);
 		// Unstarted/cued messages do not confirm that playVideo was accepted.
 		if (state === 1 || state === 2 || state === 0) clearAboutFilmRetries();
+		if (state === 2 && aboutFilmShouldPlay) aboutFilmViewerPaused = true;
+		else if (state === 1) aboutFilmViewerPaused = false;
 		if (typeof message?.info?.muted === 'boolean') {
 			aboutFilmMuted = message.info.muted;
 			syncFilmSoundButton();
 		}
-		if (message?.event === 'onAutoplayBlocked') {
-			const attemptedAudio = aboutFilmAudioUnlocked;
-			aboutFilmAudioUnlocked = false;
-			aboutFilmMuted = true;
-			syncFilmSoundButton();
-			// Recover muted autoplay when a previous page interaction did not grant audio.
-			if (attemptedAudio) {
-				sendAboutFilmCommand('mute');
-				sendAboutFilmCommand('playVideo');
-			}
-		}
+		if (message?.event === 'onAutoplayBlocked') clearAboutFilmRetries();
 	};
-	const playAboutFilm = () => {
-		if (aboutFilmAudioUnlocked) {
-			sendAboutFilmCommand('unMute');
-			sendAboutFilmCommand('setVolume', [100]);
-		} else sendAboutFilmCommand('mute');
-		sendAboutFilmCommand('playVideo');
-	};
+	// Playback never changes volume or mute: those belong to the viewer.
+	const playAboutFilm = () => sendAboutFilmCommand('playVideo');
 	const unlockAboutFilmAudio = (event) => {
 		if (!event.isTrusted) return;
-		aboutFilmAudioUnlocked = true;
-		if (aboutFilmShouldPlay) playAboutFilm();
+		sendAboutFilmCommand('unMute');
 	};
 	const syncAboutFilmPlayback = () => {
 		clearAboutFilmRetries();
 		if (!aboutFilmLoaded) return;
 		if (aboutFilmShouldPlay) {
+			if (aboutFilmViewerPaused) return;
 			storyEl.dataset.aboutFilmRetrying = 'true';
 			for (const delay of [0, 120, 350, 700, 1200, 2000, 3500, 5000]) {
 				if (delay === 0) playAboutFilm();
 				else {
 					aboutFilmRetryTimers.push(
 						setTimeout(() => {
-							if (aboutFilmShouldPlay) playAboutFilm();
+							if (aboutFilmShouldPlay && !aboutFilmViewerPaused) playAboutFilm();
 						}, delay)
 					);
 				}
@@ -707,9 +694,6 @@ if (storyEl) {
 	window.addEventListener('hashchange', onHashChange);
 	window.addEventListener('message', onAboutFilmMessage);
 	filmSoundButton?.addEventListener('click', unlockAboutFilmAudio);
-	window.addEventListener('pointerdown', unlockAboutFilmAudio, { capture: true });
-	window.addEventListener('pointerup', unlockAboutFilmAudio, { capture: true });
-	window.addEventListener('keydown', unlockAboutFilmAudio, { capture: true });
 	motionQuery.addEventListener('change', updateMotionPreference);
 	if (window.location.hash) onHashChange();
 	else onScroll();

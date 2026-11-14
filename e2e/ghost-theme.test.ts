@@ -7,18 +7,9 @@ test('Ghost serves readable home content without JavaScript', async ({ browser }
 	const page = await context.newPage();
 	await page.goto(process.env.GHOST_THEME_TEST_URL!);
 	await expect(page.locator('.hero-copy h1')).toContainText('NYCU LIFE');
-	// The hero title and its two next steps sit under the machine artwork, never over it.
-	await expect(page.locator('.hero-copy .hero-tagline')).toBeVisible();
-	await expect(page.locator('.hero-actions a')).toHaveCount(2);
-	const [machine, copy] = await Promise.all(
-		['.hero-scene .gacha-machine', '.hero-copy'].map((selector) =>
-			page
-				.locator(selector)
-				.first()
-				.evaluate((e) => e.getBoundingClientRect())
-		)
-	);
-	expect(copy.top).toBeGreaterThanOrEqual(machine.bottom - 1);
+	// The opening stays focused on the artwork, with editable copy available to screen readers.
+	await expect(page.locator('.hero-copy')).toHaveClass(/sr-only/);
+	await expect(page.locator('.hero-actions')).toHaveCount(0);
 	await expect(page.locator('.product-copy')).toHaveCount(4);
 	for (const product of await page.locator('.product-copy').all())
 		await expect(product).toBeVisible();
@@ -47,7 +38,27 @@ test('initial About deep link survives late iframe loading', async ({ page }) =>
 	);
 });
 
-test('film really autoplays muted, enables sound on click and respects Pause', async ({ page }) => {
+test('hero copy stays visually hidden before and after the first scroll', async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto('/?motion=on#hero');
+	await expect(page.locator('.prototype-story')).toHaveAttribute('data-story-ready', 'true');
+	const copy = page.locator('.hero-copy');
+	const expectClippedCopy = async () => {
+		const bounds = await copy.boundingBox();
+		expect(bounds).not.toBeNull();
+		expect(bounds!.width).toBeLessThanOrEqual(1);
+		expect(bounds!.height).toBeLessThanOrEqual(1);
+	};
+	await expectClippedCopy();
+	await page.mouse.wheel(0, 40);
+	await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+	await expectClippedCopy();
+	await expect(page.locator('.hero-actions')).toHaveCount(0);
+});
+
+test('film autoplays muted and preserves viewer pause and mute after page input', async ({
+	page
+}) => {
 	test.setTimeout(60000);
 	await page.goto('/?motion=on#about');
 	const frame = page.frameLocator('.team-film iframe');
@@ -63,6 +74,8 @@ test('film really autoplays muted, enables sound on click and respects Pause', a
 		.poll(() => video.evaluate((v: HTMLVideoElement) => !v.muted && !v.paused && v.volume > 0))
 		.toBe(true);
 	await expect(page.locator('.film-sound')).toBeHidden();
+	await frame.getByRole('button', { name: /^(Mute(?: \(m\))?|靜音.*)$/ }).click();
+	await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.muted)).toBe(true);
 	// Pause the real media element; startup retries must not resume it.
 	await video.evaluate((v: HTMLVideoElement) => v.pause());
 	await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
@@ -70,8 +83,11 @@ test('film really autoplays muted, enables sound on click and respects Pause', a
 		'data-about-film-retrying',
 		'false'
 	);
+	await page.locator('.about-copy h2').click();
+	await page.keyboard.press('Shift');
 	await page.waitForTimeout(1300);
 	expect(await video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+	expect(await video.evaluate((v: HTMLVideoElement) => v.muted)).toBe(true);
 });
 
 test('vertical gestures step through products and release to the next chapter', async ({
