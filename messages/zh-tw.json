@@ -511,5 +511,9 @@
 	"eyebrow_news": "NYCU LIFE / 最新消息",
 	"eyebrow_devlog": "NYCU LIFE / 開發日誌",
 	"eyebrow_comics": "NYCU LIFE / 漫畫專區",
-	"eyebrow_products": "NYCU LIFE / 產品"
+	"eyebrow_products": "NYCU LIFE / 產品",
+
+	"install_title": "下載 NYCU LIFE",
+	"install_description": "選擇你的手機平台，下載 NYCU LIFE，讓校園生活更輕鬆。",
+	"install_home": "返回首頁"
 }
